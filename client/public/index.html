@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FoodAI</title>
+</head>
+<body>
+  <h1>FoodAI - Gemini AI Integration</h1>
+  <input id="prompt" placeholder="Enter your prompt" style="width: 300px;">
+  <button onclick="generate()">Generate Response</button>
+  <div id="response" style="margin-top: 20px;"></div>
+
+  <script>
+    async function generate() {
+      const prompt = document.getElementById('prompt').value;
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt })
+      });
+      const data = await res.json();
+      document.getElementById('response').innerText = data.response || data.error;
+    }
+  </script>
+</body>
+</html>
