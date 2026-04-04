@@ -8,7 +8,7 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="sticky top-0 z-50 py-3 backdrop-blur-lg bg-[#F0E6D1]">
+<nav className="sticky top-0 z-50 py-3 backdrop-blur-2xl bg-[#F0E6D1]/60 border-b border-[#DBCFB0]">
       <div className="container px-4 mx-auto relative text-sm">
         <div className="flex justify-between items-center">
           
@@ -17,7 +17,7 @@ const Navbar = () => {
             <span className="text-[#839705]">covery</span>
           </div>
 
-          <ul className="hidden lg:flex space-x-12 font-freeman font-bold text-[#1B211A]">
+          <ul className="hidden lg:flex space-x-12 font-freeman text-[#1B211A]">
             <li><a href="#" className="hover:text-[#839705] transition">Home</a></li>
             <li><a href="#" className="hover:text-[#839705] transition">How it works</a></li>
             <li><a href="#" className="hover:text-[#839705] transition">About</a></li>
