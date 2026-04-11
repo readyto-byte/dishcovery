@@ -1,4 +1,5 @@
 import HeroSection from "./components/HeroSection"
+import HowItWorks from "./components/HowItWorks"
 import Navbar from "./components/Navbar"
 
 const LandingPage = () => {
@@ -6,6 +7,7 @@ const LandingPage = () => {
     <>
      <Navbar />
      <HeroSection />
+     <HowItWorks />
     </>
   )
 }
