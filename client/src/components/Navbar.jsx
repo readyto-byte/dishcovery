@@ -18,9 +18,9 @@ const Navbar = () => {
           </div>
 
           <ul className="hidden lg:flex space-x-12 font-freeman text-[#1B211A]">
-            <li><a href="#" className="hover:text-[#839705] transition">Home</a></li>
-            <li><a href="#" className="hover:text-[#839705] transition">How it works</a></li>
-            <li><a href="#" className="hover:text-[#839705] transition">About</a></li>
+            <li><a href="#home" className="hover:text-[#839705] transition">Home</a></li>
+            <li><a href="#how-it-works" className="hover:text-[#839705] transition">How it works</a></li>
+            <li><a href="#about" className="hover:text-[#839705] transition">About</a></li>
           </ul>
 
           <div className="hidden lg:flex justify-center space-x-8 items-center font-bold">
@@ -52,9 +52,9 @@ const Navbar = () => {
 
             <div className="flex flex-col bg-[#F0E6D1] w-full">
               <ul className="font-freeman font-bold text-[#1B211A] flex flex-col gap-4 mt-6 mb-6 items-center">
-                <li><a href="#" className="hover:text-[#839705] transition">Home</a></li>
-                <li><a href="#" className="hover:text-[#839705] transition">How it works</a></li>
-                <li><a href="#" className="hover:text-[#839705] transition">About</a></li>
+                <li><a href="#home" className="hover:text-[#839705] transition">Home</a></li>
+                <li><a href="#how-it-works" className="hover:text-[#839705] transition">How it works</a></li>
+                <li><a href="#about" className="hover:text-[#839705] transition">About</a></li>
               </ul>
 
               <div className="pb-6 flex justify-center gap-4 font-bold">

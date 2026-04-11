@@ -5,7 +5,7 @@ import { ArrowRight } from "lucide-react";
 
 const HeroSection = () => {
   return (
-    <div className="relative w-full">
+    <div id="home" className="relative w-full">
 
       <div className="absolute inset-0 -z-10">
         <img 
@@ -26,8 +26,8 @@ const HeroSection = () => {
         </h2>
 
         <div className="flex flex-col sm:flex-row gap-4 mt-10 justify-center items-center">
-          <img src={pic1} alt="Sample 1" className="w-55 sm:w-60 lg:w-70 rounded-2xl object-cover shadow-lg" />
-          <img src={pic2} alt="Sample 2" className="w-55 sm:w-60 lg:w-70 rounded-2xl object-cover shadow-lg" />
+          <img src={pic1} alt="Sample 1" className="w-55 sm:w-60 lg:w-70 rounded-2xl object-cover shadow-lg hover:scale-110 hover:shadow-2xl transition-all duration-300 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] cursor-pointer" />
+          <img src={pic2} alt="Sample 2" className="w-55 sm:w-60 lg:w-70 rounded-2xl object-cover shadow-lg hover:scale-110 hover:shadow-2xl transition-all duration-300 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] cursor-pointer" />
         </div>
 
         <div className="text-white mt-10 flex justify-center px-6">

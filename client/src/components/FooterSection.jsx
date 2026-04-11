@@ -11,22 +11,22 @@ const FooterSection = () => {
             Discover recipes made just for you.
           </p>
         </div>
-
+ 
         <nav className="flex items-center justify-end gap-10">
           <a
-            href="#"
+            href="#home"
             className="text-white text-base sm:text-lg font-freeman hover:text-[#BBCB2E] transition-colors duration-200"
           >
             Home
           </a>
           <a
-            href="#"
+            href="#how-it-works"
             className="text-white text-base sm:text-lg font-freeman hover:text-[#BBCB2E] transition-colors duration-200"
           >
             How It Works
           </a>
           <a
-            href="#"
+            href="#about"
             className="text-white text-base sm:text-lg font-freeman hover:text-[#BBCB2E] transition-colors duration-200"
           >
             About
@@ -42,5 +42,5 @@ const FooterSection = () => {
     </footer>
   );
 };
-
+ 
 export default FooterSection;

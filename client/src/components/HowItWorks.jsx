@@ -1,5 +1,6 @@
+import { useEffect, useRef } from "react";
 import { KeyboardIcon, Sparkles, UtensilsCrossed } from "lucide-react";
-
+ 
 const steps = [
   {
     number: 1,
@@ -20,36 +21,59 @@ const steps = [
     icon: <UtensilsCrossed size={28} />,
   },
 ];
-
+ 
 const HowItWorks = () => {
+  const cardRefs = useRef([]);
+ 
+  useEffect(() => {
+    const observers = cardRefs.current.map((card, i) => {
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            setTimeout(() => {
+              card.classList.remove("opacity-0", "translate-y-8");
+              card.classList.add("opacity-100", "translate-y-0");
+            }, i * 150);
+            observer.disconnect();
+          }
+        },
+        { threshold: 0.2 }
+      );
+      if (card) observer.observe(card);
+      return observer;
+    });
+ 
+    return () => observers.forEach((obs) => obs.disconnect());
+  }, []);
+ 
   return (
-    <div className="relative w-full bg-gradient-to-b from-[#8BAE66] to-[#2B3D1A] py-14 px-6 sm:py-20 lg:py-24 lg:px-16">
-
+    <div id="how-it-works" className="relative w-full bg-gradient-to-b from-[#8BAE66] to-[#2B3D1A] py-14 px-6 sm:py-20 lg:py-24 lg:px-16">
+ 
       <div className="relative flex flex-col items-start max-w-xl lg:max-w-2xl mx-auto w-full">
-
+ 
         <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-roboto text-white mb-8 lg:-ml-20">
           How it works
         </h2>
-
+ 
         <p className="text-center w-full text-sm sm:text-base lg:text-lg font-freeman font-semibold text-white mb-8">
           Find the{" "}
           <span className="text-[#BBCB2E] italic">perfect recipe</span>{" "}
           in just a few seconds.
         </p>
-
+ 
         <div className="flex flex-col gap-4 lg:gap-5 w-full">
-          {steps.map((step) => (
+          {steps.map((step, i) => (
             <div
               key={step.number}
-              className="flex items-center gap-4 bg-[#F5EFD8]/90 rounded-xl px-5 py-4 lg:px-7 lg:py-5 shadow-md"
+              ref={(el) => (cardRefs.current[i] = el)}
+              className="flex items-center gap-4 bg-[#F5EFD8]/90 rounded-xl px-5 py-4 lg:px-7 lg:py-5 shadow-md opacity-0 translate-y-8 transition-all duration-500 ease-out"
             >
- 
               <div className="flex-shrink-0 w-10 h-10 lg:w-12 lg:h-12 rounded-lg bg-[#2B3D1A] flex items-center justify-center">
                 <span className="text-white font-bold font-roboto text-lg lg:text-xl leading-none">
                   {step.number}
                 </span>
               </div>
-
+ 
               <div className="flex-1">
                 <p className="text-sm lg:text-base font-bold text-[#1B211A] font-roboto leading-snug">
                   {step.title}
@@ -58,18 +82,17 @@ const HowItWorks = () => {
                   {step.description}
                 </p>
               </div>
-
-              {/* Icon */}
+ 
               <div className="flex-shrink-0 text-[#2B3D1A] opacity-80">
                 {step.icon}
               </div>
             </div>
           ))}
         </div>
-
+ 
       </div>
     </div>
   );
 };
-
+ 
 export default HowItWorks;
