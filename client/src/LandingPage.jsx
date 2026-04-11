@@ -1,3 +1,4 @@
+import AboutSection from "./components/AboutSection"
 import HeroSection from "./components/HeroSection"
 import HowItWorks from "./components/HowItWorks"
 import Navbar from "./components/Navbar"
@@ -10,6 +11,7 @@ const LandingPage = () => {
      <HeroSection />
      <HowItWorks />
      <SampleRecipe />
+     <AboutSection />
     </>
   )
 }
