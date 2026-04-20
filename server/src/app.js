@@ -21,7 +21,6 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '..', '..', 'client', 'public')));
 
 // Auth middleware to set req.user
 const authMiddleware = async (req, res, next) => {
