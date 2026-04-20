@@ -1,22 +1,30 @@
 const DashboardNavbar = ({ setCurrentPage, sidebarOpen, setSidebarOpen }) => {
   return (
-    <nav className="bg-[#32491B] px-4 md:px-8 py-4 flex items-center justify-between shadow-lg sticky top-0 z-10 w-full">
+    <nav
+      className="px-4 md:px-8 py-4 flex items-center justify-between shadow-lg sticky top-0 z-10 w-full"
+      style={{
+        background: 'rgba(50, 73, 27, 0.6)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        borderBottom: '1px solid rgba(181, 208, 152, 0.2)',
+      }}
+    >
       <div className="flex items-center gap-3">
         <button 
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="text-white text-3xl focus:outline-none lg:hidden"
+          className="text-white text-3xl focus:outline-none lg:hidden cursor-pointer"
         >
           <i className="fas fa-bars"></i>
         </button>
       </div>
       
       <div className="flex items-center gap-4 md:gap-6">
-        <button className="text-white hover:text-[#B5D098] transition-colors">
+        <button className="text-white hover:text-[#B5D098] transition-colors cursor-pointer">
           <i className="fas fa-newspaper text-2xl md:text-3xl"></i>
         </button>
         <button 
           onClick={() => setCurrentPage('dashboard')}
-          className="text-white hover:text-[#B5D098] transition-colors"
+          className="text-white hover:text-[#B5D098] transition-colors cursor-pointer"
         >
           <i className="fas fa-home text-2xl md:text-3xl"></i>
         </button>
