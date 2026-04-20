@@ -15,7 +15,12 @@ async function signUp({ email, password, firstName, lastName, username }) {
 
   const { data: accountData, error: accountError } = await supabaseAdmin
     .from('account')
-    .insert([{ id: userId, first_name: firstName, last_name: lastName, username}])
+    .insert([{
+      id: userId,
+      first_name: firstName,
+      last_name: lastName,
+      username,
+    }])
     .single()
 
   if (accountError) {
@@ -38,22 +43,29 @@ async function logIn(loginInfo, password) {
     throw new Error('Login information is required')
   }
 
-  let email = loginInfo
+  const normalizedLoginInfo = loginInfo.trim()
+  let email = normalizedLoginInfo
 
-  // Check if input is a username input (does not contain '@')
-  if (!loginInfo.includes('@')) {
-    // Look up the email from the accounts table using the username
-    const { data, error } = await supabase
+  // Check if input is a username (does not contain '@')
+  if (!normalizedLoginInfo.includes('@')) {
+    // Look up the auth user id from account using username
+    const { data, error } = await supabaseAdmin
       .from('account')
-      .select('email')
-      .eq('username', loginInfo)
+      .select('id')
+      .ilike('username', normalizedLoginInfo)
       .single()
 
     if (error || !data) {
       throw new Error('Username not found')
     }
 
-    email = data.email
+    // Resolve the actual auth email from Supabase Auth using auth user id
+    const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(data.id)
+    if (userError || !userData?.user?.email) {
+      throw new Error('Could not resolve email for this username')
+    }
+
+    email = userData.user.email
   }
 
   // Login with the resolved email/username and password
@@ -71,7 +83,7 @@ async function logIn(loginInfo, password) {
     const { data, error } = await supabase
       .from('account')
       .select('*')
-      .eq('user_id', authData.user.id)
+      .eq('id', authData.user.id)
       .single()
     if (!error) accountData = data
   }
