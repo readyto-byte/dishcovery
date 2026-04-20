@@ -20,6 +20,7 @@ async function signUp({ email, password, firstName, lastName, username }) {
       first_name: firstName,
       last_name: lastName,
       username,
+      is_verified: !!authData.user.email_confirmed_at,
     }])
     .single()
 
@@ -43,29 +44,22 @@ async function logIn(loginInfo, password) {
     throw new Error('Login information is required')
   }
 
-  const normalizedLoginInfo = loginInfo.trim()
-  let email = normalizedLoginInfo
+  let email = loginInfo
 
-  // Check if input is a username (does not contain '@')
-  if (!normalizedLoginInfo.includes('@')) {
-    // Look up the auth user id from account using username
-    const { data, error } = await supabaseAdmin
+  // Check if input is a username input (does not contain '@')
+  if (!loginInfo.includes('@')) {
+    // Look up the email from the accounts table using the username
+    const { data, error } = await supabase
       .from('account')
-      .select('id')
-      .ilike('username', normalizedLoginInfo)
+      .select('email')
+      .eq('username', loginInfo)
       .single()
 
     if (error || !data) {
       throw new Error('Username not found')
     }
 
-    // Resolve the actual auth email from Supabase Auth using auth user id
-    const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(data.id)
-    if (userError || !userData?.user?.email) {
-      throw new Error('Could not resolve email for this username')
-    }
-
-    email = userData.user.email
+    email = data.email
   }
 
   // Login with the resolved email/username and password
@@ -88,7 +82,19 @@ async function logIn(loginInfo, password) {
     if (!error) accountData = data
   }
 
-  // Checks if the user's account is verified in the Account Database
+  // Keep account.is_verified aligned with Supabase Auth (email confirmed).
+  if (accountData && authData.user.email_confirmed_at && !accountData.is_verified) {
+    const { data: updated, error: updateError } = await supabaseAdmin
+      .from('account')
+      .update({ is_verified: true })
+      .eq('id', authData.user.id)
+      .select()
+      .single()
+    if (!updateError && updated) {
+      accountData = updated
+    }
+  }
+
   if (accountData && !accountData.is_verified) {
   await supabase.auth.signOut()
   throw new Error('Account not verified. Please check your email.')
