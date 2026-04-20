@@ -1,3 +1,5 @@
+import heroBg from "../../assets/hero-bg.jpg";
+
 const HistoryPage = () => {
   const historyRecipes = [
     {
@@ -63,50 +65,48 @@ const HistoryPage = () => {
   ];
 
   const handleViewRecipe = (id) => {
-    alert(`📖 Recipe details for recipe ${id} will be available soon!`);
+    alert(`Recipe details for recipe ${id} will be available soon!`);
   };
 
   const handleClearHistory = () => {
     if (confirm('Are you sure you want to clear your entire recipe history?')) {
-      alert('✨ History cleared!');
+      alert('History cleared!');
     }
   };
 
   return (
     <div className="pb-12">
       {/* History Header */}
-      <div className="mx-4 md:mx-8 mt-6 mb-8">
-        <div className="bg-[#587A34] rounded-2xl shadow-xl overflow-hidden">
-          <div className="bg-[#95A131] p-6 md:p-8">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-              <div>
-                <h1 className="font-fredoka-one text-4xl md:text-5xl text-[#F0E6D1] drop-shadow-md">
-                  <i className="fas fa-history mr-3"></i> Recipe History
-                </h1>
-                <p className="text-[#F0E6D1]/80 text-lg mt-2">
-                  All recipes you've viewed ({historyRecipes.length} total)
-                </p>
-              </div>
-              <button 
-                onClick={handleClearHistory}
-                className="bg-[#587A34] hover:bg-[#32491B] transition-all px-5 py-2 rounded-lg text-white font-semibold text-sm shadow-md"
-              >
-                <i className="fas fa-trash-alt mr-2"></i> Clear History
-              </button>
-            </div>
+      <div
+        className="relative mx-4 md:mx-8 mt-6 mb-8 overflow-hidden rounded-2xl shadow-xl"
+        style={{ backgroundImage: `url(${heroBg})`, backgroundSize: "cover", backgroundPosition: "center" }}
+      >
+        <div className="absolute inset-0 bg-[#1e3a0f]/70 rounded-2xl" />
+        <div className="relative px-8 py-7 flex items-center justify-between gap-5">
+          <div>
+            <h1 className="text-[#F0E6D1] font-extrabold text-2xl md:text-3xl tracking-wide uppercase leading-tight">
+              Recipe <span className="text-[#B5D098]">History</span>
+            </h1>
+            <p className="text-[#B5D098] text-sm mt-1">
+              All recipes you've viewed ({historyRecipes.length} total)
+            </p>
           </div>
+          <button
+            onClick={handleClearHistory}
+            className="shrink-0 bg-[#587A34] hover:bg-[#32491B] transition-all px-5 py-2 rounded-lg text-white font-semibold text-sm shadow-md"
+          >
+            <i className="fas fa-trash-alt mr-2"></i> Clear History
+          </button>
         </div>
       </div>
 
-      {/* History Recipe Cards Grid */}
       <div className="mx-4 md:mx-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {historyRecipes.map((recipe) => (
-            <div 
+            <div
               key={recipe.id}
               className="history-card bg-[#F0E6D1] rounded-2xl shadow-lg overflow-hidden cursor-pointer hover:scale-105 transition-all duration-300"
             >
-              {/* Thin green top border/bar */}
               <div className="relative h-12 bg-[#587A34] flex items-center justify-end px-4">
                 <div className="bg-[#95A131] rounded-full px-3 py-1 text-xs font-bold text-white">
                   Viewed {recipe.viewed}
@@ -117,8 +117,8 @@ const HistoryPage = () => {
                 <p className="text-black/60 text-sm mt-1">{recipe.type} • {recipe.difficulty}</p>
                 <div className="flex flex-wrap gap-2 mt-3">
                   {recipe.tags.map((tag, idx) => (
-                    <span 
-                      key={idx} 
+                    <span
+                      key={idx}
                       className="bg-[#839705]/20 text-[#32491B] px-2 py-0.5 rounded-full text-xs font-semibold"
                     >
                       {tag}
@@ -130,7 +130,7 @@ const HistoryPage = () => {
                     <span><i className="far fa-clock"></i> {recipe.time}</span>
                     <span><i className="fas fa-users"></i> {recipe.servings}</span>
                   </div>
-                  <button 
+                  <button
                     onClick={() => handleViewRecipe(recipe.id)}
                     className="text-[#587A34] hover:text-[#32491B] font-semibold text-sm transition-all"
                   >
