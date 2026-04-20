@@ -7,3 +7,69 @@
   --font-fredoka: "Fredoka", sans-serif;
 
 }
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.animate-spin { animation: spin 1s linear infinite; }
+
+.font-lemon {
+  font-family: 'Lemon', cursive;
+}
+.font-fredoka-one {
+  font-family: 'Fredoka One', cursive;
+}
+
+.welcome-bg {
+  background-image: url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200&h=400&fit=crop');
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+.welcome-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(149, 161, 49, 0.85);
+  border-radius: 1rem;
+  z-index: 0;
+}
+.welcome-bg > * {
+  position: relative;
+  z-index: 1;
+}
+
+.chip {
+  transition: all 0.2s ease;
+}
+.chip:hover {
+  transform: translateY(-2px);
+}
+
+.history-card {
+  transition: all 0.2s ease;
+}
+.history-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.main-transition {
+  transition: margin-left 0.3s ease-in-out;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #D4E8B5;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #587A34;
+  border-radius: 10px;
+}
