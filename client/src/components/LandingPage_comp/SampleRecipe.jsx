@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { X, Clock, Users, Flame } from "lucide-react";
-import pic1 from "../assets/placeholder1.jpg";
+import pic1 from "/src/assets/placeholder1.jpg";
 
 const recipes = [
   { id: 1, image: pic1, title: "Kinilaw na Pochi", cuisine: "Filipino", difficulty: "Easy", time: "15m", servings: 4, calories: 285, tag: "Vegetarian" },
