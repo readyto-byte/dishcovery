@@ -1,13 +1,4 @@
-const API_BASE_URL = import.meta.env.const cors = require('cors');
-
-const app = express();
-
-app.use(cors({
-  origin: ['https://dishcovery-nu-seven.vercel.app/', 'http://localhost:3000'],
-  credentials: true,
-}));
-
-app.use(express.json());VITE_API_URL || 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export const apiCall = async (endpoint, options = {}) => {
   const token = localStorage.getItem('access_token');
