@@ -34,11 +34,13 @@ const Sidebar = ({ currentPage, setCurrentPage, sidebarOpen, setSidebarOpen }) =
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       } lg:translate-x-0`}>
         <div className="relative h-full flex flex-col">
-          <div className="flex items-center gap-3 px-6 pt-12 pb-8 border-b border-[#B5D098]/30">
-            <div className="w-14 h-14 bg-[#587A34] rounded-full flex items-center justify-center shadow-lg">
-              <i className="fas fa-utensils text-white text-2xl"></i>
+
+          {/* Logo */}
+          <div className="flex items-center justify-center px-6 pt-12 pb-8 border-b border-[#B5D098]/30">
+            <div className="flex items-center flex-shrink-0 font-lemon font-bold text-2xl cursor-pointer">
+              <span className="text-[#1B211A]">Dish</span>
+              <span className="text-[#839705]">covery</span>
             </div>
-            <span className="font-lemon text-2xl text-[#32491B]">DISHCOVERY</span>
           </div>
           
           <div className="flex-1 py-8 space-y-2">
@@ -65,6 +67,7 @@ const Sidebar = ({ currentPage, setCurrentPage, sidebarOpen, setSidebarOpen }) =
           <div className="p-6 border-t border-[#B5D098]/30">
             <div className="w-12 h-12 bg-[#587A34] rounded-full mx-auto opacity-50"></div>
           </div>
+
         </div>
       </aside>
     </>

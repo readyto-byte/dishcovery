@@ -1,6 +1,6 @@
 const DashboardNavbar = ({ setCurrentPage, sidebarOpen, setSidebarOpen }) => {
   return (
-    <nav className="bg-[#32491B] px-4 md:px-8 py-4 flex items-center justify-between shadow-lg sticky top-0 z-10">
+    <nav className="bg-[#32491B] px-4 md:px-8 py-4 flex items-center justify-between shadow-lg sticky top-0 z-10 w-full">
       <div className="flex items-center gap-3">
         <button 
           onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -8,14 +8,6 @@ const DashboardNavbar = ({ setCurrentPage, sidebarOpen, setSidebarOpen }) => {
         >
           <i className="fas fa-bars"></i>
         </button>
-        <div className="flex items-center gap-2 lg:hidden">
-          <i className="fas fa-utensils text-[#F0E6D1] text-2xl"></i>
-          <span className="font-lemon text-white text-xl">DISHCOVERY</span>
-        </div>
-      </div>
-      
-      <div className="hidden lg:block">
-        <span className="font-lemon text-white text-4xl tracking-wide">DISHCOVERY</span>
       </div>
       
       <div className="flex items-center gap-4 md:gap-6">
