@@ -17,7 +17,7 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors({
-  origin: ['https://dishcovery-nu-seven.vercel.app', 'http://localhost:3000'],
+  origin: ['https://godishcovery.com', 'https://dishcovery-nu-seven.vercel.app', 'http://localhost:3000'],
   credentials: true,
 }));
 app.use(express.json());
