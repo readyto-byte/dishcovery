@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from "react-router-dom";
 import Sidebar from "./components/Dashboard/Sidebar";
 import DashboardNavbar from "./components/Dashboard/DashboardNavbar";
 import WelcomeBanner from "./components/Dashboard/WelcomeBanner";
@@ -9,6 +10,7 @@ import ProfilePage from "./components/Dashboard/ProfilePage";
 // import SettingsPage from "./components/Dashboard/SettingsPage";  // COMMENT OUT - doesn't exist yet
 
 const DashboardPage = () => {
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [isLoading, setIsLoading] = useState(false);
@@ -93,6 +95,14 @@ const renderPage = () => {
   }
 };
 
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } finally {
+      navigate("/", { replace: true });
+    }
+  };
+
   return (
     <div className="relative min-h-screen bg-[#B5D098]">
       <Sidebar 
@@ -100,6 +110,7 @@ const renderPage = () => {
         setCurrentPage={setCurrentPage}
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
+        onLogout={handleLogout}
       />
       <main style={{ marginLeft: sidebarOpen ? '18rem' : '0' }} className="transition-all duration-300">
         <DashboardNavbar 
