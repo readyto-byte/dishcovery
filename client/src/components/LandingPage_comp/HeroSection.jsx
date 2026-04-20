@@ -1,6 +1,6 @@
-import heroBg from "../assets/hero-bg.jpg"
-import pic1 from "../assets/placeholder1.jpg"
-import pic2 from "../assets/placeholder2.jpg"
+import heroBg from "../../assets/hero-bg.jpg";
+import pic1 from "../../assets/placeholder1.jpg";
+import pic2 from "../../assets/placeholder2.jpg";
 import { ArrowRight } from "lucide-react";
 
 const HeroSection = () => {
