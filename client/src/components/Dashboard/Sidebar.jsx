@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-const Sidebar = ({ currentPage, setCurrentPage, sidebarOpen, setSidebarOpen }) => {
+const Sidebar = ({ currentPage, setCurrentPage, sidebarOpen, setSidebarOpen, onLogout }) => {
   
   useEffect(() => {
     const handleResize = () => {
@@ -56,7 +56,10 @@ const Sidebar = ({ currentPage, setCurrentPage, sidebarOpen, setSidebarOpen }) =
                 <span className="text-[#000000] font-semibold text-2xl">{item.label}</span>
               </button>
             ))}
-            <button className="flex items-center gap-4 px-8 py-4 w-full text-left hover:bg-[#B5D098]/30 rounded-r-full transition-all duration-200">
+            <button
+              onClick={onLogout}
+              className="flex items-center gap-4 px-8 py-4 w-full text-left hover:bg-[#B5D098]/30 rounded-r-full transition-all duration-200"
+            >
               <i className="fas fa-sign-out-alt w-6 h-6 text-[#32491B] text-xl"></i>
               <span className="text-[#000000] font-semibold text-2xl">Logout</span>
             </button>
