@@ -17,11 +17,10 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors({
-  origin: ['https://dishcovery-nu-seven.vercel.app', 'http://localhost:3000'],
+  origin: ['https://godishcovery.com', 'https://dishcovery-nu-seven.vercel.app', 'http://localhost:3000'],
   credentials: true,
 }));
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '..', '..', 'client', 'public')));
 
 // Auth middleware to set req.user
 const authMiddleware = async (req, res, next) => {
@@ -59,11 +58,6 @@ app.post('/api/generate', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-});
-
-// Catch-all handler: send back index.html for client-side routing
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', '..', 'client', 'public', 'index.html'));
 });
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
