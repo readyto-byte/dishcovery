@@ -88,7 +88,10 @@ const Login = ({ isOpen, onClose, onSwitch }) => {
           <X size={24} />
         </button>
 
-        <h2 className="text-center text-4xl font-lemon text-[#1B211A] mb-8">Login</h2>
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-semibold text-[#2D3A18] tracking-tight">Welcome back!</h2>
+          <p className="text-sm text-[#2D3A18] mt-2">Sign in to your account</p>
+        </div>
 
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
           <input
@@ -109,14 +112,14 @@ const Login = ({ isOpen, onClose, onSwitch }) => {
           {error ? <p className="text-sm text-red-200 text-center">{error}</p> : null}
           {success ? <p className="text-sm text-green-200 text-center">{success}</p> : null}
 
-          <p className="text-center text-sm mt-2">
+          <p className="text-center text-xs text-[#2D3A18] mt-2">
             No account yet?{" "}
             <button 
                 type="button"
                 onClick={onSwitch} 
                 className="text-blue-600 hover:underline bg-transparent border-none cursor-pointer"
             >
-                Sign Up
+              Sign up
             </button>
             </p>
 

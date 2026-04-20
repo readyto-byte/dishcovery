@@ -92,7 +92,10 @@ const Signup = ({ isOpen, onClose, onSwitch }) => {
           <X size={24} />
         </button>
 
-        <h2 className="text-center text-4xl font-lemon text-[#1B211A] mb-8">Sign Up</h2>
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-semibold text-[#2D3A18] tracking-tight">Create an account</h2>
+          <p className="text-sm text-[#2D3A18] mt-2">Join us to get started</p>
+        </div>
 
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
           <input
@@ -143,12 +146,12 @@ const Signup = ({ isOpen, onClose, onSwitch }) => {
           
           <p className="text-center text-sm mt-2">
             Already have an account?{" "}
-            <button 
-                type="button" 
-                onClick={onSwitch}
-                className="text-blue-600 hover:underline bg-transparent border-none cursor-pointer"
+            <button
+              type="button"
+              onClick={onSwitch}
+              className="text-[#2D3A18] font-medium hover:underline bg-transparent border-none cursor-pointer"
             >
-                Log In
+              Log in
             </button>
           </p>
 
