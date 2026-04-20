@@ -192,7 +192,7 @@ const ProfileModal = ({ profile, onSave, onClose }) => {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-[#F0E6D1] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-
+        {/* Header */}
         <div className="bg-[#587A34] px-6 py-4 flex items-center justify-between">
           <h2 className="text-[#F0E6D1] font-bold text-lg tracking-wide">
             {profile?.id ? "Edit Profile" : "New Profile"}
@@ -282,7 +282,7 @@ const ProfileModal = ({ profile, onSave, onClose }) => {
                   {opt}
                 </button>
               ))}
-              {/* Custom allergy tags */}
+
               {allergies
                 .filter((a) => !ALLERGY_OPTIONS.includes(a))
                 .map((opt) => (
@@ -303,7 +303,6 @@ const ProfileModal = ({ profile, onSave, onClose }) => {
             />
           </div>
 
-          {/* Actions */}
           <div className="flex gap-3 pt-1">
             <button
               onClick={onClose}
@@ -324,7 +323,6 @@ const ProfileModal = ({ profile, onSave, onClose }) => {
   );
 };
 
-
 const ProfileCard = ({ profile, onEdit, onDelete, onSetDefault }) => {
   const hasRestrictions = profile.dietaryRestrictions.length > 0;
   const hasAllergies = profile.allergies.length > 0;
@@ -338,7 +336,7 @@ const ProfileCard = ({ profile, onEdit, onDelete, onSetDefault }) => {
           : "border-transparent hover:border-[#587A34]/40"
       }`}
     >
-      {/* Action Buttons */}
+
       <div className="absolute top-3 right-3 flex gap-1">
         <button
           onClick={() => onEdit(profile)}
@@ -362,13 +360,10 @@ const ProfileCard = ({ profile, onEdit, onDelete, onSetDefault }) => {
         )}
       </div>
 
-      {/* Avatar */}
       <Avatar name={profile.name} avatar={profile.avatar} size="lg" />
 
-      {/* Name */}
       <p className="text-[#2d3f1a] font-bold text-sm">{profile.name}</p>
 
-      {/* Default Badge */}
       {profile.isDefault ? (
         <span className="px-3 py-0.5 rounded-full bg-[#3a5220] text-[#F0E6D1] text-xs font-semibold">
           Default
@@ -382,7 +377,6 @@ const ProfileCard = ({ profile, onEdit, onDelete, onSetDefault }) => {
         </button>
       )}
 
-      {/* Divider */}
       <div className="w-full h-px bg-[#587A34]/20" />
 
       {isEmpty ? (
@@ -443,7 +437,6 @@ const AddProfileCard = ({ onClick }) => (
   </button>
 );
 
-// Main ProfilePage
 const ProfilePage = () => {
   const [profiles, setProfiles] = useState(initialProfiles);
   const [modal, setModal] = useState(null);
@@ -478,14 +471,14 @@ const ProfilePage = () => {
 
   return (
     <div className="mx-4 md:mx-8 mt-6">
-      {/* Header Card */}
+
       <div
         className="relative rounded-2xl shadow-xl overflow-hidden px-8 py-7 mb-6 flex items-center gap-5"
         style={{ backgroundImage: `url(${heroBg})`, backgroundSize: "cover", backgroundPosition: "center" }}
       >
-        {/* Dark overlay */}
+
         <div className="absolute inset-0 bg-[#1e3a0f]/70 rounded-2xl" />
-        {/* Content */}
+
         <div className="relative flex items-center gap-5">
           <div>
             <h1 className="text-[#F0E6D1] font-extrabold text-2xl md:text-3xl tracking-wide uppercase leading-tight">
@@ -498,8 +491,7 @@ const ProfilePage = () => {
         </div>
       </div>
 
-      {/* Profiles Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {profiles.map((profile) => (
           <ProfileCard
             key={profile.id}
@@ -512,7 +504,6 @@ const ProfilePage = () => {
         <AddProfileCard onClick={handleAdd} />
       </div>
 
-      {/* Modal */}
       {modal && (
         <ProfileModal
           profile={modal.profile}
