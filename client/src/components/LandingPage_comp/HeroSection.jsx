@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import heroBg from "../../assets/hero-bg.jpg";
 import pic1 from "../../assets/placeholder1.jpg";
 import pic2 from "../../assets/placeholder2.jpg";
@@ -36,10 +37,13 @@ const HeroSection = () => {
           </p>
         </div>
 
-        <a href="#" className="mt-8 inline-flex items-center gap-2 px-6 py-3 text-center rounded-md bg-gradient-to-l from-[#839705] to-[#2B3102] text-white hover:scale-105 transition font-freeman">
+        <Link
+          to="/?auth=signup"
+          className="mt-8 inline-flex items-center gap-2 px-6 py-3 text-center rounded-md bg-gradient-to-l from-[#839705] to-[#2B3102] text-white hover:scale-105 transition font-freeman"
+        >
           Get Started Here
-          <ArrowRight size={18}/>
-        </a>
+          <ArrowRight size={18} />
+        </Link>
       </div>
     </div>
   );
