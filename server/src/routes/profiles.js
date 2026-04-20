@@ -20,13 +20,41 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const accountId = req.user.id; // Adjust based on your auth setup
-    const { name, allergies, dietaryPreferences } = req.body;
+    const {
+      name,
+      date_of_birth,
+      dateOfBirth,
+      gender,
+      avatar_url,
+      avatarUrl,
+      is_active,
+      isActive,
+      allergies,
+      dietaryPreferences,
+      dietary_restrictions,
+      dietary_preferences
+    } = req.body;
 
     if (!name) {
       return res.status(400).json({ success: false, error: 'Profile name is required' });
     }
 
-    const profile = await createProfile(accountId, name, allergies, dietaryPreferences);
+    const resolvedDateOfBirth = date_of_birth ?? dateOfBirth;
+    if (!resolvedDateOfBirth) {
+      return res.status(400).json({ success: false, error: 'date_of_birth is required (YYYY-MM-DD)' });
+    }
+
+    const dietaryRestrictions = dietary_restrictions ?? allergies ?? [];
+    const resolvedDietaryPreferences = dietary_preferences ?? dietaryPreferences ?? [];
+    const profile = await createProfile(accountId, {
+      name,
+      dateOfBirth: resolvedDateOfBirth,
+      gender: gender ?? null,
+      avatarUrl: avatar_url ?? avatarUrl ?? null,
+      isActive: is_active ?? isActive ?? true,
+      dietaryRestrictions,
+      dietaryPreferences: resolvedDietaryPreferences
+    });
     res.json({ success: true, data: profile });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
@@ -36,10 +64,20 @@ router.post('/', async (req, res) => {
 // Update a profile
 router.put('/:profileId', async (req, res) => {
   try {
+    const accountId = req.user.id;
     const { profileId } = req.params;
-    const updates = req.body;
+    const { allergies, dietaryPreferences, ...restUpdates } = req.body;
+    const updates = { ...restUpdates };
 
-    const profile = await updateProfile(profileId, updates);
+    if (allergies !== undefined) {
+      updates.dietary_restrictions = allergies;
+    }
+
+    if (dietaryPreferences !== undefined) {
+      updates.dietary_preferences = dietaryPreferences;
+    }
+
+    const profile = await updateProfile(accountId, profileId, updates);
     res.json({ success: true, data: profile });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
@@ -49,9 +87,10 @@ router.put('/:profileId', async (req, res) => {
 // Delete a profile
 router.delete('/:profileId', async (req, res) => {
   try {
+    const accountId = req.user.id;
     const { profileId } = req.params;
 
-    const result = await deleteProfile(profileId);
+    const result = await deleteProfile(accountId, profileId);
     res.json({ success: true, message: result.message });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });

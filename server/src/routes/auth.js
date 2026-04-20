@@ -48,7 +48,15 @@ router.post('/login', async (req, res) => {
     }
 
     const data = await logIn(loginIdentifier, password);
-    res.json({ success: true, message: 'Logged in successfully' });
+    const session = data.auth?.session;
+    res.json({
+      success: true,
+      message: 'Logged in successfully',
+      access_token: session?.access_token,
+      refresh_token: session?.refresh_token,
+      expires_at: session?.expires_at,
+      account: data.account,
+    });
   } catch (error) {
     res.status(401).json({ success: false, error: error.message });
   }
