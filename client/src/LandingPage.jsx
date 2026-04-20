@@ -1,22 +1,54 @@
+<<<<<<< Updated upstream
 import AboutSection from "./components/LandingPage_comp/AboutSection"
 import FooterSection from "./components/LandingPage_comp/FooterSection"
 import HeroSection from "./components/LandingPage_comp/HeroSection"
 import HowItWorks from "./components/LandingPage_comp/HowItWorks"
 import Navbar from "./components/LandingPage_comp/Navbar"
 import SampleRecipe from "./components/LandingPage_comp/SampleRecipe"
+=======
+import { useSearchParams } from "react-router-dom";
+import AboutSection from "./components/AboutSection"
+import FooterSection from "./components/FooterSection"
+import HeroSection from "./components/HeroSection"
+import HowItWorks from "./components/HowItWorks"
+import Navbar from "./components/Navbar"
+import SampleRecipe from "./components/SampleRecipe"
+import Signup from "./components/Signup"
+import Login from "./components/Login"
+>>>>>>> Stashed changes
 
 const LandingPage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const isLoginOpen = searchParams.get("auth") === "login";
+  const isSignupOpen = searchParams.get("auth") === "signup";
+
+  const openLogin = () => setSearchParams({ auth: "login" });
+  const openSignup = () => setSearchParams({ auth: "signup" });
+  const closeAuth = () => setSearchParams({}); 
+
   return (
-    <>
-     <Navbar />
-     <HeroSection />
-     <HowItWorks />
-     <SampleRecipe />
-     <AboutSection />
-     <FooterSection />
-    </>
-  )
-}
+    <div className="relative">
+      <Navbar onSignupClick={openSignup} onLoginClick={openLogin}/>
+      
+      <HeroSection />
+      <HowItWorks />
+      <SampleRecipe />
+      <AboutSection />
+      <FooterSection />
 
-export default LandingPage
+      <Signup 
+        isOpen={isSignupOpen} 
+        onClose={closeAuth} 
+        onSwitch={openLogin} 
+      />
+      <Login 
+        isOpen={isLoginOpen} 
+        onClose={closeAuth} 
+        onSwitch={openSignup} 
+      />
+    </div>
+  );
+};
 
+export default LandingPage;
