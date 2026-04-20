@@ -6,6 +6,7 @@ const { GoogleGenAI } = require('@google/genai');
 const { supabase } = require('./config/supabase');
 const authRoutes = require('./routes/auth');
 const profilesRoutes = require('./routes/profiles');
+const recipesRoutes = require('./routes/recipes');
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -38,13 +39,14 @@ const authMiddleware = async (req, res, next) => {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/profiles', authMiddleware, profilesRoutes);
+app.use('/api/recipes', recipesRoutes);
 
 app.post('/api/generate', async (req, res) => {
   try {
     const { prompt } = req.body;
     const result = await ai.models.generateContent({
       model: 'gemini-2.0-flash',
-      contents: prompt
+      contents: prompt,
     });
     res.json({ response: result.text });
   } catch (error) {
