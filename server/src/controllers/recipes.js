@@ -53,13 +53,22 @@ Return ONLY a valid JSON object with this exact structure:
       "keyIngredients": ["1/4 cup flour", "2 large eggs"],
       "whyItFits": "Why this recipe matches their needs",
       "instructions": ["Step 1", "Step 2", ...],
-      "tips": "Any special tips"
+      "tips": "Any special tips",
+      "nutritionalInfo": {
+        "calories": 250,
+        "protein": "15g",
+        "carbs": "30g",
+        "fat": "8g",
+        "fiber": "5g"
+      }
     }
   ]
 }
 
 - Always return between 2 and 3 suggestions.
 - Each recipe must include ingredient measurements in "keyIngredients" (for example, "1/4 cup", "2 tsp", "3 slices").
+- ALWAYS include nutritionalInfo with calories (as number), protein, carbs, fat, and fiber (as strings with units like "15g").
+- Estimate nutritional values per serving based on the recipe.
 - If no new suggestions are appropriate, set "suggestions" to an empty array, but still return "estimatedTime" and "message".
 - Do not include any text outside the JSON object.`;
 
@@ -110,10 +119,18 @@ async function getCachedRecipeResponse(searchQuery) {
     try {
       const parsed = JSON.parse(row.instructions);
       if (parsed && typeof parsed === 'object' && parsed.title) {
-        return { id: row.id, ...parsed };
+        const nutritionalInfo = row.nutritional_info ? JSON.parse(row.nutritional_info) : null;
+        return { id: row.id, ...parsed, nutritionalInfo };
       }
     } catch (err) {
       // ignore parse errors and fall back to field mapping
+    }
+
+    let nutritionalInfo = null;
+    try {
+      nutritionalInfo = row.nutritional_info ? JSON.parse(row.nutritional_info) : null;
+    } catch (err) {
+      // ignore
     }
 
     return {
@@ -128,6 +145,7 @@ async function getCachedRecipeResponse(searchQuery) {
       prepTimeMin: row.prep_time_min || null,
       cookTimeMin: row.cook_time_min || null,
       servings: row.servings || null,
+      nutritionalInfo,
     };
   });
 
@@ -153,6 +171,7 @@ async function cacheRecipeResponse(searchQuery, response) {
     cook_time_min: parseMinutes(suggestion.cookTimeMin ?? suggestion.cook_time_min),
     servings: suggestion.servings ?? null,
     instructions: JSON.stringify(suggestion),
+    nutritional_info: suggestion.nutritionalInfo ? JSON.stringify(suggestion.nutritionalInfo) : null,
     cached_date: new Date().toISOString(),
   }));
 
