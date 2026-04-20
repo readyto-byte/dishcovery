@@ -56,17 +56,19 @@ const Sidebar = ({ currentPage, setCurrentPage, sidebarOpen, setSidebarOpen, onL
                 <span className="text-[#000000] font-semibold text-2xl">{item.label}</span>
               </button>
             ))}
+          </div>
+          <div className="px-3 pb-8 pt-4">
             <button
               onClick={onLogout}
-              className="flex items-center gap-4 px-8 py-4 w-full text-left hover:bg-[#B5D098]/30 rounded-r-full transition-all duration-200"
+              className="group flex items-center gap-4 w-full px-5 py-3.5 rounded-xl border border-[#32491B]/20 bg-[#32491B]/5 hover:bg-[#32491B] transition-all duration-300 cursor-pointer"
             >
-              <i className="fas fa-sign-out-alt w-6 h-6 text-[#32491B] text-xl"></i>
-              <span className="text-[#000000] font-semibold text-2xl">Logout</span>
+              <div className="w-9 h-9 rounded-lg bg-[#32491B]/10 group-hover:bg-[#587A34] flex items-center justify-center shrink-0 transition-all duration-300">
+                <i className="fas fa-sign-out-alt text-[#32491B] group-hover:text-white text-base transition-colors duration-300"></i>
+              </div>
+              <span className="text-[#32491B] group-hover:text-white font-semibold text-base tracking-wide transition-colors duration-300">
+                Logout
+              </span>
             </button>
-          </div>
-          
-          <div className="p-6 border-t border-[#B5D098]/30">
-            <div className="w-12 h-12 bg-[#587A34] rounded-full mx-auto opacity-50"></div>
           </div>
         </div>
       </aside>
