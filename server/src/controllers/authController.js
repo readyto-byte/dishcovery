@@ -15,7 +15,13 @@ async function signUp({ email, password, firstName, lastName, username }) {
 
   const { data: accountData, error: accountError } = await supabaseAdmin
     .from('account')
-    .insert([{ id: userId, first_name: firstName, last_name: lastName, username}])
+    .insert([{
+      id: userId,
+      first_name: firstName,
+      last_name: lastName,
+      username,
+      is_verified: !!authData.user.email_confirmed_at,
+    }])
     .single()
 
   if (accountError) {
@@ -71,12 +77,24 @@ async function logIn(loginInfo, password) {
     const { data, error } = await supabase
       .from('account')
       .select('*')
-      .eq('user_id', authData.user.id)
+      .eq('id', authData.user.id)
       .single()
     if (!error) accountData = data
   }
 
-  // Checks if the user's account is verified in the Account Database
+  // Keep account.is_verified aligned with Supabase Auth (email confirmed).
+  if (accountData && authData.user.email_confirmed_at && !accountData.is_verified) {
+    const { data: updated, error: updateError } = await supabaseAdmin
+      .from('account')
+      .update({ is_verified: true })
+      .eq('id', authData.user.id)
+      .select()
+      .single()
+    if (!updateError && updated) {
+      accountData = updated
+    }
+  }
+
   if (accountData && !accountData.is_verified) {
   await supabase.auth.signOut()
   throw new Error('Account not verified. Please check your email.')
