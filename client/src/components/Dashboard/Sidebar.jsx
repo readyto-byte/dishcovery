@@ -85,22 +85,12 @@ const Sidebar = ({ currentPage, setCurrentPage, sidebarOpen, setSidebarOpen, onL
               </button>
             ))}
           </div>
+
           <div className="px-3 pb-8 pt-4">
             <button
               onClick={onLogout}
               className="group flex items-center gap-4 w-full px-5 py-3.5 rounded-xl border border-[#32491B]/20 bg-[#32491B]/5 hover:bg-[#32491B] transition-all duration-300 cursor-pointer"
             >
-              <div className="w-9 h-9 rounded-lg bg-[#32491B]/10 group-hover:bg-[#587A34] flex items-center justify-center shrink-0 transition-all duration-300">
-                <i className="fas fa-sign-out-alt text-[#32491B] group-hover:text-white text-base transition-colors duration-300"></i>
-              </div>
-              <span className="text-[#32491B] group-hover:text-white font-semibold text-base tracking-wide transition-colors duration-300">
-                Logout
-              </span>
-            </button>
-          </div>
-
-          <div className="px-3 pb-8 pt-4">
-            <button className="group flex items-center gap-4 w-full px-5 py-3.5 rounded-xl border border-[#32491B]/20 bg-[#32491B]/5 hover:bg-[#32491B] transition-all duration-300 cursor-pointer">
               <div className="w-9 h-9 rounded-lg bg-[#32491B]/10 group-hover:bg-[#587A34] flex items-center justify-center shrink-0 transition-all duration-300">
                 <i className="fas fa-sign-out-alt text-[#32491B] group-hover:text-white text-base transition-colors duration-300"></i>
               </div>
