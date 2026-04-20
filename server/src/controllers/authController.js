@@ -3,7 +3,10 @@ const { rollbackAccountCreation } = require('./accountDelete');
 
 // Sign Up
 async function signUp({ email, password, firstName, lastName, username }) {
-  const { data: authData, error: authError } = await supabase.auth.signUp({ email, password })
+  const normalizedEmail = email.trim().toLowerCase()
+  const normalizedUsername = username.trim()
+
+  const { data: authData, error: authError } = await supabase.auth.signUp({ email: normalizedEmail, password })
 
   if (authError) throw authError
 
@@ -19,7 +22,8 @@ async function signUp({ email, password, firstName, lastName, username }) {
       id: userId,
       first_name: firstName,
       last_name: lastName,
-      username,
+      username: normalizedUsername,
+      email: normalizedEmail,
       is_verified: !!authData.user.email_confirmed_at,
     }])
     .single()
@@ -35,7 +39,7 @@ async function signUp({ email, password, firstName, lastName, username }) {
     throw accountError
   }
 
-  return { email: email, message: 'User registered successfully, Account Verification Email Sent.' }
+  return { email: normalizedEmail, message: 'User registered successfully, Account Verification Email Sent.' }
 }
 
 // Dynamic Login Function for Email or Username Input
@@ -44,22 +48,31 @@ async function logIn(loginInfo, password) {
     throw new Error('Login information is required')
   }
 
-  let email = loginInfo
+  const normalizedLoginInfo = loginInfo.trim()
+  let email = normalizedLoginInfo.toLowerCase()
 
-  // Check if input is a username input (does not contain '@')
-  if (!loginInfo.includes('@')) {
-    // Look up the email from the accounts table using the username
-    const { data, error } = await supabase
+  // Always try to resolve as username first so users can type either in one field.
+  const normalizedUsername = normalizedLoginInfo.replace(/^@+/, '').trim()
+  if (normalizedUsername) {
+    const { data, error } = await supabaseAdmin
       .from('account')
-      .select('email')
-      .eq('username', loginInfo)
-      .single()
+      .select('id')
+      .ilike('username', normalizedUsername)
+      .limit(1)
 
-    if (error || !data) {
-      throw new Error('Username not found')
+    if (error) {
+      throw error
     }
 
-    email = data.email
+    if (data && data.length > 0) {
+      const account = data[0]
+      // Resolve canonical email from Supabase Auth using account id.
+      const { data: authUserData, error: authUserError } = await supabaseAdmin.auth.admin.getUserById(account.id)
+      if (authUserError || !authUserData?.user?.email) {
+        throw new Error('Unable to resolve email for this username')
+      }
+      email = authUserData.user.email.trim().toLowerCase()
+    }
   }
 
   // Login with the resolved email/username and password

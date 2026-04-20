@@ -1,14 +1,16 @@
 import { useState } from 'react';
+import { useNavigate } from "react-router-dom";
 import Sidebar from "./components/Dashboard/Sidebar";
 import DashboardNavbar from "./components/Dashboard/DashboardNavbar";
 import WelcomeBanner from "./components/Dashboard/WelcomeBanner";
 import CreateRecipeSection from "./components/Dashboard/CreateRecipeSection";
 import RecipeCard from "./components/Dashboard/RecipeCard";
-import HistoryPage from "./components/Dashboard/HistoryPage";  // UNCOMMENTED - NOW EXISTS!
-// import ProfilePage from "./components/Dashboard/ProfilePage";  // COMMENT OUT - doesn't exist yet
+import HistoryPage from "./components/Dashboard/HistoryPage";  
+import ProfilePage from "./components/Dashboard/ProfilePage";  
 // import SettingsPage from "./components/Dashboard/SettingsPage";  // COMMENT OUT - doesn't exist yet
 
 const DashboardPage = () => {
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [isLoading, setIsLoading] = useState(false);
@@ -72,24 +74,32 @@ const DashboardPage = () => {
     setIsLoading(false);
   };
 
-  const renderPage = () => {
-    switch(currentPage) {
-      case 'dashboard':
-        return (
-          <>
-            <WelcomeBanner />
-            <CreateRecipeSection onGenerate={generateRecipe} isLoading={isLoading} />
-            <RecipeCard recipeData={recipeData} isLoading={isLoading} />
-          </>
-        );
-      case 'history':
-        return <HistoryPage />;  // NOW THIS WILL SHOW THE FULL HISTORY PAGE!
-      case 'profile':
-        return <div className="mx-4 md:mx-8 mt-6"><div className="bg-[#587A34] rounded-2xl shadow-xl overflow-hidden p-12 text-center"><p className="text-[#F0E6D1] text-xl">Profile Page - Coming Soon!</p></div></div>;
-      case 'settings':
-        return <div className="mx-4 md:mx-8 mt-6"><div className="bg-[#587A34] rounded-2xl shadow-xl overflow-hidden p-12 text-center"><p className="text-[#F0E6D1] text-xl">Settings Page - Coming Soon!</p></div></div>;
-      default:
-        return null;
+const renderPage = () => {
+  switch(currentPage) {
+    case 'dashboard':
+      return (
+        <>
+          <WelcomeBanner />
+          <CreateRecipeSection onGenerate={generateRecipe} isLoading={isLoading} />
+          <RecipeCard recipeData={recipeData} isLoading={isLoading} />
+        </>
+      );
+    case 'history':
+      return <HistoryPage />;
+    case 'profile':
+      return <ProfilePage />;   
+    case 'settings':
+      return <div className="mx-4 md:mx-8 mt-6">...</div>;
+    default:
+      return null;
+  }
+};
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } finally {
+      navigate("/", { replace: true });
     }
   };
 
@@ -100,6 +110,7 @@ const DashboardPage = () => {
         setCurrentPage={setCurrentPage}
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
+        onLogout={handleLogout}
       />
       <main style={{ marginLeft: sidebarOpen ? '18rem' : '0' }} className="transition-all duration-300">
         <DashboardNavbar 
