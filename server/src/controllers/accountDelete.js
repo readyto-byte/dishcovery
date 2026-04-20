@@ -11,7 +11,7 @@ async function rollbackAccountCreation(userId) {
       await supabaseAdmin
         .from('account')
         .delete()
-        .eq('id', userId) 
+        .eq('id', userId)
 }
 
 async function deleteAccount(userId) {

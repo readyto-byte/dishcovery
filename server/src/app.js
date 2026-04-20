@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
 
@@ -7,6 +8,7 @@ const { supabase } = require('./config/supabase');
 const authRoutes = require('./routes/auth');
 const profilesRoutes = require('./routes/profiles');
 const recipesRoutes = require('./routes/recipes');
+const historyRoutes = require('./routes/history');
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -14,8 +16,16 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
+app.use(cors({
+  origin: [
+    'https://godishcovery.com',
+    'https://www.godishcovery.com', 
+    'https://dishcovery-nu-seven.vercel.app',
+    'http://localhost:5173',
+  ],
+  credentials: true,
+}));
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '..', '..', 'client', 'public')));
 
 // Auth middleware to set req.user
 const authMiddleware = async (req, res, next) => {
@@ -39,7 +49,8 @@ const authMiddleware = async (req, res, next) => {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/profiles', authMiddleware, profilesRoutes);
-app.use('/api/recipes', recipesRoutes);
+app.use('/api/history', authMiddleware, historyRoutes);
+app.use('/api/recipes', authMiddleware, recipesRoutes);
 
 app.post('/api/generate', async (req, res) => {
   try {
@@ -52,11 +63,6 @@ app.post('/api/generate', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-});
-
-// Catch-all handler: send back index.html for client-side routing
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', '..', 'client', 'public', 'index.html'));
 });
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
