@@ -2,7 +2,7 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import API_BASE_URL from "../../api/config.js";
 
-const Signup = ({ isOpen, onClose, onSwitch }) => {
+const Signup = ({ isOpen, onClose, onSwitch, onSignupSuccess }) => {
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -11,7 +11,6 @@ const Signup = ({ isOpen, onClose, onSwitch }) => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
   const resetFormState = () => {
     setEmail("");
@@ -21,7 +20,6 @@ const Signup = ({ isOpen, onClose, onSwitch }) => {
     setPassword("");
     setConfirmPassword("");
     setError("");
-    setSuccess("");
   };
 
   const handleClose = () => {
@@ -32,7 +30,6 @@ const Signup = ({ isOpen, onClose, onSwitch }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setSuccess("");
 
     if (!email || !username || !firstName || !lastName || !password || !confirmPassword) {
       setError("Please fill in all fields.");
@@ -70,9 +67,10 @@ const Signup = ({ isOpen, onClose, onSwitch }) => {
         throw new Error(data.error || `Signup failed (HTTP ${response.status}).`);
       }
 
-      setSuccess(data.message || "Signup successful. Check your email for verification.");
-      setPassword("");
-      setConfirmPassword("");
+      const message =
+        data.message || "You’re signed up! Check your email to verify your account before logging in.";
+      resetFormState();
+      onSignupSuccess?.(message);
     } catch (err) {
       if (err instanceof TypeError && err.message.toLowerCase().includes("fetch")) {
         setError("Network error: cannot reach API. Start backend (`npm run dev` in project root) and restart frontend dev server.");
@@ -165,7 +163,6 @@ const Signup = ({ isOpen, onClose, onSwitch }) => {
           />
 
           {error ? <p className="text-sm text-red-600 text-center">{error}</p> : null}
-          {success ? <p className="text-sm text-green-700 text-center">{success}</p> : null}
 
           <button
             type="submit"

@@ -16,6 +16,7 @@ async function signUp({ email, password, firstName, lastName, username }) {
 
   const userId = authData.user.id
 
+  // `account` row mirrors profile fields; email lives on Supabase Auth only (no `email` column on `account`).
   const { data: accountData, error: accountError } = await supabaseAdmin
     .from('account')
     .insert([{
@@ -23,7 +24,6 @@ async function signUp({ email, password, firstName, lastName, username }) {
       first_name: firstName,
       last_name: lastName,
       username: normalizedUsername,
-      email: normalizedEmail,
       is_verified: !!authData.user.email_confirmed_at,
     }])
     .single()
