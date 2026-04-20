@@ -7,6 +7,7 @@ const { supabase } = require('./config/supabase');
 const authRoutes = require('./routes/auth');
 const profilesRoutes = require('./routes/profiles');
 const recipesRoutes = require('./routes/recipes');
+const historyRoutes = require('./routes/history');
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -39,7 +40,8 @@ const authMiddleware = async (req, res, next) => {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/profiles', authMiddleware, profilesRoutes);
-app.use('/api/recipes', recipesRoutes);
+app.use('/api/history', authMiddleware, historyRoutes);
+app.use('/api/recipes', authMiddleware, recipesRoutes);
 
 app.post('/api/generate', async (req, res) => {
   try {
