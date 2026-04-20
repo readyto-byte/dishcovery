@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { X } from "lucide-react";
+import API_BASE_URL from "../../api/config.js";
 
 const Signup = ({ isOpen, onClose, onSwitch }) => {
   const [email, setEmail] = useState("");
@@ -45,7 +46,7 @@ const Signup = ({ isOpen, onClose, onSwitch }) => {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch("/api/auth/signup", {
+      const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, username, firstName, lastName, password }),
@@ -85,12 +86,26 @@ const Signup = ({ isOpen, onClose, onSwitch }) => {
 
   if (!isOpen) return null;
 
+  const fieldClassName =
+    "w-full px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300 transition-all";
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="relative w-full max-w-md p-8 bg-[#5A7A38] rounded-[2rem] shadow-2xl mx-4">
-        <button onClick={handleClose} className="absolute top-4 right-4 text-white/70 hover:text-white">
-          <X size={24} />
-        </button>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm transition-all duration-200">
+      <div className="relative w-full max-w-md p-8 bg-white rounded-2xl shadow-xl mx-4 duration-200">
+        <div className="flex justify-between items-center mb-6">
+          <div className="font-lemon font-bold text-xl">
+            <span className="text-[#1B211A]">Dish</span>
+            <span className="text-[#839705]">covery</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+            aria-label="Close"
+          >
+            <X size={24} />
+          </button>
+        </div>
 
         <div className="text-center mb-8">
           <h2 className="text-2xl font-semibold text-[#2D3A18] tracking-tight">Create an account</h2>
@@ -98,53 +113,69 @@ const Signup = ({ isOpen, onClose, onSwitch }) => {
         </div>
 
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-          <input
-            type="text"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full p-3 rounded-full bg-[#EFE3C8] placeholder-gray-500 outline-none"
-          />
+          <div className="grid grid-cols-2 gap-3">
+            <input
+              type="text"
+              placeholder="First name"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              className={fieldClassName}
+              autoComplete="given-name"
+            />
+            <input
+              type="text"
+              placeholder="Last name"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              className={fieldClassName}
+              autoComplete="family-name"
+            />
+          </div>
           <input
             type="text"
             placeholder="Username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="w-full p-3 rounded-full bg-[#EFE3C8] placeholder-gray-500 outline-none"
+            className={fieldClassName}
+            autoComplete="username"
           />
           <input
-            type="text"
-            placeholder="First Name"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-            className="w-full p-3 rounded-full bg-[#EFE3C8] placeholder-gray-500 outline-none"
-          />
-          <input
-            type="text"
-            placeholder="Last Name"
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-            className="w-full p-3 rounded-full bg-[#EFE3C8] placeholder-gray-500 outline-none"
+            type="email"
+            placeholder="Email address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className={fieldClassName}
+            autoComplete="email"
           />
           <input
             type="password"
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full p-3 rounded-full bg-[#EFE3C8] placeholder-gray-500 outline-none"
+            className={fieldClassName}
+            autoComplete="new-password"
           />
           <input
             type="password"
-            placeholder="Confirm Password"
+            placeholder="Confirm password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full p-3 rounded-full bg-[#EFE3C8] placeholder-gray-500 outline-none"
+            className={fieldClassName}
+            autoComplete="new-password"
           />
 
-          {error ? <p className="text-sm text-red-200 text-center">{error}</p> : null}
-          {success ? <p className="text-sm text-green-200 text-center">{success}</p> : null}
-          
-          <p className="text-center text-sm mt-2">
+          {error ? <p className="text-sm text-red-600 text-center">{error}</p> : null}
+          {success ? <p className="text-sm text-green-700 text-center">{success}</p> : null}
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="mt-2 w-full py-2.5 bg-[#2D3A18] text-white text-sm font-medium rounded-lg hover:bg-[#2D3A18]/90 transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {isSubmitting ? "…" : "Sign up"}
+          </button>
+
+          <p className="text-center text-xs text-[#2D3A18] mt-2">
             Already have an account?{" "}
             <button
               type="button"
@@ -154,14 +185,6 @@ const Signup = ({ isOpen, onClose, onSwitch }) => {
               Log in
             </button>
           </p>
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="mt-4 w-1/4 self-center py-2 bg-[#2D3A18] text-white font-bold rounded-lg hover:bg-[#1B211A] transition disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? "..." : "SIGN UP"}
-          </button>
         </form>
       </div>
     </div>

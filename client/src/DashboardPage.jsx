@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from "react-router-dom";
+import API_BASE_URL from "./api/config.js";
 import Sidebar from "./components/Dashboard/Sidebar";
 import DashboardNavbar from "./components/Dashboard/DashboardNavbar";
 import WelcomeBanner from "./components/Dashboard/WelcomeBanner";
@@ -97,7 +98,7 @@ const renderPage = () => {
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await fetch(`${API_BASE_URL}/api/auth/logout`, { method: "POST" });
     } finally {
       navigate("/", { replace: true });
     }
