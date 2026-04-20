@@ -4,7 +4,7 @@ import DashboardNavbar from "./components/Dashboard/DashboardNavbar";
 import WelcomeBanner from "./components/Dashboard/WelcomeBanner";
 import CreateRecipeSection from "./components/Dashboard/CreateRecipeSection";
 import RecipeCard from "./components/Dashboard/RecipeCard";
-// import HistoryPage from "./components/Dashboard/HistoryPage";  // COMMENT OUT - doesn't exist yet
+import HistoryPage from "./components/Dashboard/HistoryPage";  // UNCOMMENTED - NOW EXISTS!
 // import ProfilePage from "./components/Dashboard/ProfilePage";  // COMMENT OUT - doesn't exist yet
 // import SettingsPage from "./components/Dashboard/SettingsPage";  // COMMENT OUT - doesn't exist yet
 
@@ -83,7 +83,7 @@ const DashboardPage = () => {
           </>
         );
       case 'history':
-        return <div className="mx-4 md:mx-8 mt-6"><div className="bg-[#587A34] rounded-2xl shadow-xl overflow-hidden p-12 text-center"><p className="text-[#F0E6D1] text-xl">History Page - Coming Soon!</p></div></div>;
+        return <HistoryPage />;  // NOW THIS WILL SHOW THE FULL HISTORY PAGE!
       case 'profile':
         return <div className="mx-4 md:mx-8 mt-6"><div className="bg-[#587A34] rounded-2xl shadow-xl overflow-hidden p-12 text-center"><p className="text-[#F0E6D1] text-xl">Profile Page - Coming Soon!</p></div></div>;
       case 'settings':
