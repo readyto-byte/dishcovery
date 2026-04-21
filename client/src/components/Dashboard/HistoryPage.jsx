@@ -7,6 +7,19 @@ const HistoryPage = ({ onViewRecipe }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isClearing, setIsClearing] = useState(false);
   const [error, setError] = useState("");
+  const [favorites, setFavorites] = useState(new Set());
+
+  const toggleFavorite = (id) => {
+    setFavorites((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
 
   const getRelativeViewedTime = (isoDate) => {
     if (!isoDate) return "recently";
@@ -86,10 +99,7 @@ const HistoryPage = ({ onViewRecipe }) => {
   }, []);
 
   const handleClearHistory = async () => {
-    if (!confirm("Are you sure you want to clear your entire recipe history?")) {
-      return;
-    }
-
+    if (!confirm("Are you sure you want to clear your entire recipe history?")) return;
     try {
       setIsClearing(true);
       setError("");
@@ -105,7 +115,6 @@ const HistoryPage = ({ onViewRecipe }) => {
   return (
     <div className="pb-12">
 
-      {/* History Header */}
       <div
         className="relative mx-4 md:mx-8 mt-6 mb-8 overflow-hidden rounded-2xl shadow-xl"
         style={{ backgroundImage: `url(${heroBg})`, backgroundSize: "cover", backgroundPosition: "center" }}
@@ -125,67 +134,107 @@ const HistoryPage = ({ onViewRecipe }) => {
             disabled={isClearing || isLoading || historyRecipes.length === 0}
             className="shrink-0 bg-[#587A34] hover:bg-[#32491B] transition-all px-5 py-2 rounded-lg text-white font-semibold text-sm shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <i className="fas fa-trash-alt mr-2"></i> {isClearing ? "Clearing..." : "Clear History"}
+            <i className="fas fa-trash-alt mr-2"></i>
+            {isClearing ? "Clearing..." : "Clear History"}
           </button>
         </div>
       </div>
 
       <div className="mx-4 md:mx-8">
-        {error ? (
+        {error && (
           <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
           </div>
-        ) : null}
+        )}
 
-        {isLoading ? (
-          <div className="rounded-xl bg-white/70 px-4 py-5 text-sm text-[#2d3f1a]">Loading history...</div>
-        ) : null}
+        {isLoading && (
+          <div className="rounded-xl bg-white/70 px-4 py-5 text-sm text-[#2d3f1a]">
+            Loading history...
+          </div>
+        )}
 
-        {!isLoading && historyRecipes.length === 0 ? (
+        {!isLoading && historyRecipes.length === 0 && (
           <div className="rounded-xl bg-white/70 px-4 py-5 text-sm text-[#2d3f1a]">
             No generated recipes in history yet. Create a recipe to see it here.
           </div>
-        ) : null}
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {historyRecipes.map((recipe) => (
-            <div
-              key={recipe.id}
-              className="bg-[#F0E6D1] rounded-2xl shadow-lg overflow-hidden hover:scale-105 transition-all duration-300"
-            >
-              <div className="relative h-12 bg-[#587A34] flex items-center justify-end px-4">
-                <div className="bg-[#95A131] rounded-full px-3 py-1 text-xs font-bold text-white">
-                  Viewed {recipe.viewed}
-                </div>
-              </div>
-              <div className="p-5">
-                <h3 className="text-xl font-bold text-[#32491B]">{recipe.title}</h3>
-                <p className="text-black/60 text-sm mt-1">{recipe.type} • {recipe.difficulty}</p>
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {recipe.tags.map((tag, idx) => (
-                    <span
-                      key={idx}
-                      className="bg-[#839705]/20 text-[#32491B] px-2 py-0.5 rounded-full text-xs font-semibold"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-                <div className="flex justify-between items-center mt-4 pt-3 border-t border-[#B5D098]/30">
-                  <div className="flex gap-3 text-sm text-black/60">
-                    <span><i className="far fa-clock"></i> {recipe.time}</span>
-                    <span><i className="fas fa-users"></i> {recipe.servings}</span>
-                  </div>
+          {historyRecipes.map((recipe) => {
+            const isFavorited = favorites.has(recipe.id);
+            return (
+              <div
+                key={recipe.id}
+                className="bg-[#F0E6D1] rounded-2xl shadow-lg overflow-hidden hover:scale-105 transition-all duration-300"
+              >
+
+                <div className="relative h-12 bg-[#587A34] flex items-center justify-between px-4">
+
                   <button
-                    onClick={() => onViewRecipe(recipe)}
-                    className="text-[#587A34] hover:text-[#32491B] font-semibold text-sm transition-all cursor-pointer"
+                    onClick={() => toggleFavorite(recipe.id)}
+                    title={isFavorited ? "Remove from favorites" : "Add to favorites"}
+                    className="flex items-center justify-center w-7 h-7 rounded-full transition-all duration-200 active:scale-90"
+                    style={{
+                      background: isFavorited ? 'rgba(240,230,209,0.2)' : 'rgba(255,255,255,0.1)',
+                      border: `1.5px solid ${isFavorited ? '#F0E6D1' : 'rgba(240,230,209,0.35)'}`,
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(240,230,209,0.25)';
+                      e.currentTarget.style.borderColor = '#F0E6D1';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = isFavorited ? 'rgba(240,230,209,0.2)' : 'rgba(255,255,255,0.1)';
+                      e.currentTarget.style.borderColor = isFavorited ? '#F0E6D1' : 'rgba(240,230,209,0.35)';
+                    }}
                   >
-                    View Recipe <i className="fas fa-arrow-right ml-1"></i>
+                    {isFavorited ? (
+
+                      <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="#F0E6D1">
+                        <path d="M8 13.5S2 9.5 2 5.5A3.5 3.5 0 018 3a3.5 3.5 0 016 2c0 4-6 8.5-6 8.5z" />
+                      </svg>
+                    ) : (
+
+                      <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="none" stroke="#F0E6D1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M8 13.5S2 9.5 2 5.5A3.5 3.5 0 018 3a3.5 3.5 0 016 2c0 4-6 8.5-6 8.5z" />
+                      </svg>
+                    )}
                   </button>
+
+                  <div className="bg-[#95A131] rounded-full px-3 py-1 text-xs font-bold text-white">
+                    Viewed {recipe.viewed}
+                  </div>
+                </div>
+
+                {/* Card body */}
+                <div className="p-5">
+                  <h3 className="text-xl font-bold text-[#32491B]">{recipe.title}</h3>
+                  <p className="text-black/60 text-sm mt-1">{recipe.type} • {recipe.difficulty}</p>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {recipe.tags.map((tag, idx) => (
+                      <span
+                        key={idx}
+                        className="bg-[#839705]/20 text-[#32491B] px-2 py-0.5 rounded-full text-xs font-semibold"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex justify-between items-center mt-4 pt-3 border-t border-[#B5D098]/30">
+                    <div className="flex gap-3 text-sm text-black/60">
+                      <span><i className="far fa-clock"></i> {recipe.time}</span>
+                      <span><i className="fas fa-users"></i> {recipe.servings}</span>
+                    </div>
+                    <button
+                      onClick={() => onViewRecipe(recipe)}
+                      className="text-[#587A34] hover:text-[#32491B] font-semibold text-sm transition-all cursor-pointer"
+                    >
+                      View Recipe <i className="fas fa-arrow-right ml-1"></i>
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
