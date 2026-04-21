@@ -34,23 +34,6 @@ const getRecipeErrorMessage = (error) => {
   return fallback;
 };
 
-const pickSuggestion = (suggestions, currentTitle) => {
-  if (!Array.isArray(suggestions) || suggestions.length === 0) return null;
-  const normalizedCurrentTitle = String(currentTitle || "").trim().toLowerCase();
-  const uniqueSuggestions = suggestions.filter((item, index, arr) => {
-    const title = String(item?.title || "").trim().toLowerCase();
-    return arr.findIndex((candidate) => String(candidate?.title || "").trim().toLowerCase() === title) === index;
-  });
-
-  const candidates = uniqueSuggestions.filter(
-    (item) => String(item?.title || "").trim().toLowerCase() !== normalizedCurrentTitle
-  );
-
-  const pool = candidates.length > 0 ? candidates : uniqueSuggestions;
-  const index = Math.floor(Math.random() * pool.length);
-  return pool[index] || null;
-};
-
 // ── Recipe Detail Modal ───────────────────────────────────────────────────────
 const RecipeDetailModal = ({ recipe, onClose }) => {
   if (!recipe) return null;
@@ -70,19 +53,19 @@ const RecipeDetailModal = ({ recipe, onClose }) => {
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="bg-[#B5D098]/30 text-[#B5D098] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                    {recipe.type}
+                    {recipe.type || 'Recipe'}
                   </span>
                   <span className={`text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider ${
                     recipe.difficulty === 'Easy' ? 'bg-green-500/20 text-green-300'
                     : recipe.difficulty === 'Medium' ? 'bg-yellow-500/20 text-yellow-300'
                     : 'bg-red-500/20 text-red-300'
                   }`}>
-                    {recipe.difficulty}
+                    {recipe.difficulty || 'Medium'}
                   </span>
                 </div>
                 <h2 className="text-[#F0E6D1] font-extrabold text-xl md:text-2xl leading-tight">{recipe.title}</h2>
                 <div className="flex gap-4 mt-3 text-[#B5D098] text-sm">
-                  <span><i className="far fa-clock mr-1"></i>{recipe.time}</span>
+                  <span><i className="far fa-clock mr-1"></i>{recipe.time || recipe.prepTime || '—'}</span>
                   <span><i className="fas fa-users mr-1"></i>{recipe.servings} servings</span>
                   {recipe.viewed && <span><i className="far fa-eye mr-1"></i>Viewed {recipe.viewed}</span>}
                 </div>
@@ -95,7 +78,7 @@ const RecipeDetailModal = ({ recipe, onClose }) => {
               </button>
             </div>
             <div className="flex flex-wrap gap-2 mt-4">
-              {recipe.tags.map((tag, idx) => (
+              {Array.isArray(recipe.tags) && recipe.tags.map((tag, idx) => (
                 <span key={idx} className="bg-[#B5D098]/20 text-[#B5D098] px-2 py-0.5 rounded-full text-xs font-semibold">
                   #{tag}
                 </span>
@@ -117,7 +100,7 @@ const RecipeDetailModal = ({ recipe, onClose }) => {
                 Ingredients
               </h3>
               <ul className="space-y-2">
-                {recipe.ingredients.map((ing, idx) => (
+                {Array.isArray(recipe.ingredients) && recipe.ingredients.map((ing, idx) => (
                   <li key={idx} className="flex items-start gap-3 text-sm text-[#2d3f1a]">
                     <span className="mt-1.5 w-2 h-2 rounded-full bg-[#839705] shrink-0"></span>
                     {ing}
@@ -134,7 +117,7 @@ const RecipeDetailModal = ({ recipe, onClose }) => {
                 Instructions
               </h3>
               <ol className="space-y-3">
-                {recipe.instructions.map((step, idx) => (
+                {Array.isArray(recipe.instructions) && recipe.instructions.map((step, idx) => (
                   <li key={idx} className="flex items-start gap-3 text-sm text-[#2d3f1a]">
                     <span className="shrink-0 w-6 h-6 rounded-full bg-[#32491B] text-[#F0E6D1] flex items-center justify-center text-xs font-bold">
                       {idx + 1}
@@ -253,9 +236,19 @@ const DashboardPage = () => {
     try {
       const profilesResponse = await apiCall("/api/profiles");
       const profiles = Array.isArray(profilesResponse?.data) ? profilesResponse.data : [];
-      const selectedProfile = profiles.find((profile) => profile?.is_active) || profiles[0] || null;
-      const normalizedProfiles = selectedProfile
-        ? [
+      const selectedProfile =
+        profiles.find((profile) => profile?.is_active) ||
+        profiles[0] ||
+        null;
+
+      if (!selectedProfile) {
+        throw new Error("No profile found. Please create and select a profile first.");
+      }
+
+      const response = await apiCall("/api/recipes", {
+        method: "POST",
+        body: JSON.stringify({
+          profiles: [
             {
               id: selectedProfile.id,
               name: selectedProfile.name,
@@ -264,19 +257,13 @@ const DashboardPage = () => {
               dietary_preferences: Array.isArray(selectedProfile.dietary_preferences)
                 ? selectedProfile.dietary_preferences : [],
             },
-          ]
-        : [];
-
-      const response = await apiCall("/api/recipes", {
-        method: "POST",
-        body: JSON.stringify({
-          profiles: normalizedProfiles,
+          ],
           conversation: [{ role: "user", content: userInput }],
           searchQuery: userInput,
         }),
       });
       const suggestions = response?.response?.suggestions;
-      const suggestion = pickSuggestion(suggestions, recipeData.title);
+      const suggestion = Array.isArray(suggestions) && suggestions.length > 0 ? suggestions[0] : null;
       if (!suggestion) throw new Error("Gemini returned no recipe suggestions.");
       const totalTimeFromApi = response?.response?.estimatedTime;
       const prepFromApi = suggestion.prepTimeMin ?? suggestion.prep_time_min;
@@ -324,7 +311,8 @@ const DashboardPage = () => {
       case 'settings':
         return <SettingsPage />;
       case 'favorites':
-        return <FavoritesPage />;
+        // ← THE ONE CHANGE: pass onViewRecipe so the modal works here too
+        return <FavoritesPage onViewRecipe={setSelectedHistoryRecipe} />;
       default:
         return null;
     }

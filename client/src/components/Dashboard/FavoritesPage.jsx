@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import heroBg from "../../assets/hero-bg.jpg";
 
-const FavoritesPage = () => {
+const FavoritesPage = ({ onViewRecipe }) => {  // ← accept prop
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -11,11 +11,7 @@ const FavoritesPage = () => {
         const savedFavorites = localStorage.getItem('favoriteRecipes');
         if (savedFavorites) {
           const parsedFavorites = JSON.parse(savedFavorites);
-          if (Array.isArray(parsedFavorites)) {
-            setFavorites(parsedFavorites);
-          } else {
-            setFavorites([]);
-          }
+          setFavorites(Array.isArray(parsedFavorites) ? parsedFavorites : []);
         } else {
           setFavorites([]);
         }
@@ -26,7 +22,6 @@ const FavoritesPage = () => {
         setLoading(false);
       }
     };
-    
     loadFavorites();
   }, []);
 
@@ -45,11 +40,6 @@ const FavoritesPage = () => {
     }
   };
 
-  const handleViewRecipe = (id) => {
-    const recipe = favorites.find(f => f.id === id);
-    alert(`Recipe details for "${recipe?.title || 'this recipe'}" will be available soon!`);
-  };
-
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -60,14 +50,10 @@ const FavoritesPage = () => {
 
   return (
     <div className="pb-12">
-      {/* Updated Header Section */}
+      {/* Header */}
       <div
         className="relative mx-4 md:mx-8 mt-6 mb-8 overflow-hidden rounded-2xl shadow-xl"
-        style={{ 
-          backgroundImage: `url(${heroBg})`, 
-          backgroundSize: "cover", 
-          backgroundPosition: "center" 
-        }}
+        style={{ backgroundImage: `url(${heroBg})`, backgroundSize: "cover", backgroundPosition: "center" }}
       >
         <div className="absolute inset-0 bg-[#1e3a0f]/70 rounded-2xl" />
         <div className="relative px-8 py-7 flex items-center justify-between gap-5">
@@ -76,7 +62,6 @@ const FavoritesPage = () => {
               My <span className="text-[#B5D098]">Favorites</span>
             </h1>
             <div className="flex items-center mt-1">
-              {/* Small circular icon to match the empty state style */}
               <div className="w-6 h-6 bg-[#B5D098]/30 rounded-full flex items-center justify-center mr-2">
                 <i className="fas fa-heart text-[#B5D098] text-[10px]"></i>
               </div>
@@ -88,7 +73,7 @@ const FavoritesPage = () => {
           {favorites.length > 0 && (
             <button
               onClick={handleClearAllFavorites}
-              className="shrink-0 bg-red-600/80 hover:bg-red-700 transition-all px-5 py-2 rounded-lg text-white font-semibold text-sm shadow-md"
+              className="shrink-0 bg-red-600/80 hover:bg-red-700 transition-all px-5 py-2 rounded-lg text-white font-semibold text-sm shadow-md cursor-pointer"
             >
               <i className="fas fa-heart-broken mr-2"></i> Clear All
             </button>
@@ -115,7 +100,7 @@ const FavoritesPage = () => {
             {favorites.map((recipe) => (
               <div
                 key={recipe.id}
-                className="bg-[#F0E6D1] rounded-2xl shadow-lg overflow-hidden cursor-pointer hover:scale-105 transition-all duration-300"
+                className="bg-[#F0E6D1] rounded-2xl shadow-lg overflow-hidden hover:scale-105 transition-all duration-300"
               >
                 <div className="relative h-12 bg-[#587A34] flex items-center justify-between px-4">
                   <div className="bg-red-500 rounded-full px-3 py-1 text-xs font-bold text-white">
@@ -126,7 +111,7 @@ const FavoritesPage = () => {
                       e.stopPropagation();
                       removeFromFavorites(recipe.id);
                     }}
-                    className="bg-white/20 hover:bg-red-500 rounded-full px-3 py-1 text-xs font-bold text-white transition-all"
+                    className="bg-white/20 hover:bg-red-500 rounded-full px-3 py-1 text-xs font-bold text-white transition-all cursor-pointer"
                   >
                     <i className="fas fa-trash-alt mr-1"></i> Remove
                   </button>
@@ -152,8 +137,8 @@ const FavoritesPage = () => {
                       <span><i className="fas fa-users"></i> {recipe.servings || 2}</span>
                     </div>
                     <button
-                      onClick={() => handleViewRecipe(recipe.id)}
-                      className="text-[#587A34] hover:text-[#32491B] font-semibold text-sm transition-all"
+                      onClick={() => onViewRecipe(recipe)}  // ← was: handleViewRecipe(recipe.id)
+                      className="text-[#587A34] hover:text-[#32491B] font-semibold text-sm transition-all cursor-pointer"
                     >
                       View Recipe <i className="fas fa-arrow-right ml-1"></i>
                     </button>
