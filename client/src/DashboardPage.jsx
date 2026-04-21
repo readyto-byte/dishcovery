@@ -151,6 +151,7 @@ const LogoutConfirmModal = ({ onConfirm, onCancel, isLoggingOut }) => (
               )}
             </div>
           </div>
+
           <h2 className="text-center font-bold text-[#1B211A] text-xl mb-2 tracking-tight">
             {isLoggingOut ? 'Logging out...' : 'Leaving so soon?'}
           </h2>
@@ -159,7 +160,9 @@ const LogoutConfirmModal = ({ onConfirm, onCancel, isLoggingOut }) => (
               ? 'Please wait while we sign you out.'
               : <>Are you sure you want to log out of <span className="font-semibold text-[#32491B]">Dishcovery</span>?</>}
           </p>
+
           <div className="h-px bg-gradient-to-r from-transparent via-[#B5D098] to-transparent mb-6" />
+
           <div className="flex gap-3">
             <button onClick={onCancel} disabled={isLoggingOut}
               className="flex-1 py-3 rounded-xl border border-[#32491B]/20 bg-white/50 hover:bg-white/80 text-[#32491B] font-semibold text-sm tracking-wide transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
@@ -182,6 +185,7 @@ const DashboardPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 1024);
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [isLoading, setIsLoading] = useState(false);
+  const [hasGenerated, setHasGenerated] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [recipeError, setRecipeError] = useState("");
@@ -216,10 +220,30 @@ const DashboardPage = () => {
     try {
       const profilesResponse = await apiCall("/api/profiles");
       const profiles = Array.isArray(profilesResponse?.data) ? profilesResponse.data : [];
+      const selectedProfile =
+        profiles.find((profile) => profile?.is_active) ||
+        profiles[0] ||
+        null;
+
+      if (!selectedProfile) {
+        throw new Error("No profile found. Please create and select a profile first.");
+      }
+
       const response = await apiCall("/api/recipes", {
         method: "POST",
         body: JSON.stringify({
-          profiles,
+          profiles: [
+            {
+              id: selectedProfile.id,
+              name: selectedProfile.name,
+              dietary_restrictions: Array.isArray(selectedProfile.dietary_restrictions)
+                ? selectedProfile.dietary_restrictions
+                : [],
+              dietary_preferences: Array.isArray(selectedProfile.dietary_preferences)
+                ? selectedProfile.dietary_preferences
+                : [],
+            },
+          ],
           conversation: [{ role: "user", content: userInput }],
           searchQuery: userInput,
         }),
@@ -244,6 +268,7 @@ const DashboardPage = () => {
     } catch (error) {
       setRecipeError(error.message || "Failed to generate recipe.");
     } finally {
+      setHasGenerated(true);
       setIsLoading(false);
     }
   };
@@ -260,7 +285,9 @@ const DashboardPage = () => {
               </div>
             )}
             <CreateRecipeSection onGenerate={generateRecipe} isLoading={isLoading} />
-            <RecipeCard recipeData={recipeData} isLoading={isLoading} />
+            {(hasGenerated || isLoading) && (
+              <RecipeCard recipeData={recipeData} isLoading={isLoading} />
+            )}
           </>
         );
       case 'history':
