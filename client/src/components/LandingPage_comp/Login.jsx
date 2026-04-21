@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { X } from "lucide-react";
+import { Eye, EyeOff, X } from "lucide-react";
 import API_BASE_URL from "../../api/config.js";
 
 const Login = ({ isOpen, onClose, onSwitch }) => {
@@ -10,12 +10,14 @@ const Login = ({ isOpen, onClose, onSwitch }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const resetFormState = () => {
     setLoginInfo("");
     setPassword("");
     setError("");
     setSuccess("");
+    setShowPassword(false);
   };
 
   const handleClose = () => {
@@ -117,14 +119,24 @@ const Login = ({ isOpen, onClose, onSwitch }) => {
             className={fieldClassName}
             autoComplete="username"
           />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className={fieldClassName}
-            autoComplete="current-password"
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className={`${fieldClassName} pr-10`}
+              autoComplete="current-password"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((s) => !s)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-gray-500 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900/20"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
 
           {error ? <p className="text-sm text-red-600 text-center">{error}</p> : null}
           {success ? <p className="text-sm text-green-700 text-center">{success}</p> : null}
