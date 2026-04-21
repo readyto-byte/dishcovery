@@ -113,6 +113,7 @@ const HistoryPage = () => {
 
   return (
     <div className="pb-12">
+
       {/* History Header */}
       <div
         className="relative mx-4 md:mx-8 mt-6 mb-8 overflow-hidden rounded-2xl shadow-xl"
@@ -159,7 +160,7 @@ const HistoryPage = () => {
           {historyRecipes.map((recipe) => (
             <div
               key={recipe.id}
-              className="history-card bg-[#F0E6D1] rounded-2xl shadow-lg overflow-hidden cursor-pointer hover:scale-105 transition-all duration-300"
+              className="bg-[#F0E6D1] rounded-2xl shadow-lg overflow-hidden hover:scale-105 transition-all duration-300"
             >
               <div className="relative h-12 bg-[#587A34] flex items-center justify-end px-4">
                 <div className="bg-[#95A131] rounded-full px-3 py-1 text-xs font-bold text-white">
@@ -185,8 +186,8 @@ const HistoryPage = () => {
                     <span><i className="fas fa-users"></i> {recipe.servings}</span>
                   </div>
                   <button
-                    onClick={() => handleViewRecipe(recipe.id)}
-                    className="text-[#587A34] hover:text-[#32491B] font-semibold text-sm transition-all"
+                    onClick={() => onViewRecipe(recipe)}
+                    className="text-[#587A34] hover:text-[#32491B] font-semibold text-sm transition-all cursor-pointer"
                   >
                     View Recipe <i className="fas fa-arrow-right ml-1"></i>
                   </button>
