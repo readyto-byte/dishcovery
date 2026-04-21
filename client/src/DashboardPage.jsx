@@ -49,7 +49,7 @@ const pickSuggestion = (suggestions, currentTitle) => {
   return pool[index] || null;
 };
 
-// ── Recipe Detail Modal ───────────────────────────────────────────────────────
+
 const RecipeDetailModal = ({ recipe, onClose }) => {
   if (!recipe) return null;
   return (
@@ -158,7 +158,6 @@ const RecipeDetailModal = ({ recipe, onClose }) => {
   );
 };
 
-// ── Logout Confirm Modal ──────────────────────────────────────────────────────
 const LogoutConfirmModal = ({ onConfirm, onCancel, isLoggingOut }) => (
   <>
     <div
@@ -210,7 +209,7 @@ const LogoutConfirmModal = ({ onConfirm, onCancel, isLoggingOut }) => (
   </>
 );
 
-// ── Dashboard Page ────────────────────────────────────────────────────────────
+
 const DashboardPage = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 1024);
@@ -222,6 +221,9 @@ const DashboardPage = () => {
   const [recipeError, setRecipeError] = useState("");
   const [lastPrompt, setLastPrompt] = useState("");
   const [selectedHistoryRecipe, setSelectedHistoryRecipe] = useState(null);
+
+  const [activeProfile, setActiveProfile] = useState(null);
+
   const [recipeData, setRecipeData] = useState({
     title: "Strawberries with Yogurt and Honey",
     description: "This refreshing dish combines sweet strawberries with creamy yogurt and honey for a delightful treat.",
@@ -323,11 +325,11 @@ const DashboardPage = () => {
       case 'history':
         return <HistoryPage onViewRecipe={setSelectedHistoryRecipe} />;
       case 'profile':
-        return <ProfilePage />;
+
+        return <ProfilePage onActiveProfileChange={setActiveProfile} />;
       case 'settings':
         return <SettingsPage />;
       case 'favorites':
-        // ← THE ONE CHANGE: pass onViewRecipe so the modal works here too
         return <FavoritesPage onViewRecipe={setSelectedHistoryRecipe} />;
       default:
         return null;
@@ -357,15 +359,16 @@ const DashboardPage = () => {
         style={{ marginLeft: sidebarOpen ? '18rem' : '0' }}
         className="transition-all duration-300"
       >
+
         <DashboardNavbar
           setCurrentPage={setCurrentPage}
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
+          activeProfile={activeProfile}
         />
         <div className="pb-12">{renderPage()}</div>
       </main>
 
-      {/* ── Modals live OUTSIDE <main> so z-index is never clipped ── */}
       {selectedHistoryRecipe && (
         <RecipeDetailModal
           recipe={selectedHistoryRecipe}
