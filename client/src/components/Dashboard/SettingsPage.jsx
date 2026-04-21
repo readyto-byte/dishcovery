@@ -1,21 +1,7 @@
 import { useEffect, useState } from "react";
-import {
-  Mail,
-  User,
-  Lock,
-  Trash2,
-  Eye,
-  EyeOff,
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
-  Save,
-  X,
-} from "lucide-react";
+import {Mail,User,Lock,Trash2,Eye,EyeOff,CheckCircle,XCircle,AlertTriangle,Save,X} from "lucide-react";
 import heroBg from "../../assets/hero-bg.jpg";
 import { apiCall } from "../../api/config";
-
-// ── Moved outside SettingsPage so they never remount on parent re-render ──
 
 const inputClass = (hasError) =>
   `w-full px-3 py-2 text-sm rounded-md border ${
@@ -95,6 +81,8 @@ const SettingsPage = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [showDeletePassword, setShowDeletePassword] = useState(false);
 
   const [userData, setUserData] = useState({
     firstName: "",
@@ -223,19 +211,21 @@ const SettingsPage = () => {
     }
   };
 
-  const handleDeleteAccount = () => {
-    if (showDeleteConfirm) {
-      setIsLoading(true);
-      setTimeout(() => {
-        alert("Account deleted successfully");
-        setShowDeleteConfirm(false);
-        setActiveSection(null);
-        setIsLoading(false);
-      }, 500);
-    } else {
-      setShowDeleteConfirm(true);
-    }
-  };
+const handleDeleteAccount = () => {
+  if (showDeleteConfirm) {
+    if (!deletePassword.trim()) return setErrors({ delete: "Please enter your password to confirm." });
+    setIsLoading(true);
+    setTimeout(() => {
+      alert("Account deleted successfully");
+      setShowDeleteConfirm(false);
+      setActiveSection(null);
+      setDeletePassword("");
+      setIsLoading(false);
+    }, 500);
+  } else {
+    setShowDeleteConfirm(true);
+  }
+};
 
   const togglePasswordVisibility = (field) =>
     setShowPassword((prev) => ({ ...prev, [field]: !prev[field] }));
@@ -246,7 +236,6 @@ const SettingsPage = () => {
     <div className="mx-4 md:mx-8 mt-6 pb-12">
       <div>
 
-        {/* Success Toast */}
         {successMessage && (
           <div className="fixed top-5 right-5 z-50 flex items-center gap-3 bg-[#3a5a12] text-[#d4e8a0] px-4 py-3 rounded-xl shadow-xl border border-[#2d4710] animate-slide-in">
             <CheckCircle className="w-4 h-4 flex-shrink-0" />
@@ -257,7 +246,6 @@ const SettingsPage = () => {
           </div>
         )}
 
-        {/* Hero Header — untouched */}
         <div
           className="relative rounded-2xl shadow-xl overflow-hidden px-8 py-7 mb-8 flex items-center gap-5"
           style={{ backgroundImage: `url(${heroBg})`, backgroundSize: "cover", backgroundPosition: "center" }}
@@ -287,7 +275,6 @@ const SettingsPage = () => {
           </div>
         ) : null}
 
-        {/* Account Settings Card */}
         <div className="bg-[#587A34] rounded-2xl border-2 border-[#587A34] overflow-hidden mb-4 shadow-lg">
           <div className="p-4 space-y-3">
 
@@ -412,28 +399,26 @@ const SettingsPage = () => {
           </div>
         </div>
 
-        {/* Divider */}
         <div className="flex items-center gap-3 my-5">
           <div className="flex-1 border-t-2 border-dashed border-[#4a6a1e]" />
           <span className="text-xs font-black uppercase tracking-widest text-[#3a5a12]">Danger Zone</span>
           <div className="flex-1 border-t-2 border-dashed border-[#4a6a1e]" />
         </div>
 
-        {/* Delete Account */}
-        <div className="bg-[#f0e6ce] border-2 border-red-400 rounded-2xl overflow-hidden shadow-md">
+        <div className="bg-[#f0e6ce] border-2 border-red-300 rounded-2xl overflow-hidden shadow-md">
           <div className="flex items-center justify-between px-5 py-4">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center flex-shrink-0">
+              <div className="w-8 h-8 rounded-full bg-red-400 flex items-center justify-center flex-shrink-0">
                 <Trash2 className="w-4 h-4 text-white" />
               </div>
               <div>
-                <p className="text-xs font-black uppercase tracking-widest text-red-600">Delete Account</p>
+                <p className="text-xs font-black uppercase tracking-widest text-red-400">Delete Account</p>
                 <p className="text-xs text-[#6b5a3a] mt-0.5">Permanently delete your account and all associated data</p>
               </div>
             </div>
             <button
               onClick={() => handleToggle("delete")}
-              className="px-4 py-1.5 text-xs font-black uppercase tracking-wide rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+              className="px-4 py-1.5 text-xs font-black uppercase tracking-wide rounded-lg bg-red-400 text-white hover:bg-red-500 transition-colors"
             >
               Delete
             </button>
@@ -457,6 +442,7 @@ const SettingsPage = () => {
                     Yes, Delete My Account
                   </button>
                 </>
+ 
               ) : (
                 <div className="space-y-3 mt-3">
                   <div className="p-3 bg-red-100 border border-red-200 rounded-lg">
@@ -465,6 +451,30 @@ const SettingsPage = () => {
                       Are you absolutely sure? This action cannot be undone.
                     </p>
                   </div>
+                  <div className="relative">
+                    <input
+                      type={showDeletePassword ? "text" : "password"}
+                      placeholder="Enter your password to confirm"
+                      value={deletePassword}
+                      onChange={(e) => {
+                        setDeletePassword(e.target.value);
+                        if (errors.delete) setErrors((prev) => ({ ...prev, delete: "" }));
+                      }}
+                      className={`${inputClass(errors.delete)} pr-10`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowDeletePassword((prev) => !prev)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6b5a3a] hover:text-[#2d2a1e]"
+                    >
+                      {showDeletePassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  {errors.delete && (
+                    <p className="text-xs text-red-600 flex items-center gap-1">
+                      <XCircle className="w-3 h-3" /> {errors.delete}
+                    </p>
+                  )}
                   <div className="flex gap-2">
                     <button
                       onClick={handleDeleteAccount}
@@ -479,7 +489,7 @@ const SettingsPage = () => {
                       {isLoading ? "Deleting..." : "Yes, Permanently Delete"}
                     </button>
                     <button
-                      onClick={() => setShowDeleteConfirm(false)}
+                      onClick={() => { setShowDeleteConfirm(false); setDeletePassword(""); setErrors({}); }}
                       className="flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-wide bg-[#c8b99a] text-[#4a3a1e] rounded-lg hover:bg-[#b8a98a] transition-colors"
                     >
                       <X className="w-3.5 h-3.5" />
