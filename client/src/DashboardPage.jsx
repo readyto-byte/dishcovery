@@ -6,6 +6,7 @@ import DashboardNavbar from "./components/Dashboard/DashboardNavbar";
 import WelcomeBanner from "./components/Dashboard/WelcomeBanner";
 import CreateRecipeSection from "./components/Dashboard/CreateRecipeSection";
 import RecipeCard from "./components/Dashboard/RecipeCard";
+import MealPlanPage from "./components/Dashboard/MealPlanPage";
 import HistoryPage from "./components/Dashboard/HistoryPage";
 import ProfilePage from "./components/Dashboard/ProfilePage";
 import SettingsPage from "./components/Dashboard/SettingsPage";
@@ -211,6 +212,8 @@ const DashboardPage = () => {
         );
       case 'history':
         return <HistoryPage onViewRecipe={setSelectedRecipe} />;
+      case 'meal-plan':
+        return <MealPlanPage onViewRecipe={setSelectedRecipe} />;
       case 'profile':
         return (
           <ProfilePage
