@@ -6,6 +6,7 @@ import DashboardNavbar from "./components/Dashboard/DashboardNavbar";
 import WelcomeBanner from "./components/Dashboard/WelcomeBanner";
 import CreateRecipeSection from "./components/Dashboard/CreateRecipeSection";
 import RecipeCard from "./components/Dashboard/RecipeCard";
+import MealPlanPage from "./components/Dashboard/MealPlanPage";
 import HistoryPage from "./components/Dashboard/HistoryPage";
 import ProfilePage from "./components/Dashboard/ProfilePage";
 import SettingsPage from "./components/Dashboard/SettingsPage";
@@ -48,7 +49,6 @@ const pickSuggestion = (suggestions, currentTitle) => {
   const index = Math.floor(Math.random() * pool.length);
   return pool[index] || null;
 };
-
 
 const RecipeDetailModal = ({ recipe, onClose }) => {
   if (!recipe) return null;
@@ -209,7 +209,6 @@ const LogoutConfirmModal = ({ onConfirm, onCancel, isLoggingOut }) => (
   </>
 );
 
-
 const DashboardPage = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 1024);
@@ -221,7 +220,6 @@ const DashboardPage = () => {
   const [recipeError, setRecipeError] = useState("");
   const [lastPrompt, setLastPrompt] = useState("");
   const [selectedHistoryRecipe, setSelectedHistoryRecipe] = useState(null);
-
   const [activeProfile, setActiveProfile] = useState(null);
 
   const [recipeData, setRecipeData] = useState({
@@ -325,10 +323,11 @@ const DashboardPage = () => {
             )}
           </>
         );
+      case 'meal-plan':
+        return <MealPlanPage onViewRecipe={setSelectedHistoryRecipe} />;
       case 'history':
         return <HistoryPage onViewRecipe={setSelectedHistoryRecipe} />;
       case 'profile':
-
         return <ProfilePage onActiveProfileChange={setActiveProfile} />;
       case 'settings':
         return <SettingsPage />;
@@ -359,10 +358,9 @@ const DashboardPage = () => {
       />
 
       <main
-        style={{ marginLeft: sidebarOpen ? '18rem' : '0' }}
-        className="transition-all duration-300"
+        style={{ marginLeft: sidebarOpen ? '272px' : '0' }}
+        className="transition-all duration-300 min-h-screen"
       >
-
         <DashboardNavbar
           setCurrentPage={setCurrentPage}
           sidebarOpen={sidebarOpen}

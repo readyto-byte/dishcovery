@@ -17,6 +17,7 @@ const Sidebar = ({ currentPage, setCurrentPage, sidebarOpen, setSidebarOpen, onL
 
   const navItems = [
     { id: 'dashboard', icon: 'fa-tachometer-alt', label: 'Dashboard' },
+    { id: 'meal-plan', icon: 'fa-calendar-alt', label: 'Meal Plan' },
     { id: 'history', icon: 'fa-history', label: 'History' },
     { id: 'favorites', icon: 'fa-heart', label: 'Favorites' },
     { id: 'profile', icon: 'fa-user', label: 'Profile' },
