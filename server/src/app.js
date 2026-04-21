@@ -6,6 +6,7 @@ require('dotenv').config();
 const { GoogleGenAI } = require('@google/genai');
 const { supabase } = require('./config/supabase');
 const authRoutes = require('./routes/auth');
+const accountRoutes = require('./routes/account');
 const profilesRoutes = require('./routes/profiles');
 const recipesRoutes = require('./routes/recipes');
 const historyRoutes = require('./routes/history');
@@ -48,6 +49,7 @@ const authMiddleware = async (req, res, next) => {
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/account', authMiddleware, accountRoutes);
 app.use('/api/profiles', authMiddleware, profilesRoutes);
 app.use('/api/history', authMiddleware, historyRoutes);
 app.use('/api/recipes', authMiddleware, recipesRoutes);
