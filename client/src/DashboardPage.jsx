@@ -9,28 +9,23 @@ import RecipeCard from "./components/Dashboard/RecipeCard";
 import HistoryPage from "./components/Dashboard/HistoryPage";  
 import ProfilePage from "./components/Dashboard/ProfilePage";  
 import SettingsPage from "./components/Dashboard/SettingsPage";
-import FavoritesPage from "./components/Dashboard/FavoritesPage"; // ✅ ADD THIS IMPORT
+import FavoritesPage from "./components/Dashboard/FavoritesPage";
 
 const LogoutConfirmModal = ({ onConfirm, onCancel, isLoggingOut }) => (
   <>
-    {/* Full-viewport backdrop with blur */}
     <div
       className="fixed inset-0 z-50 bg-black/10 backdrop-blur-md"
       onClick={!isLoggingOut ? onCancel : undefined}
     />
-
-    {/* Modal */}
     <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
       <div
         className="pointer-events-auto mx-4 w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden"
         style={{ background: 'linear-gradient(160deg, #f7f0e3 0%, #ede0c4 100%)' }}
         onClick={e => e.stopPropagation()}
       >
-        {/* Top accent bar */}
         <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg, #32491B, #839705, #B5D098)' }} />
 
         <div className="px-7 pt-7 pb-6">
-          {/* Icon — spinner when logging out */}
           <div className="flex justify-center mb-5">
             <div className="w-14 h-14 rounded-2xl bg-[#32491B]/10 flex items-center justify-center shadow-inner">
               {isLoggingOut ? (
@@ -44,7 +39,6 @@ const LogoutConfirmModal = ({ onConfirm, onCancel, isLoggingOut }) => (
             </div>
           </div>
 
-          {/* Text */}
           <h2 className="text-center font-bold text-[#1B211A] text-xl mb-2 tracking-tight">
             {isLoggingOut ? 'Logging out...' : 'Leaving so soon?'}
           </h2>
@@ -55,10 +49,8 @@ const LogoutConfirmModal = ({ onConfirm, onCancel, isLoggingOut }) => (
             }
           </p>
 
-          {/* Divider */}
           <div className="h-px bg-gradient-to-r from-transparent via-[#B5D098] to-transparent mb-6" />
 
-          {/* Buttons */}
           <div className="flex gap-3">
             <button
               onClick={onCancel}
@@ -86,6 +78,7 @@ const DashboardPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [isLoading, setIsLoading] = useState(false);
+  const [hasGenerated, setHasGenerated] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [recipeError, setRecipeError] = useState("");
@@ -175,6 +168,7 @@ const DashboardPage = () => {
     } catch (error) {
       setRecipeError(error.message || "Failed to generate recipe.");
     } finally {
+      setHasGenerated(true);
       setIsLoading(false);
     }
   };
@@ -191,7 +185,9 @@ const DashboardPage = () => {
               </div>
             ) : null}
             <CreateRecipeSection onGenerate={generateRecipe} isLoading={isLoading} />
-            <RecipeCard recipeData={recipeData} isLoading={isLoading} />
+            {(hasGenerated || isLoading) && (
+              <RecipeCard recipeData={recipeData} isLoading={isLoading} />
+            )}
           </>
         );
       case 'history':
@@ -200,7 +196,7 @@ const DashboardPage = () => {
         return <ProfilePage />;   
       case 'settings':
         return <SettingsPage />;
-      case 'favorites': // ✅ ADD THIS CASE
+      case 'favorites':
         return <FavoritesPage />;
       default:
         return null;
