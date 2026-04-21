@@ -1,24 +1,6 @@
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import heroBg from "../../assets/hero-bg.jpg";
-
-const initialProfiles = [
-  {
-    id: 1,
-    name: "Tyrone S.",
-    isDefault: true,
-    avatar: null,
-    dietaryRestrictions: [],
-    allergies: [],
-  },
-  {
-    id: 2,
-    name: "Annalise K.",
-    isDefault: false,
-    avatar: null,
-    dietaryRestrictions: ["Keto", "Gluten-Free"],
-    allergies: ["Nuts", "Shellfish"],
-  },
-];
+import { apiCall } from "../../api/config";
 
 const DIETARY_OPTIONS = ["Keto", "Gluten-Free", "Vegan", "Vegetarian", "Paleo", "Dairy-Free"];
 const ALLERGY_OPTIONS = ["Nuts", "Shellfish", "Eggs", "Soy", "Wheat", "Fish"];
@@ -163,9 +145,11 @@ const CustomTagInput = ({ onAdd, placeholder, accentClass, textClass }) => {
 
 const ProfileModal = ({ profile, onSave, onClose }) => {
   const [name, setName] = useState(profile?.name || "");
+  const [dateOfBirth, setDateOfBirth] = useState(profile?.dateOfBirth || "");
   const [avatar, setAvatar] = useState(profile?.avatar || null);
   const [dietary, setDietary] = useState(profile?.dietaryRestrictions || []);
   const [allergies, setAllergies] = useState(profile?.allergies || []);
+  const [formError, setFormError] = useState("");
 
   const toggle = (list, setList, val) => {
     setList((prev) =>
@@ -179,10 +163,19 @@ const ProfileModal = ({ profile, onSave, onClose }) => {
   };
 
   const handleSave = () => {
-    if (!name.trim()) return;
+    if (!name.trim()) {
+      setFormError("Name is required.");
+      return;
+    }
+    if (!dateOfBirth) {
+      setFormError("Date of birth is required.");
+      return;
+    }
+    setFormError("");
     onSave({
       ...(profile || {}),
       name: name.trim(),
+      dateOfBirth,
       avatar,
       dietaryRestrictions: dietary,
       allergies,
@@ -221,6 +214,18 @@ const ProfileModal = ({ profile, onSave, onClose }) => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter name..."
+              className="w-full bg-white border border-[#587A34]/30 rounded-lg px-3 py-2 text-[#3a5220] text-sm focus:outline-none focus:ring-2 focus:ring-[#587A34]/50"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[#3a5220] text-xs font-semibold uppercase tracking-wider mb-1">
+              Date of Birth
+            </label>
+            <input
+              type="date"
+              value={dateOfBirth}
+              onChange={(e) => setDateOfBirth(e.target.value)}
               className="w-full bg-white border border-[#587A34]/30 rounded-lg px-3 py-2 text-[#3a5220] text-sm focus:outline-none focus:ring-2 focus:ring-[#587A34]/50"
             />
           </div>
@@ -302,6 +307,10 @@ const ProfileModal = ({ profile, onSave, onClose }) => {
               accentClass="bg-red-500 text-white border-red-500"
             />
           </div>
+
+          {formError ? (
+            <p className="text-sm text-red-600">{formError}</p>
+          ) : null}
 
           <div className="flex gap-3 pt-1">
             <button
@@ -438,35 +447,124 @@ const AddProfileCard = ({ onClick }) => (
 );
 
 const ProfilePage = () => {
-  const [profiles, setProfiles] = useState(initialProfiles);
+  const [profiles, setProfiles] = useState([]);
   const [modal, setModal] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const mapApiProfileToUi = (profile) => ({
+    id: profile.id,
+    name: profile.name ?? "",
+    dateOfBirth: profile.date_of_birth ?? "",
+    avatar: profile.avatar_url ?? null,
+    dietaryRestrictions: Array.isArray(profile.dietary_restrictions) ? profile.dietary_restrictions : [],
+    allergies: Array.isArray(profile.dietary_preferences) ? profile.dietary_preferences : [],
+    isDefault: !!profile.is_active,
+  });
+
+  useEffect(() => {
+    const loadProfiles = async () => {
+      try {
+        setIsLoading(true);
+        setError("");
+        const response = await apiCall("/api/profiles");
+        const rows = Array.isArray(response?.data) ? response.data : [];
+        setProfiles(rows.map(mapApiProfileToUi));
+      } catch (err) {
+        setError(err.message || "Failed to load profiles.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadProfiles();
+  }, []);
 
   const handleEdit = (profile) => setModal({ mode: "edit", profile });
   const handleAdd = () => setModal({ mode: "add", profile: null });
   const handleClose = () => setModal(null);
 
-  const handleSave = (data) => {
-    if (modal.mode === "add") {
-      setProfiles((prev) => [
-        ...prev,
-        { ...data, id: Date.now(), isDefault: prev.length === 0 },
-      ]);
-    } else {
-      setProfiles((prev) =>
-        prev.map((p) => (p.id === data.id ? { ...p, ...data } : p))
-      );
+  const handleSave = async (data) => {
+    if (!modal) return;
+
+    setIsSaving(true);
+    setError("");
+    try {
+      if (modal.mode === "add") {
+        const response = await apiCall("/api/profiles", {
+          method: "POST",
+          body: JSON.stringify({
+            name: data.name,
+            dateOfBirth: data.dateOfBirth,
+            avatar_url: data.avatar,
+            dietaryRestrictions: data.dietaryRestrictions,
+            allergies: data.allergies,
+            isDefault: profiles.length === 0,
+          }),
+        });
+        if (!response?.data) {
+          throw new Error("Profile created but no profile data was returned.");
+        }
+        const created = mapApiProfileToUi(response.data);
+        setProfiles((prev) => [...prev, created]);
+      } else {
+        const response = await apiCall(`/api/profiles/${data.id}`, {
+          method: "PUT",
+          body: JSON.stringify({
+            name: data.name,
+            date_of_birth: data.dateOfBirth,
+            avatar_url: data.avatar,
+            dietaryRestrictions: data.dietaryRestrictions,
+            allergies: data.allergies,
+          }),
+        });
+        if (!response?.data) {
+          throw new Error("Profile updated but no profile data was returned.");
+        }
+        const updated = mapApiProfileToUi(response.data);
+        setProfiles((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+      }
+      setModal(null);
+    } catch (err) {
+      setError(err.message || "Failed to save profile.");
+    } finally {
+      setIsSaving(false);
     }
-    setModal(null);
   };
 
-  const handleDelete = (id) => {
-    setProfiles((prev) => prev.filter((p) => p.id !== id));
+  const handleDelete = async (id) => {
+    const confirmed = window.confirm("Are you sure you want to delete this profile?");
+    if (!confirmed) return;
+
+    setError("");
+    try {
+      await apiCall(`/api/profiles/${id}`, { method: "DELETE" });
+      setProfiles((prev) => prev.filter((p) => p.id !== id));
+    } catch (err) {
+      setError(err.message || "Failed to delete profile.");
+    }
   };
 
-  const handleSetDefault = (id) => {
-    setProfiles((prev) =>
-      prev.map((p) => ({ ...p, isDefault: p.id === id }))
-    );
+  const handleSetDefault = async (id) => {
+    setError("");
+    const previous = profiles;
+    const next = previous.map((p) => ({ ...p, isDefault: p.id === id }));
+    setProfiles(next);
+
+    try {
+      await Promise.all(
+        next.map((p) =>
+          apiCall(`/api/profiles/${p.id}`, {
+            method: "PUT",
+            body: JSON.stringify({ isDefault: p.id === id }),
+          })
+        )
+      );
+    } catch (err) {
+      setProfiles(previous);
+      setError(err.message || "Failed to update default profile.");
+    }
   };
 
   return (
@@ -491,6 +589,16 @@ const ProfilePage = () => {
         </div>
       </div>
 
+      {error ? (
+        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      ) : null}
+
+      {isLoading ? (
+        <div className="rounded-xl bg-white/70 px-4 py-5 text-sm text-[#2d3f1a]">Loading profiles...</div>
+      ) : null}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {profiles.map((profile) => (
           <ProfileCard
@@ -511,6 +619,12 @@ const ProfilePage = () => {
           onClose={handleClose}
         />
       )}
+
+      {isSaving ? (
+        <div className="fixed bottom-5 right-5 rounded-lg bg-[#2d3f1a] px-4 py-2 text-sm text-white shadow-lg">
+          Saving profile...
+        </div>
+      ) : null}
     </div>
   );
 };
