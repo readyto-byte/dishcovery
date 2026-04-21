@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 
 const Sidebar = ({ currentPage, setCurrentPage, sidebarOpen, setSidebarOpen, onLogout }) => {
-  
+
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 1024) {
@@ -26,11 +26,12 @@ const Sidebar = ({ currentPage, setCurrentPage, sidebarOpen, setSidebarOpen, onL
   return (
     <>
       {sidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden backdrop-blur-sm"
           onClick={() => setSidebarOpen(false)}
         />
       )}
+
       <aside
         className={`fixed top-0 left-0 h-full z-30 transition-transform duration-300 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
@@ -103,6 +104,7 @@ const Sidebar = ({ currentPage, setCurrentPage, sidebarOpen, setSidebarOpen, onL
 
         </div>
       </aside>
+
     </>
   );
 };
