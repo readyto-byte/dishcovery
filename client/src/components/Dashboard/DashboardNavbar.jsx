@@ -14,7 +14,7 @@ const DashboardNavbar = ({ setCurrentPage, sidebarOpen, setSidebarOpen, activePr
       const rows = Array.isArray(response?.data) ? response.data : [];
       setProfiles(rows);
       if (!activeProfileProp) {
-        const active = rows.find((p) => p.is_active) || rows[0] || null;
+        const active = rows.find((p) => p.is_active) || null;
         if (active) {
           setActiveProfile({ id: active.id, name: active.name ?? "", avatar: active.avatar_url ?? null });
         }
@@ -22,10 +22,12 @@ const DashboardNavbar = ({ setCurrentPage, sidebarOpen, setSidebarOpen, activePr
     } catch {}
   };
 
+  // Fetch on mount
   useEffect(() => {
     fetchProfiles();
   }, []);
 
+  // Re-fetch every time dropdown opens so changes from Profile page are reflected
   useEffect(() => {
     if (dropdownOpen) fetchProfiles();
   }, [dropdownOpen]);
@@ -140,11 +142,13 @@ const DashboardNavbar = ({ setCurrentPage, sidebarOpen, setSidebarOpen, activePr
                 <p className="text-[#587A34] text-[10px] mt-0.5">{profiles.length} profile{profiles.length !== 1 ? 's' : ''}</p>
               </div>
 
+              {/* Scrollable profile list — shows ALL profiles */}
               <div
                 className="py-2 overflow-y-auto"
                 style={{
                   maxHeight: '240px',
-
+                  overflowY: 'auto',
+                  // Custom scrollbar
                   scrollbarWidth: 'thin',
                   scrollbarColor: '#B5D098 transparent',
                 }}
@@ -161,7 +165,7 @@ const DashboardNavbar = ({ setCurrentPage, sidebarOpen, setSidebarOpen, activePr
 
                 <div className="profile-scroll" style={{ maxHeight: '240px', overflowY: 'auto' }}>
                   {profiles.map((profile) => {
-                    const isActive = profile.id === activeProfile?.id || profile.is_active;
+                    const isActive = profile.id === activeProfile?.id;
                     const isLoadingProfile = switching === profile.id;
                     return (
                       <button
