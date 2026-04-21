@@ -10,6 +10,7 @@ const accountRoutes = require('./routes/account');
 const profilesRoutes = require('./routes/profiles');
 const recipesRoutes = require('./routes/recipes');
 const historyRoutes = require('./routes/history');
+const favoritesRoutes = require('./routes/favorites');
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -53,6 +54,7 @@ app.use('/api/account', authMiddleware, accountRoutes);
 app.use('/api/profiles', authMiddleware, profilesRoutes);
 app.use('/api/history', authMiddleware, historyRoutes);
 app.use('/api/recipes', authMiddleware, recipesRoutes);
+app.use('/api/favorites', authMiddleware, favoritesRoutes);
 
 app.post('/api/generate', async (req, res) => {
   try {
