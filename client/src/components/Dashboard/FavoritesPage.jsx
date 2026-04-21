@@ -6,13 +6,11 @@ const FavoritesPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load favorites from localStorage with error handling
     const loadFavorites = () => {
       try {
         const savedFavorites = localStorage.getItem('favoriteRecipes');
         if (savedFavorites) {
           const parsedFavorites = JSON.parse(savedFavorites);
-          // Make sure it's an array
           if (Array.isArray(parsedFavorites)) {
             setFavorites(parsedFavorites);
           } else {
@@ -30,7 +28,7 @@ const FavoritesPage = () => {
     };
     
     loadFavorites();
-  }, []); // Empty dependency array - only runs once on mount
+  }, []);
 
   const removeFromFavorites = (recipeId) => {
     if (confirm('Remove this recipe from your favorites?')) {
@@ -62,7 +60,7 @@ const FavoritesPage = () => {
 
   return (
     <div className="pb-12">
-      {/* Favorites Header - ALWAYS SHOWS, even with no favorites */}
+      {/* Updated Header Section */}
       <div
         className="relative mx-4 md:mx-8 mt-6 mb-8 overflow-hidden rounded-2xl shadow-xl"
         style={{ 
@@ -77,10 +75,15 @@ const FavoritesPage = () => {
             <h1 className="text-[#F0E6D1] font-extrabold text-2xl md:text-3xl tracking-wide uppercase leading-tight">
               My <span className="text-[#B5D098]">Favorites</span>
             </h1>
-            <p className="text-[#B5D098] text-sm mt-1">
-              <i className="fas fa-heart text-red-400 mr-1"></i> 
-              {favorites.length} saved {favorites.length === 1 ? 'recipe' : 'recipes'}
-            </p>
+            <div className="flex items-center mt-1">
+              {/* Small circular icon to match the empty state style */}
+              <div className="w-6 h-6 bg-[#B5D098]/30 rounded-full flex items-center justify-center mr-2">
+                <i className="fas fa-heart text-[#B5D098] text-[10px]"></i>
+              </div>
+              <p className="text-[#B5D098] text-sm">
+                {favorites.length} saved {favorites.length === 1 ? 'recipe' : 'recipes'}
+              </p>
+            </div>
           </div>
           {favorites.length > 0 && (
             <button
@@ -95,14 +98,16 @@ const FavoritesPage = () => {
 
       <div className="mx-4 md:mx-8">
         {favorites.length === 0 ? (
-          // Empty state - no favorites yet
-          <div className="bg-[#F0E6D1]/50 backdrop-blur-sm rounded-2xl p-12 text-center">
-            <div className="text-7xl mb-4">❤️</div>
-            <h3 className="text-2xl font-bold text-[#32491B] mb-2">No favorites yet</h3>
-            <p className="text-[#587A34] text-lg mb-4">Start adding recipes to your favorites collection!</p>
-            <p className="text-black/60 text-sm">
-              <i className="fas fa-heart text-red-500 mr-1"></i> 
-              Click the heart icon on any recipe to save it here
+          <div className="bg-[#F0E6D1]/50 backdrop-blur-sm rounded-2xl p-16 text-center">
+            <div className="flex justify-center mb-6">
+              <div className="w-32 h-32 bg-[#B5D098]/40 rounded-full flex items-center justify-center">
+                <i className="fas fa-heart text-[#889E73] text-6xl"></i>
+              </div>
+            </div>
+            <h3 className="text-2xl font-bold text-[#32491B] mb-2">No Saved Dishcoveries</h3>
+            <p className="text-[#587A34] text-lg mb-6">Start adding recipes to your favorites collection!</p>
+            <p className="text-black/40 text-sm italic">
+              Click the heart icon on any recipe card to see it here.
             </p>
           </div>
         ) : (
@@ -131,8 +136,6 @@ const FavoritesPage = () => {
                   <p className="text-black/60 text-sm mt-1">
                     {recipe.type || 'Saved Recipe'} • {recipe.difficulty || 'Medium'}
                   </p>
-                  
-                  {/* Tags Section */}
                   <div className="flex flex-wrap gap-2 mt-3">
                     {recipe.tags && Array.isArray(recipe.tags) && recipe.tags.map((tag, idx) => (
                       <span
@@ -142,18 +145,7 @@ const FavoritesPage = () => {
                         {tag}
                       </span>
                     ))}
-                    {(!recipe.tags || !Array.isArray(recipe.tags) || recipe.tags.length === 0) && (
-                      <>
-                        <span className="bg-[#839705]/20 text-[#32491B] px-2 py-0.5 rounded-full text-xs font-semibold">
-                          <i className="fas fa-star mr-1"></i> Saved
-                        </span>
-                        <span className="bg-[#839705]/20 text-[#32491B] px-2 py-0.5 rounded-full text-xs font-semibold">
-                          <i className="fas fa-clock mr-1"></i> {recipe.prepTime || 'Quick'}
-                        </span>
-                      </>
-                    )}
                   </div>
-                  
                   <div className="flex justify-between items-center mt-4 pt-3 border-t border-[#B5D098]/30">
                     <div className="flex gap-3 text-sm text-black/60">
                       <span><i className="far fa-clock"></i> {recipe.time || recipe.prepTime || '15 min'}</span>
