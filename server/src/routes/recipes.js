@@ -32,8 +32,8 @@ router.post('/', async (req, res) => {
       return res.status(401).json({ success: false, error: 'Authentication required' });
     }
 
-    if (!profiles || !conversation || conversation.length === 0) {
-      return res.status(400).json({ success: false, error: 'Please provide profiles and at least one conversation message.' });
+    if (!conversation || conversation.length === 0) {
+      return res.status(400).json({ success: false, error: 'Please provide at least one conversation message.' });
     }
 
     const query = search_query ?? searchQuery ?? conversation.map((msg) => msg.content).join(' ');

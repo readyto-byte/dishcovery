@@ -4,6 +4,9 @@ const crypto = require('crypto');
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
+const GENERATION_MAX_RETRIES = 2;
+const RETRYABLE_ERROR_PATTERNS = /(unavailable|high demand|try again later|503|rate limit|resource exhausted)/i;
+
 function buildConversationText(conversation = []) {
   if (!conversation || conversation.length === 0) return '';
   return conversation.map((msg) => `${msg.role}: ${msg.content}`).join('\n');
@@ -30,6 +33,25 @@ function asArray(value) {
 function toCsvOrNone(values) {
   const list = asArray(values).map((item) => String(item).trim()).filter(Boolean);
   return list.length > 0 ? list.join(', ') : 'none';
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function extractJsonObject(text = '') {
+  const trimmed = String(text || '').replace(/```json\n?|\n?```/g, '').trim();
+  const firstBrace = trimmed.indexOf('{');
+  const lastBrace = trimmed.lastIndexOf('}');
+  if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
+    return trimmed;
+  }
+  return trimmed.slice(firstBrace, lastBrace + 1);
+}
+
+function isRetryableAiError(error) {
+  const message = String(error?.message || '');
+  return RETRYABLE_ERROR_PATTERNS.test(message);
 }
 
 async function searchRecipes({ profiles, conversation = [] }) {
@@ -90,15 +112,35 @@ Return ONLY a valid JSON object with this exact structure:
 - If no new suggestions are appropriate, set "suggestions" to an empty array, but still return "estimatedTime" and "message".
 - Do not include any text outside the JSON object.`;
 
-  const result = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: prompt,
-    config: {
-      thinkingConfig: {
-        thinkingBudget: 0,
-      },
-    },
-  });
+  let result = null;
+  let lastError = null;
+
+  for (let attempt = 0; attempt <= GENERATION_MAX_RETRIES; attempt += 1) {
+    try {
+      result = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+          thinkingConfig: {
+            thinkingBudget: 0,
+          },
+        },
+      });
+      lastError = null;
+      break;
+    } catch (error) {
+      lastError = error;
+      if (attempt >= GENERATION_MAX_RETRIES || !isRetryableAiError(error)) {
+        break;
+      }
+      const backoffMs = 500 * (attempt + 1);
+      await sleep(backoffMs);
+    }
+  }
+
+  if (!result && lastError) {
+    throw lastError;
+  }
 
   console.log('Token usage:', result.usageMetadata);
   console.log('Input tokens:', result.usageMetadata.promptTokenCount);
@@ -108,7 +150,7 @@ Return ONLY a valid JSON object with this exact structure:
   const text = result.text;
 
   try {
-    const cleaned = text.replace(/```json\n?|\n?```/g, '').trim();
+    const cleaned = extractJsonObject(text);
     const response = JSON.parse(cleaned);
     return response;
   } catch (error) {
