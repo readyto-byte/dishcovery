@@ -9,6 +9,7 @@ import RecipeCard from "./components/Dashboard/RecipeCard";
 import HistoryPage from "./components/Dashboard/HistoryPage";  
 import ProfilePage from "./components/Dashboard/ProfilePage";  
 import SettingsPage from "./components/Dashboard/SettingsPage";
+import FavoritesPage from "./components/Dashboard/FavoritesPage"; // ✅ ADD THIS IMPORT
 
 const LogoutConfirmModal = ({ onConfirm, onCancel, isLoggingOut }) => (
   <>
@@ -180,6 +181,8 @@ const DashboardPage = () => {
         return <ProfilePage />;   
       case 'settings':
         return <SettingsPage />;
+      case 'favorites': // ✅ ADD THIS CASE
+        return <FavoritesPage />;
       default:
         return null;
     }
@@ -190,8 +193,6 @@ const DashboardPage = () => {
     try {
       await fetch(`${API_BASE_URL}/api/auth/logout`, { method: "POST" });
     } finally {
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
       navigate("/", { replace: true });
     }
   };
