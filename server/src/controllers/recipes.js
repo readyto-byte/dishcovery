@@ -4,8 +4,8 @@ const crypto = require('crypto');
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-const GENERATION_MAX_RETRIES = 2;
-const RETRYABLE_ERROR_PATTERNS = /(unavailable|high demand|try again later|503|rate limit|resource exhausted)/i;
+const GENERATION_MAX_RETRIES = 3;
+const RETRYABLE_ERROR_PATTERNS = /(unavailable|high demand|try again later|503|429|rate limit|resource exhausted|quota exceeded|too many requests)/i;
 
 function buildConversationText(conversation = []) {
   if (!conversation || conversation.length === 0) return '';
@@ -51,10 +51,32 @@ function extractJsonObject(text = '') {
 
 function isRetryableAiError(error) {
   const message = String(error?.message || '');
-  return RETRYABLE_ERROR_PATTERNS.test(message);
+  const statusCode = Number(error?.status ?? error?.code ?? 0);
+  return statusCode === 429 || statusCode === 503 || RETRYABLE_ERROR_PATTERNS.test(message);
+}
+
+function getRetryDelayMs(error, attempt) {
+  const message = String(error?.message || '');
+  const retryAfterMatch = message.match(/retry in\s+([\d.]+)\s*s/i);
+  if (retryAfterMatch) {
+    const seconds = Number(retryAfterMatch[1]);
+    if (Number.isFinite(seconds) && seconds > 0) {
+      return Math.ceil(seconds * 1000) + 250;
+    }
+  }
+
+  const exponentialBackoffMs = 750 * (2 ** attempt);
+  const jitterMs = Math.floor(Math.random() * 250);
+  return exponentialBackoffMs + jitterMs;
+}
+
+function isFreeTierQuotaError(error) {
+  const message = String(error?.message || '');
+  return /free_tier|quota exceeded.*free tier|generate_content_free_tier_requests/i.test(message);
 }
 
 async function searchRecipes({ profiles, conversation = [], avoidTitles = [] }) {
+  console.log('searchRecipes input:', { profileCount: profiles?.length ?? 0, conversationCount: conversation?.length ?? 0, avoidTitlesCount: avoidTitles?.length ?? 0 });
   let profileInfo = 'No profiles specified.';
   if (profiles && profiles.length > 0) {
     profileInfo = profiles.map((p) => {
@@ -92,12 +114,13 @@ Always include recipe recommendations at the end of your response when appropria
 
 Return ONLY a valid JSON object with this exact structure:
 {
+  "header": "Short compliment under 7 words",
   "message": "Your chatbot response here",
   "estimatedTime": "Estimated total prep/cook time, e.g. 30 minutes",
   "suggestions": [
     {
       "title": "Recipe Title",
-      "description": "Brief description",
+      "description": "Brief description under 100 words",
       "keyIngredients": ["1/4 cup flour", "2 large eggs"],
       "whyItFits": "Why this recipe matches their needs",
       "instructions": ["Step 1", "Step 2", ...],
@@ -113,8 +136,12 @@ Return ONLY a valid JSON object with this exact structure:
   ]
 }
 
-- Always return between 2 and 3 suggestions.
+- ALWAYS include "header" as a friendly compliment or short response.
+- "header" must be fewer than 7 words.
+- Examples of valid "header": "Great choice!", "Lovely taste!", "Quick and easy!".
+- Always return exactly 3 suggestions.
 - Each recipe must include ingredient measurements in "keyIngredients" (for example, "1/4 cup", "2 tsp", "3 slices").
+- Keep each recipe "description" under 100 words.
 - ALWAYS include nutritionalInfo with calories (as number), protein, carbs, fat, and fiber (as strings with units like "15g").
 - Estimate nutritional values per serving based on the recipe.
 - If no new suggestions are appropriate, set "suggestions" to an empty array, but still return "estimatedTime" and "message".
@@ -141,19 +168,26 @@ Return ONLY a valid JSON object with this exact structure:
       if (attempt >= GENERATION_MAX_RETRIES || !isRetryableAiError(error)) {
         break;
       }
-      const backoffMs = 500 * (attempt + 1);
+      const backoffMs = getRetryDelayMs(error, attempt);
       await sleep(backoffMs);
     }
   }
 
   if (!result && lastError) {
+    if (isFreeTierQuotaError(lastError)) {
+      throw new Error(
+        'Gemini free-tier request quota reached for this API key/project. ' +
+        'If you already have prepaid credits, make sure this key is attached to a billed project/tier (not free-tier only), or wait for quota reset.'
+      );
+    }
     throw lastError;
   }
 
-  console.log('Token usage:', result.usageMetadata);
-  console.log('Input tokens:', result.usageMetadata.promptTokenCount);
-  console.log('Output tokens:', result.usageMetadata.candidatesTokenCount);
-  console.log('Total tokens:', result.usageMetadata.totalTokenCount);
+  const usage = result?.usageMetadata || {};
+  console.log('Token usage:', usage);
+  console.log('Input tokens:', usage.promptTokenCount ?? null);
+  console.log('Output tokens:', usage.candidatesTokenCount ?? null);
+  console.log('Total tokens:', usage.totalTokenCount ?? null);
 
   const text = result.text;
 
@@ -217,7 +251,10 @@ async function getCachedRecipeResponse(searchQuery) {
     };
   });
 
+  const headerFromInstructions = suggestions.find((item) => typeof item.header === 'string' && item.header.trim())?.header;
+
   return {
+    header: headerFromInstructions ?? 'Great choice!',
     message: 'Cached recipe response',
     estimatedTime: 'Cached',
     suggestions,
@@ -238,7 +275,10 @@ async function cacheRecipeResponse(searchQuery, response) {
     prep_time_min: parseMinutes(suggestion.prepTimeMin ?? suggestion.prep_time_min ?? suggestion.estimatedTime),
     cook_time_min: parseMinutes(suggestion.cookTimeMin ?? suggestion.cook_time_min),
     servings: suggestion.servings ?? null,
-    instructions: JSON.stringify(suggestion),
+    instructions: JSON.stringify({
+      ...suggestion,
+      header: response.header ?? null,
+    }),
     nutritional_info: suggestion.nutritionalInfo ? JSON.stringify(suggestion.nutritionalInfo) : null,
     cached_date: new Date().toISOString(),
   }));

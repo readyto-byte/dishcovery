@@ -13,6 +13,10 @@ const authMiddleware = require('./middleware/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const maskedGeminiKey = process.env.GEMINI_API_KEY
+  ? `${process.env.GEMINI_API_KEY.slice(0, 6)}...${process.env.GEMINI_API_KEY.slice(-4)}`
+  : 'missing';
+console.log('GEMINI_API_KEY:', maskedGeminiKey);
 
 // Middleware
 app.use(cors({
