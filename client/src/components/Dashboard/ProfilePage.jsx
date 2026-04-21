@@ -142,7 +142,7 @@ const CustomTagInput = ({ onAdd, placeholder, accentClass }) => {
   );
 };
 
-/* ── Delete Confirmation Modal ───────────────────────────────────────── */
+/* ── Delete Confirmation Modal ─────────────────────────────────────── */
 const DeleteConfirmModal = ({ profileName, onConfirm, onCancel, isDeleting }) => (
   <>
     <div
@@ -152,14 +152,11 @@ const DeleteConfirmModal = ({ profileName, onConfirm, onCancel, isDeleting }) =>
     <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
       <div
         className="pointer-events-auto mx-4 w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden"
-        style={{ background: 'linear-gradient(160deg, #f7f0e3 0%, #ede0c4 100%)' }}
+        style={{ background: "linear-gradient(160deg, #f7f0e3 0%, #ede0c4 100%)" }}
         onClick={e => e.stopPropagation()}
       >
-        {/* Top accent bar — red to signal danger */}
         <div className="h-1 w-full bg-gradient-to-r from-red-400 via-red-500 to-red-400" />
-
         <div className="px-7 pt-7 pb-6">
-          {/* Icon */}
           <div className="flex justify-center mb-5">
             <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center shadow-inner">
               {isDeleting ? (
@@ -174,35 +171,22 @@ const DeleteConfirmModal = ({ profileName, onConfirm, onCancel, isDeleting }) =>
               )}
             </div>
           </div>
-
-          {/* Text */}
           <h2 className="text-center font-bold text-[#1B211A] text-xl mb-2 tracking-tight">
-            {isDeleting ? 'Deleting...' : 'Delete Profile?'}
+            {isDeleting ? "Deleting..." : "Delete Profile?"}
           </h2>
           <p className="text-center text-[#4a5e30] text-sm leading-relaxed mb-7">
             {isDeleting
-              ? 'Please wait while we remove this profile.'
-              : <>This will permanently delete <span className="font-semibold text-[#32491B]">{profileName}</span>. This action cannot be undone.</>
-            }
+              ? "Please wait while we remove this profile."
+              : <>This will permanently delete <span className="font-semibold text-[#32491B]">{profileName}</span>. This action cannot be undone.</>}
           </p>
-
-          {/* Divider */}
           <div className="h-px bg-gradient-to-r from-transparent via-[#B5D098] to-transparent mb-6" />
-
-          {/* Buttons */}
           <div className="flex gap-3">
-            <button
-              onClick={onCancel}
-              disabled={isDeleting}
-              className="flex-1 py-3 rounded-xl border border-[#32491B]/20 bg-white/50 hover:bg-white/80 text-[#32491B] font-semibold text-sm tracking-wide transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-            >
+            <button onClick={onCancel} disabled={isDeleting}
+              className="flex-1 py-3 rounded-xl border border-[#32491B]/20 bg-white/50 hover:bg-white/80 text-[#32491B] font-semibold text-sm tracking-wide transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
               Cancel
             </button>
-            <button
-              onClick={onConfirm}
-              disabled={isDeleting}
-              className="flex-1 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold text-sm tracking-wide transition-all duration-200 shadow-md cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-            >
+            <button onClick={onConfirm} disabled={isDeleting}
+              className="flex-1 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold text-sm tracking-wide transition-all duration-200 shadow-md cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
               Yes, Delete
             </button>
           </div>
@@ -212,6 +196,7 @@ const DeleteConfirmModal = ({ profileName, onConfirm, onCancel, isDeleting }) =>
   </>
 );
 
+/* ── Profile Modal ─────────────────────────────────────────────────── */
 const ProfileModal = ({ profile, onSave, onClose }) => {
   const [name, setName] = useState(profile?.name || "");
   const [dateOfBirth, setDateOfBirth] = useState(profile?.dateOfBirth || "");
@@ -220,11 +205,8 @@ const ProfileModal = ({ profile, onSave, onClose }) => {
   const [allergies, setAllergies] = useState(profile?.allergies || []);
   const [formError, setFormError] = useState("");
 
-  const toggle = (list, setList, val) => {
-    setList((prev) =>
-      prev.includes(val) ? prev.filter((x) => x !== val) : [...prev, val]
-    );
-  };
+  const toggle = (list, setList, val) =>
+    setList((prev) => prev.includes(val) ? prev.filter((x) => x !== val) : [...prev, val]);
 
   const addCustom = (list, setList, val) => {
     const formatted = val.charAt(0).toUpperCase() + val.slice(1);
@@ -253,22 +235,30 @@ const ProfileModal = ({ profile, onSave, onClose }) => {
 
           <div>
             <label className="block text-[#3a5220] text-xs font-semibold uppercase tracking-wider mb-1">Name</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter name..." className="w-full bg-white border border-[#587A34]/30 rounded-lg px-3 py-2 text-[#3a5220] text-sm focus:outline-none focus:ring-2 focus:ring-[#587A34]/50" />
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter name..."
+              className="w-full bg-white border border-[#587A34]/30 rounded-lg px-3 py-2 text-[#3a5220] text-sm focus:outline-none focus:ring-2 focus:ring-[#587A34]/50" />
           </div>
 
           <div>
             <label className="block text-[#3a5220] text-xs font-semibold uppercase tracking-wider mb-1">Date of Birth</label>
-            <input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} className="w-full bg-white border border-[#587A34]/30 rounded-lg px-3 py-2 text-[#3a5220] text-sm focus:outline-none focus:ring-2 focus:ring-[#587A34]/50" />
+            <input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)}
+              className="w-full bg-white border border-[#587A34]/30 rounded-lg px-3 py-2 text-[#3a5220] text-sm focus:outline-none focus:ring-2 focus:ring-[#587A34]/50" />
           </div>
 
           <div>
             <label className="block text-[#3a5220] text-xs font-semibold uppercase tracking-wider mb-2">Dietary Restrictions</label>
             <div className="flex flex-wrap gap-2">
               {DIETARY_OPTIONS.map((opt) => (
-                <button key={opt} onClick={() => toggle(dietary, setDietary, opt)} className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${dietary.includes(opt) ? "bg-[#587A34] text-white border-[#587A34]" : "bg-white text-[#587A34] border-[#587A34]/40 hover:border-[#587A34]"}`}>{opt}</button>
+                <button key={opt} onClick={() => toggle(dietary, setDietary, opt)}
+                  className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${dietary.includes(opt) ? "bg-[#587A34] text-white border-[#587A34]" : "bg-white text-[#587A34] border-[#587A34]/40 hover:border-[#587A34]"}`}>
+                  {opt}
+                </button>
               ))}
               {dietary.filter((d) => !DIETARY_OPTIONS.includes(d)).map((opt) => (
-                <button key={opt} onClick={() => toggle(dietary, setDietary, opt)} className="px-3 py-1 rounded-full text-xs font-semibold border bg-[#587A34] text-white border-[#587A34] flex items-center gap-1">{opt}<span className="ml-1 opacity-70">×</span></button>
+                <button key={opt} onClick={() => toggle(dietary, setDietary, opt)}
+                  className="px-3 py-1 rounded-full text-xs font-semibold border bg-[#587A34] text-white border-[#587A34] flex items-center gap-1">
+                  {opt}<span className="ml-1 opacity-70">×</span>
+                </button>
               ))}
             </div>
             <CustomTagInput onAdd={(val) => addCustom(dietary, setDietary, val)} placeholder="e.g. Halal, Low-sodium..." accentClass="bg-[#587A34] text-white border-[#587A34]" />
@@ -278,10 +268,16 @@ const ProfileModal = ({ profile, onSave, onClose }) => {
             <label className="block text-[#3a5220] text-xs font-semibold uppercase tracking-wider mb-2">Allergies</label>
             <div className="flex flex-wrap gap-2">
               {ALLERGY_OPTIONS.map((opt) => (
-                <button key={opt} onClick={() => toggle(allergies, setAllergies, opt)} className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${allergies.includes(opt) ? "bg-red-500 text-white border-red-500" : "bg-white text-red-500 border-red-300 hover:border-red-500"}`}>{opt}</button>
+                <button key={opt} onClick={() => toggle(allergies, setAllergies, opt)}
+                  className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${allergies.includes(opt) ? "bg-red-500 text-white border-red-500" : "bg-white text-red-500 border-red-300 hover:border-red-500"}`}>
+                  {opt}
+                </button>
               ))}
               {allergies.filter((a) => !ALLERGY_OPTIONS.includes(a)).map((opt) => (
-                <button key={opt} onClick={() => toggle(allergies, setAllergies, opt)} className="px-3 py-1 rounded-full text-xs font-semibold border bg-red-500 text-white border-red-500 flex items-center gap-1">{opt}<span className="ml-1 opacity-70">×</span></button>
+                <button key={opt} onClick={() => toggle(allergies, setAllergies, opt)}
+                  className="px-3 py-1 rounded-full text-xs font-semibold border bg-red-500 text-white border-red-500 flex items-center gap-1">
+                  {opt}<span className="ml-1 opacity-70">×</span>
+                </button>
               ))}
             </div>
             <CustomTagInput onAdd={(val) => addCustom(allergies, setAllergies, val)} placeholder="e.g. Sesame, Mustard..." accentClass="bg-red-500 text-white border-red-500" />
@@ -299,21 +295,36 @@ const ProfileModal = ({ profile, onSave, onClose }) => {
   );
 };
 
-const ProfileCard = ({ profile, onEdit, onDelete, onSetDefault }) => {
+/* ── Profile Card ──────────────────────────────────────────────────── */
+const ProfileCard = ({ profile, onEdit, onDelete, onSetActive }) => {
   const hasRestrictions = profile.dietaryRestrictions.length > 0;
   const hasAllergies = profile.allergies.length > 0;
   const isEmpty = !hasRestrictions && !hasAllergies;
 
   return (
-    <div className={`relative bg-[#c8dba8] rounded-2xl p-5 flex flex-col items-center gap-3 shadow-md border-2 transition-all ${profile.isDefault ? "border-[#3a5220] shadow-lg" : "border-transparent hover:border-[#587A34]/40"}`}>
+    <div className={`relative bg-[#c8dba8] rounded-2xl p-5 flex flex-col items-center gap-3 shadow-md border-2 transition-all ${
+      profile.isDefault
+        ? "border-[#3a5220] shadow-lg ring-2 ring-[#3a5220]/20"
+        : "border-transparent hover:border-[#587A34]/40"
+    }`}>
+
+      {profile.isDefault && (
+        <div className="absolute top-3 left-3 flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-[#3a5220] animate-pulse" />
+          <span className="text-[#3a5220] text-[10px] font-bold uppercase tracking-wider">Active</span>
+        </div>
+      )}
+
       <div className="absolute top-3 right-3 flex gap-1">
-        <button onClick={() => onEdit(profile)} className="w-7 h-7 flex items-center justify-center rounded-full bg-[#587A34]/20 hover:bg-[#587A34]/40 transition-colors text-[#3a5220]" title="Edit">
+        <button onClick={() => onEdit(profile)}
+          className="w-7 h-7 flex items-center justify-center rounded-full bg-[#587A34]/20 hover:bg-[#587A34]/40 transition-colors text-[#3a5220]" title="Edit">
           <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6.5-6.5a2 2 0 112.828 2.828L11.828 15.828a4 4 0 01-1.414.828l-3 1 1-3a4 4 0 01.828-1.414z" />
           </svg>
         </button>
         {!profile.isDefault && (
-          <button onClick={() => onDelete(profile)} className="w-7 h-7 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-200 transition-colors text-red-500" title="Delete">
+          <button onClick={() => onDelete(profile)}
+            className="w-7 h-7 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-200 transition-colors text-red-500" title="Delete">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
@@ -321,13 +332,29 @@ const ProfileCard = ({ profile, onEdit, onDelete, onSetDefault }) => {
         )}
       </div>
 
-      <Avatar name={profile.name} avatar={profile.avatar} size="lg" />
+      <div className="relative mt-4">
+        <Avatar name={profile.name} avatar={profile.avatar} size="lg" />
+        {profile.isDefault && (
+          <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[#3a5220] border-2 border-[#c8dba8] flex items-center justify-center shadow">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </span>
+        )}
+      </div>
+
       <p className="text-[#2d3f1a] font-bold text-sm">{profile.name}</p>
 
-      {profile.isDefault ? (
-        <span className="px-3 py-0.5 rounded-full bg-[#3a5220] text-[#F0E6D1] text-xs font-semibold">Default</span>
-      ) : (
-        <button onClick={() => onSetDefault(profile.id)} className="px-3 py-0.5 rounded-full border border-[#587A34]/50 text-[#3a5220] text-xs font-semibold hover:bg-[#587A34]/20 transition-colors">Set Default</button>
+      {!profile.isDefault && (
+        <button
+          onClick={() => onSetActive(profile.id)}
+          className="px-3 py-1 rounded-full border border-[#587A34]/50 text-[#3a5220] text-xs font-semibold hover:bg-[#587A34]/20 transition-colors flex items-center gap-1.5"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          Set as Active
+        </button>
       )}
 
       <div className="w-full h-px bg-[#587A34]/20" />
@@ -362,8 +389,10 @@ const ProfileCard = ({ profile, onEdit, onDelete, onSetDefault }) => {
   );
 };
 
+/* ── Add Profile Card ──────────────────────────────────────────────── */
 const AddProfileCard = ({ onClick }) => (
-  <button onClick={onClick} className="bg-[#c8dba8]/50 border-2 border-dashed border-[#587A34]/40 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 hover:bg-[#c8dba8] hover:border-[#587A34] transition-all min-h-[180px] group">
+  <button onClick={onClick}
+    className="bg-[#c8dba8]/50 border-2 border-dashed border-[#587A34]/40 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 hover:bg-[#c8dba8] hover:border-[#587A34] transition-all min-h-[180px] group">
     <div className="w-12 h-12 rounded-full bg-[#587A34]/20 flex items-center justify-center group-hover:bg-[#587A34]/30 transition-colors">
       <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-[#3a5220]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -373,10 +402,11 @@ const AddProfileCard = ({ onClick }) => (
   </button>
 );
 
-const ProfilePage = () => {
+/* ── Profile Page ──────────────────────────────────────────────────── */
+const ProfilePage = ({ onActiveProfileChange }) => {
   const [profiles, setProfiles] = useState([]);
   const [modal, setModal] = useState(null);
-  const [deleteTarget, setDeleteTarget] = useState(null); // { id, name }
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -455,7 +485,6 @@ const ProfilePage = () => {
     }
   };
 
-  // Opens the styled confirmation modal instead of window.confirm
   const handleDelete = (profile) => {
     setDeleteTarget({ id: profile.id, name: profile.name });
   };
@@ -475,11 +504,17 @@ const ProfilePage = () => {
     }
   };
 
-  const handleSetDefault = async (id) => {
+  const handleSetActive = async (id) => {
     setError("");
     const previous = profiles;
     const next = previous.map((p) => ({ ...p, isDefault: p.id === id }));
     setProfiles(next);
+
+    const newActive = next.find((p) => p.id === id);
+    if (newActive && onActiveProfileChange) {
+      onActiveProfileChange({ id: newActive.id, name: newActive.name, avatar: newActive.avatar });
+    }
+
     try {
       await Promise.all(
         next.map((p) =>
@@ -491,12 +526,13 @@ const ProfilePage = () => {
       );
     } catch (err) {
       setProfiles(previous);
-      setError(err.message || "Failed to update default profile.");
+      setError(err.message || "Failed to update active profile.");
     }
   };
 
   return (
     <div className="mx-4 md:mx-8 mt-6">
+
       <div
         className="relative rounded-2xl shadow-xl overflow-hidden px-8 py-7 mb-6 flex items-center gap-5"
         style={{ backgroundImage: `url(${heroBg})`, backgroundSize: "cover", backgroundPosition: "center" }}
@@ -510,13 +546,13 @@ const ProfilePage = () => {
         </div>
       </div>
 
-      {error ? (
+      {error && (
         <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
-      ) : null}
+      )}
 
-      {isLoading ? (
+      {isLoading && (
         <div className="rounded-xl bg-white/70 px-4 py-5 text-sm text-[#2d3f1a]">Loading profiles...</div>
-      ) : null}
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {profiles.map((profile) => (
@@ -525,7 +561,7 @@ const ProfilePage = () => {
             profile={profile}
             onEdit={handleEdit}
             onDelete={handleDelete}
-            onSetDefault={handleSetDefault}
+            onSetActive={handleSetActive}
           />
         ))}
         <AddProfileCard onClick={handleAdd} />
@@ -544,9 +580,9 @@ const ProfilePage = () => {
         />
       )}
 
-      {isSaving ? (
+      {isSaving && (
         <div className="fixed bottom-5 right-5 rounded-lg bg-[#2d3f1a] px-4 py-2 text-sm text-white shadow-lg">Saving profile...</div>
-      ) : null}
+      )}
     </div>
   );
 };
