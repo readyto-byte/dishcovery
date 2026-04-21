@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { RotateCcw, Apple, Droplet, ShoppingBag, Clock, ChefHat, Heart, Activity, Ruler, Weight, Calendar, Flame, Coffee, Sun, Moon, AlertCircle, CheckCircle2, Utensils, Target, PlusCircle } from "lucide-react";
 import heroBg from "../../assets/hero-bg.jpg";
+import { apiCall } from "../../api/config";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const MEAL_SLOTS = ["Breakfast", "Lunch", "Dinner"];
@@ -43,6 +44,9 @@ const MealPlanPage = ({ onViewRecipe }) => {
   
   const [generatedPlan, setGeneratedPlan] = useState(null);
   const [showForm, setShowForm] = useState(true);
+  const [mealPlanSaveError, setMealPlanSaveError] = useState(null);
+  const [mealPlanSaveOk, setMealPlanSaveOk] = useState(false);
+  const [mealPlanSaving, setMealPlanSaving] = useState(false);
 
   const handleSlotClick = (day, meal) => {
     setActiveSlot({ day, meal });
@@ -119,7 +123,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
     });
   };
 
-  const generateMealPlan = () => {
+  const generateMealPlan = async () => {
     // Create sample meal suggestions based on preferences
     const getMealSuggestions = () => {
       let breakfast = { title: "", calories: 0, protein: 0, carbs: 0, fats: 0 };
@@ -255,8 +259,9 @@ const MealPlanPage = ({ onViewRecipe }) => {
     const totalCarbs = meals.breakfast.carbs + meals.lunch.carbs + meals.dinner.carbs;
     const totalFats = meals.breakfast.fats + meals.lunch.fats + meals.dinner.fats;
     
+    const snapshot = { ...formData };
     setGeneratedPlan({
-      ...formData,
+      ...snapshot,
       meals,
       groceryList,
       waterGoal,
@@ -264,9 +269,22 @@ const MealPlanPage = ({ onViewRecipe }) => {
       totalNutrition: { calories: totalCalories, protein: totalProtein, carbs: totalCarbs, fats: totalFats },
       createdAt: new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
     });
-    
-    // Hide the form, show the generated plan
+
     setShowForm(false);
+    setMealPlanSaveError(null);
+    setMealPlanSaveOk(false);
+    setMealPlanSaving(true);
+    try {
+      await apiCall("/api/meal-plans", {
+        method: "POST",
+        body: JSON.stringify(snapshot),
+      });
+      setMealPlanSaveOk(true);
+    } catch (err) {
+      setMealPlanSaveError(err?.message || "Could not save your meal plan preferences.");
+    } finally {
+      setMealPlanSaving(false);
+    }
   };
 
   const handleNewMealPlan = () => {
@@ -667,6 +685,23 @@ const MealPlanPage = ({ onViewRecipe }) => {
             </div>
             
             <div className="p-6 space-y-6">
+              {mealPlanSaving && (
+                <p className="text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+                  Saving your preferences…
+                </p>
+              )}
+              {mealPlanSaveOk && !mealPlanSaving && (
+                <p className="text-sm text-[#32491B] bg-[#e8f2dc] border border-[#B5D098]/50 rounded-lg px-4 py-3 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  Your meal plan preferences were saved to your account.
+                </p>
+              )}
+              {mealPlanSaveError && (
+                <p className="text-sm text-red-800 bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  {mealPlanSaveError}
+                </p>
+              )}
               {/* Profile Summary Card */}
               <div className="bg-[#f5f9ef] rounded-xl p-5 border border-[#B5D098]/30">
                 <div className="flex items-center gap-2 mb-4">
