@@ -26,7 +26,7 @@ function normalizeProfileForCache(profile = {}) {
 router.post('/', async (req, res) => {
   try {
     const accountId = req.user?.id;
-    const { profiles, conversation, search_query, searchQuery } = req.body;
+    const { profiles, conversation, search_query, searchQuery, bypass_cache, bypassCache } = req.body;
 
     if (!accountId) {
       return res.status(401).json({ success: false, error: 'Authentication required' });
@@ -39,7 +39,8 @@ router.post('/', async (req, res) => {
     const query = search_query ?? searchQuery ?? conversation.map((msg) => msg.content).join(' ');
     const cacheContext = JSON.stringify((profiles || []).map(normalizeProfileForCache));
     const cacheQuery = `${query}||profiles:${cacheContext}`;
-    const cachedResponse = await getCachedRecipeResponse(cacheQuery);
+    const shouldBypassCache = Boolean(bypass_cache ?? bypassCache);
+    const cachedResponse = shouldBypassCache ? null : await getCachedRecipeResponse(cacheQuery);
 
     if (cachedResponse) {
       await addHistoryRecord(accountId, {

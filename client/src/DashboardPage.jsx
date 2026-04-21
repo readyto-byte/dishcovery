@@ -34,6 +34,21 @@ const getRecipeErrorMessage = (error) => {
   return fallback;
 };
 
+const pickSuggestion = (suggestions, currentTitle) => {
+  if (!Array.isArray(suggestions) || suggestions.length === 0) return null;
+  const normalizedCurrentTitle = String(currentTitle || "").trim().toLowerCase();
+  const uniqueSuggestions = suggestions.filter((item, index, arr) => {
+    const title = String(item?.title || "").trim().toLowerCase();
+    return arr.findIndex((candidate) => String(candidate?.title || "").trim().toLowerCase() === title) === index;
+  });
+  const candidates = uniqueSuggestions.filter(
+    (item) => String(item?.title || "").trim().toLowerCase() !== normalizedCurrentTitle
+  );
+  const pool = candidates.length > 0 ? candidates : uniqueSuggestions;
+  const index = Math.floor(Math.random() * pool.length);
+  return pool[index] || null;
+};
+
 // ── Recipe Detail Modal ───────────────────────────────────────────────────────
 const RecipeDetailModal = ({ recipe, onClose }) => {
   if (!recipe) return null;
@@ -205,6 +220,7 @@ const DashboardPage = () => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [recipeError, setRecipeError] = useState("");
+  const [lastPrompt, setLastPrompt] = useState("");
   const [selectedHistoryRecipe, setSelectedHistoryRecipe] = useState(null);
   const [recipeData, setRecipeData] = useState({
     title: "Strawberries with Yogurt and Honey",
@@ -236,19 +252,9 @@ const DashboardPage = () => {
     try {
       const profilesResponse = await apiCall("/api/profiles");
       const profiles = Array.isArray(profilesResponse?.data) ? profilesResponse.data : [];
-      const selectedProfile =
-        profiles.find((profile) => profile?.is_active) ||
-        profiles[0] ||
-        null;
-
-      if (!selectedProfile) {
-        throw new Error("No profile found. Please create and select a profile first.");
-      }
-
-      const response = await apiCall("/api/recipes", {
-        method: "POST",
-        body: JSON.stringify({
-          profiles: [
+      const selectedProfile = profiles.find((profile) => profile?.is_active) || profiles[0] || null;
+      const normalizedProfiles = selectedProfile
+        ? [
             {
               id: selectedProfile.id,
               name: selectedProfile.name,
@@ -257,13 +263,22 @@ const DashboardPage = () => {
               dietary_preferences: Array.isArray(selectedProfile.dietary_preferences)
                 ? selectedProfile.dietary_preferences : [],
             },
-          ],
+          ]
+        : [];
+      const normalizedPrompt = String(userInput || "").trim().toLowerCase();
+      const shouldBypassCache = normalizedPrompt.length > 0 && normalizedPrompt === lastPrompt;
+
+      const response = await apiCall("/api/recipes", {
+        method: "POST",
+        body: JSON.stringify({
+          profiles: normalizedProfiles,
           conversation: [{ role: "user", content: userInput }],
           searchQuery: userInput,
+          bypassCache: shouldBypassCache,
         }),
       });
       const suggestions = response?.response?.suggestions;
-      const suggestion = Array.isArray(suggestions) && suggestions.length > 0 ? suggestions[0] : null;
+      const suggestion = pickSuggestion(suggestions, recipeData.title);
       if (!suggestion) throw new Error("Gemini returned no recipe suggestions.");
       const totalTimeFromApi = response?.response?.estimatedTime;
       const prepFromApi = suggestion.prepTimeMin ?? suggestion.prep_time_min;
@@ -279,6 +294,7 @@ const DashboardPage = () => {
         ingredients: Array.isArray(suggestion.keyIngredients) ? suggestion.keyIngredients : [],
         instructions: Array.isArray(suggestion.instructions) ? suggestion.instructions : [],
       });
+      setLastPrompt(normalizedPrompt);
     } catch (error) {
       setRecipeError(getRecipeErrorMessage(error));
     } finally {
