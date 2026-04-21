@@ -1,76 +1,101 @@
+import { useEffect, useState } from "react";
 import heroBg from "../../assets/hero-bg.jpg";
+import { apiCall } from "../../api/config";
 
 const HistoryPage = () => {
-  const historyRecipes = [
-    {
-      id: 1,
-      title: "Strawberries with Yogurt & Honey",
-      type: "Classic Recipe",
-      difficulty: "Easy",
-      time: "10 min",
-      servings: 2,
-      viewed: "2 days ago",
-      tags: ["dessert", "healthy", "quick"]
-    },
-    {
-      id: 2,
-      title: "Classic Italian Lasagna",
-      type: "Italian",
-      difficulty: "Medium",
-      time: "45 min",
-      servings: 6,
-      viewed: "3 days ago",
-      tags: ["italian", "dinner"]
-    },
-    {
-      id: 3,
-      title: "Garlic Butter Salmon",
-      type: "Seafood",
-      difficulty: "Easy",
-      time: "20 min",
-      servings: 4,
-      viewed: "5 days ago",
-      tags: ["seafood", "healthy"]
-    },
-    {
-      id: 4,
-      title: "Vegetable Stir Fry",
-      type: "Asian",
-      difficulty: "Easy",
-      time: "15 min",
-      servings: 4,
-      viewed: "1 week ago",
-      tags: ["vegan", "quick"]
-    },
-    {
-      id: 5,
-      title: "Homemade Tomato Soup",
-      type: "Comfort Food",
-      difficulty: "Easy",
-      time: "30 min",
-      servings: 4,
-      viewed: "1 week ago",
-      tags: ["soup", "vegetarian"]
-    },
-    {
-      id: 6,
-      title: "Fluffy Pancakes",
-      type: "Breakfast",
-      difficulty: "Easy",
-      time: "20 min",
-      servings: 4,
-      viewed: "2 weeks ago",
-      tags: ["breakfast", "sweet"]
+  const [historyRecipes, setHistoryRecipes] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const getRelativeViewedTime = (isoDate) => {
+    if (!isoDate) return "recently";
+    const now = new Date();
+    const viewedAt = new Date(isoDate);
+    const diffMs = now - viewedAt;
+    const minute = 60 * 1000;
+    const hour = 60 * minute;
+    const day = 24 * hour;
+    const week = 7 * day;
+
+    if (diffMs < hour) {
+      const mins = Math.max(1, Math.floor(diffMs / minute));
+      return `${mins} min ago`;
     }
-  ];
+    if (diffMs < day) {
+      const hours = Math.floor(diffMs / hour);
+      return `${hours} hour${hours > 1 ? "s" : ""} ago`;
+    }
+    if (diffMs < week) {
+      const days = Math.floor(diffMs / day);
+      return `${days} day${days > 1 ? "s" : ""} ago`;
+    }
+    const weeks = Math.floor(diffMs / week);
+    return `${weeks} week${weeks > 1 ? "s" : ""} ago`;
+  };
+
+  const parseOutputResponse = (outputResponse) => {
+    if (!outputResponse) return null;
+    if (typeof outputResponse === "object") return outputResponse;
+    if (typeof outputResponse === "string") {
+      try {
+        return JSON.parse(outputResponse);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  };
+
+  const mapHistoryToUi = (item) => {
+    const parsed = parseOutputResponse(item.output_response);
+    const firstSuggestion = parsed?.suggestions?.[0] || {};
+    const estimatedTime = parsed?.estimatedTime || "N/A";
+
+    return {
+      id: item.id,
+      title: firstSuggestion.title || item.search_query || "Generated Recipe",
+      type: item.source_api === "cache" ? "Cached Recipe" : "AI Generated",
+      difficulty: "Medium",
+      time: estimatedTime,
+      servings: firstSuggestion.servings || "-",
+      viewed: getRelativeViewedTime(item.searched_date),
+      tags: ["history", "dishcovery", item.source_api || "recipe"],
+      searchQuery: item.search_query,
+      output: parsed,
+    };
+  };
+
+  useEffect(() => {
+    const loadHistory = async () => {
+      try {
+        setIsLoading(true);
+        setError("");
+        const response = await apiCall("/api/history");
+        const rows = Array.isArray(response?.data) ? response.data : [];
+        setHistoryRecipes(rows.map(mapHistoryToUi));
+      } catch (err) {
+        setError(err.message || "Failed to load history.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadHistory();
+  }, []);
 
   const handleViewRecipe = (id) => {
-    alert(`Recipe details for recipe ${id} will be available soon!`);
+    const recipe = historyRecipes.find((row) => row.id === id);
+    if (!recipe) return;
+    alert(
+      `Search: ${recipe.searchQuery || "N/A"}\n\n` +
+      `Recipe: ${recipe.title}\n` +
+      `Estimated time: ${recipe.time}`
+    );
   };
 
   const handleClearHistory = () => {
-    if (confirm('Are you sure you want to clear your entire recipe history?')) {
-      alert('History cleared!');
+    if (confirm("Are you sure you want to clear your entire recipe history?")) {
+      alert("Clear history endpoint is not set up yet.");
     }
   };
 
@@ -101,6 +126,22 @@ const HistoryPage = () => {
       </div>
 
       <div className="mx-4 md:mx-8">
+        {error ? (
+          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        ) : null}
+
+        {isLoading ? (
+          <div className="rounded-xl bg-white/70 px-4 py-5 text-sm text-[#2d3f1a]">Loading history...</div>
+        ) : null}
+
+        {!isLoading && historyRecipes.length === 0 ? (
+          <div className="rounded-xl bg-white/70 px-4 py-5 text-sm text-[#2d3f1a]">
+            No generated recipes in history yet. Create a recipe to see it here.
+          </div>
+        ) : null}
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {historyRecipes.map((recipe) => (
             <div
