@@ -47,7 +47,19 @@ async function getHistoryByAccount(accountId) {
   return data;
 }
 
+async function clearHistoryByAccount(accountId) {
+  const { error } = await supabaseAdmin
+    .from('history')
+    .delete()
+    .eq('account_id', accountId);
+
+  if (error) {
+    throw error;
+  }
+}
+
 module.exports = {
   addHistoryRecord,
   getHistoryByAccount,
+  clearHistoryByAccount,
 };

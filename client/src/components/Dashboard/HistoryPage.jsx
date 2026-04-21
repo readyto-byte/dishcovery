@@ -5,6 +5,7 @@ import { apiCall } from "../../api/config";
 const HistoryPage = () => {
   const [historyRecipes, setHistoryRecipes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isClearing, setIsClearing] = useState(false);
   const [error, setError] = useState("");
 
   const getRelativeViewedTime = (isoDate) => {
@@ -93,9 +94,20 @@ const HistoryPage = () => {
     );
   };
 
-  const handleClearHistory = () => {
-    if (confirm("Are you sure you want to clear your entire recipe history?")) {
-      alert("Clear history endpoint is not set up yet.");
+  const handleClearHistory = async () => {
+    if (!confirm("Are you sure you want to clear your entire recipe history?")) {
+      return;
+    }
+
+    try {
+      setIsClearing(true);
+      setError("");
+      await apiCall("/api/history", { method: "DELETE" });
+      setHistoryRecipes([]);
+    } catch (err) {
+      setError(err.message || "Failed to clear history.");
+    } finally {
+      setIsClearing(false);
     }
   };
 
@@ -119,9 +131,10 @@ const HistoryPage = () => {
           </div>
           <button
             onClick={handleClearHistory}
-            className="shrink-0 bg-[#587A34] hover:bg-[#32491B] transition-all px-5 py-2 rounded-lg text-white font-semibold text-sm shadow-md cursor-pointer"
+            disabled={isClearing || isLoading || historyRecipes.length === 0}
+            className="shrink-0 bg-[#587A34] hover:bg-[#32491B] transition-all px-5 py-2 rounded-lg text-white font-semibold text-sm shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <i className="fas fa-trash-alt mr-2"></i> Clear History
+            <i className="fas fa-trash-alt mr-2"></i> {isClearing ? "Clearing..." : "Clear History"}
           </button>
         </div>
       </div>

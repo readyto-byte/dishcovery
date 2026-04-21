@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { addHistoryRecord, getHistoryByAccount } = require('../controllers/history');
+const { addHistoryRecord, getHistoryByAccount, clearHistoryByAccount } = require('../controllers/history');
 
 // Create a history record for the authenticated user
 router.post('/', async (req, res) => {
@@ -35,6 +35,17 @@ router.get('/', async (req, res) => {
     const accountId = req.user.id;
     const history = await getHistoryByAccount(accountId);
     res.json({ success: true, data: history });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Clear all history records for the authenticated user
+router.delete('/', async (req, res) => {
+  try {
+    const accountId = req.user.id;
+    await clearHistoryByAccount(accountId);
+    res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
