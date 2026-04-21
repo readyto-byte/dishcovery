@@ -14,18 +14,12 @@ import FavoritesPage from "./components/Dashboard/FavoritesPage";
 const getRecipeErrorMessage = (error) => {
   const fallback = "Failed to generate recipe. Please try again.";
   const rawMessage = typeof error?.message === "string" ? error.message : "";
-
   const parseErrorPayload = (value) => {
     if (!value) return null;
     if (typeof value === "object") return value;
     if (typeof value !== "string") return null;
-    try {
-      return JSON.parse(value);
-    } catch {
-      return null;
-    }
+    try { return JSON.parse(value); } catch { return null; }
   };
-
   const parsed = parseErrorPayload(rawMessage);
   const errorPayload = parsed?.error || parsed;
   const serviceMessage =
@@ -33,19 +27,10 @@ const getRecipeErrorMessage = (error) => {
     parsed?.message ||
     (typeof rawMessage === "string" ? rawMessage : "");
   const status = errorPayload?.status || parsed?.status || "";
-
-  // Gemini can return transient UNAVAILABLE/high-demand errors.
-  if (
-    status === "UNAVAILABLE" ||
-    /high demand|try again later|UNAVAILABLE/i.test(serviceMessage)
-  ) {
+  if (status === "UNAVAILABLE" || /high demand|try again later|UNAVAILABLE/i.test(serviceMessage)) {
     return "Dishcovery AI is busy right now. Please try again in a moment.";
   }
-
-  if (serviceMessage && serviceMessage.trim().length > 0) {
-    return serviceMessage;
-  }
-
+  if (serviceMessage && serviceMessage.trim().length > 0) return serviceMessage;
   return fallback;
 };
 
@@ -61,10 +46,8 @@ const RecipeDetailModal = ({ recipe, onClose }) => {
           style={{ background: 'linear-gradient(160deg, #f7f0e3 0%, #ede0c4 100%)' }}
           onClick={e => e.stopPropagation()}
         >
-          {/* Accent bar */}
           <div className="h-1 w-full shrink-0" style={{ background: 'linear-gradient(90deg, #32491B, #839705, #B5D098)' }} />
 
-          {/* Header */}
           <div className="px-7 pt-6 pb-4 shrink-0" style={{ background: 'linear-gradient(135deg, #32491B 0%, #587A34 100%)' }}>
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -84,7 +67,7 @@ const RecipeDetailModal = ({ recipe, onClose }) => {
                 <div className="flex gap-4 mt-3 text-[#B5D098] text-sm">
                   <span><i className="far fa-clock mr-1"></i>{recipe.time}</span>
                   <span><i className="fas fa-users mr-1"></i>{recipe.servings} servings</span>
-                  <span><i className="far fa-eye mr-1"></i>Viewed {recipe.viewed}</span>
+                  {recipe.viewed && <span><i className="far fa-eye mr-1"></i>Viewed {recipe.viewed}</span>}
                 </div>
               </div>
               <button
@@ -103,7 +86,6 @@ const RecipeDetailModal = ({ recipe, onClose }) => {
             </div>
           </div>
 
-          {/* Scrollable body */}
           <div className="overflow-y-auto flex-1 px-7 py-6 space-y-6">
             {recipe.description && (
               <p className="text-[#4a5e30] text-sm leading-relaxed italic border-l-4 border-[#B5D098] pl-4">
@@ -147,7 +129,6 @@ const RecipeDetailModal = ({ recipe, onClose }) => {
             </div>
           </div>
 
-          {/* Footer */}
           <div className="px-7 py-4 shrink-0 border-t border-[#B5D098]/30 flex justify-end">
             <button
               onClick={onClose}
@@ -189,7 +170,6 @@ const LogoutConfirmModal = ({ onConfirm, onCancel, isLoggingOut }) => (
               )}
             </div>
           </div>
-
           <h2 className="text-center font-bold text-[#1B211A] text-xl mb-2 tracking-tight">
             {isLoggingOut ? 'Logging out...' : 'Leaving so soon?'}
           </h2>
@@ -198,9 +178,7 @@ const LogoutConfirmModal = ({ onConfirm, onCancel, isLoggingOut }) => (
               ? 'Please wait while we sign you out.'
               : <>Are you sure you want to log out of <span className="font-semibold text-[#32491B]">Dishcovery</span>?</>}
           </p>
-
           <div className="h-px bg-gradient-to-r from-transparent via-[#B5D098] to-transparent mb-6" />
-
           <div className="flex gap-3">
             <button onClick={onCancel} disabled={isLoggingOut}
               className="flex-1 py-3 rounded-xl border border-[#32491B]/20 bg-white/50 hover:bg-white/80 text-[#32491B] font-semibold text-sm tracking-wide transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
@@ -227,7 +205,7 @@ const DashboardPage = () => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [recipeError, setRecipeError] = useState("");
-  const [selectedHistoryRecipe, setSelectedHistoryRecipe] = useState(null); // ← NEW
+  const [selectedHistoryRecipe, setSelectedHistoryRecipe] = useState(null);
   const [recipeData, setRecipeData] = useState({
     title: "Strawberries with Yogurt and Honey",
     description: "This refreshing dish combines sweet strawberries with creamy yogurt and honey for a delightful treat.",
@@ -275,11 +253,9 @@ const DashboardPage = () => {
               id: selectedProfile.id,
               name: selectedProfile.name,
               dietary_restrictions: Array.isArray(selectedProfile.dietary_restrictions)
-                ? selectedProfile.dietary_restrictions
-                : [],
+                ? selectedProfile.dietary_restrictions : [],
               dietary_preferences: Array.isArray(selectedProfile.dietary_preferences)
-                ? selectedProfile.dietary_preferences
-                : [],
+                ? selectedProfile.dietary_preferences : [],
             },
           ],
           conversation: [{ role: "user", content: userInput }],
@@ -329,7 +305,6 @@ const DashboardPage = () => {
           </>
         );
       case 'history':
-        // ← Pass the callback down so HistoryPage can trigger the modal
         return <HistoryPage onViewRecipe={setSelectedHistoryRecipe} />;
       case 'profile':
         return <ProfilePage />;
