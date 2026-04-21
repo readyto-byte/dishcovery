@@ -29,7 +29,9 @@ router.post('/', async (req, res) => {
       avatarUrl,
       is_active,
       isActive,
+      isDefault,
       allergies,
+      dietaryRestrictions,
       dietaryPreferences,
       dietary_restrictions,
       dietary_preferences
@@ -41,18 +43,17 @@ router.post('/', async (req, res) => {
 
     const resolvedDateOfBirth = date_of_birth ?? dateOfBirth;
     if (!resolvedDateOfBirth) {
-      return res.status(400).json({ success: false, error: 'date_of_birth is required (YYYY-MM-DD)' });
+      return res.status(400).json({ success: false, error: "Date of birth is required." });
     }
-
-    const dietaryRestrictions = dietary_restrictions ?? allergies ?? [];
-    const resolvedDietaryPreferences = dietary_preferences ?? dietaryPreferences ?? [];
+    const resolvedDietaryRestrictions = dietary_restrictions ?? dietaryRestrictions ?? [];
+    const resolvedDietaryPreferences = dietary_preferences ?? dietaryPreferences ?? allergies ?? [];
     const profile = await createProfile(accountId, {
       name,
       dateOfBirth: resolvedDateOfBirth,
       gender: gender ?? null,
       avatarUrl: avatar_url ?? avatarUrl ?? null,
-      isActive: is_active ?? isActive ?? true,
-      dietaryRestrictions,
+      isActive: is_active ?? isActive ?? isDefault ?? true,
+      dietaryRestrictions: resolvedDietaryRestrictions,
       dietaryPreferences: resolvedDietaryPreferences
     });
     res.json({ success: true, data: profile });
@@ -66,15 +67,32 @@ router.put('/:profileId', async (req, res) => {
   try {
     const accountId = req.user.id;
     const { profileId } = req.params;
-    const { allergies, dietaryPreferences, ...restUpdates } = req.body;
+    const {
+      allergies,
+      dietaryPreferences,
+      dietaryRestrictions,
+      isDefault,
+      isActive,
+      ...restUpdates
+    } = req.body;
     const updates = { ...restUpdates };
 
     if (allergies !== undefined) {
-      updates.dietary_restrictions = allergies;
+      updates.dietary_preferences = allergies;
+    }
+
+    if (dietaryRestrictions !== undefined) {
+      updates.dietary_restrictions = dietaryRestrictions;
     }
 
     if (dietaryPreferences !== undefined) {
       updates.dietary_preferences = dietaryPreferences;
+    }
+
+    if (isDefault !== undefined) {
+      updates.is_active = isDefault;
+    } else if (isActive !== undefined) {
+      updates.is_active = isActive;
     }
 
     const profile = await updateProfile(accountId, profileId, updates);

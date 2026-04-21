@@ -100,6 +100,8 @@ const renderPage = () => {
     try {
       await fetch(`${API_BASE_URL}/api/auth/logout`, { method: "POST" });
     } finally {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
       navigate("/", { replace: true });
     }
   };

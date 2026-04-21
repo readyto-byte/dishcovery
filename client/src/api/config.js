@@ -18,7 +18,14 @@ export const apiCall = async (endpoint, options = {}) => {
   });
 
   if (!response.ok) {
-    throw new Error(`API error: ${response.statusText}`);
+    let backendError = "";
+    try {
+      const data = await response.json();
+      backendError = data?.error || data?.message || "";
+    } catch {
+      // Ignore JSON parse failures and fall back to status text.
+    }
+    throw new Error(backendError || `API error: ${response.statusText}`);
   }
 
   return await response.json();
