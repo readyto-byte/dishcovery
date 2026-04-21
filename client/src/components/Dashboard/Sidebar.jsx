@@ -25,22 +25,22 @@ const Sidebar = ({ currentPage, setCurrentPage, sidebarOpen, setSidebarOpen, onL
 
   return (
     <>
-      <div
-        className={`fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm transition-opacity duration-300 ${
-          sidebarOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'
-        }`}
-        onClick={() => setSidebarOpen(false)}
-      />
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden backdrop-blur-sm"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
       <aside
-        className={`fixed top-0 left-0 h-full z-50 transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 left-0 h-full z-30 transition-transform duration-300 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0`}
         style={{ width: '272px', background: 'linear-gradient(160deg, #f7f0e3 0%, #ede0c4 100%)' }}
       >
         <div className="relative h-full flex flex-col">
 
-          <div className="flex items-center justify-center px-6 pt-10 pb-10">
+          <div className="flex items-center justify-center px-6 pt-10 pb-7">
             <div className="flex items-center gap-2 cursor-pointer">
               <div className="w-8 h-8 rounded-lg bg-[#32491B] flex items-center justify-center shadow-md">
                 <i className="fas fa-utensils text-[#F0E6D1] text-sm"></i>
@@ -52,22 +52,21 @@ const Sidebar = ({ currentPage, setCurrentPage, sidebarOpen, setSidebarOpen, onL
             </div>
           </div>
 
-          <div className="flex-1 py-2 space-y-1">
+          <div className="mx-6 h-px bg-gradient-to-r from-transparent via-[#B5D098] to-transparent mb-6" />
+
+          <div className="flex-1 py-2 space-y-1 overflow-hidden">
             {navItems.map(item => (
               <button
                 key={item.id}
-                onClick={() => {
-                  setCurrentPage(item.id);
-                  if (window.innerWidth < 1024) setSidebarOpen(false);
-                }}
+                onClick={() => setCurrentPage(item.id)}
                 className={`relative flex items-center gap-4 pl-6 pr-0 py-3.5 w-full text-left transition-all duration-200 group cursor-pointer ${
                   currentPage === item.id
                     ? ''
-                    : 'hover:bg-[#B5D098]/40 rounded-r-full'
+                    : 'hover:bg-[#B5D098]/40 rounded-r-lg'
                 }`}
               >
                 {currentPage === item.id && (
-                  <span className="absolute inset-y-0 left-0 right-0 bg-[#B5D098] rounded-r-full z-0" />
+                  <span className="absolute inset-y-0 left-0 right-0 bg-[#B5D098] z-0" />
                 )}
 
                 <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-all duration-200 relative z-10 ${
