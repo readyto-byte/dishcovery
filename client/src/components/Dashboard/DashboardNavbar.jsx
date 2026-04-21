@@ -7,6 +7,8 @@ const DashboardNavbar = ({ setCurrentPage, sidebarOpen, setSidebarOpen }) => {
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
         borderBottom: '1px solid rgba(181, 208, 152, 0.2)',
+        marginLeft: sidebarOpen ? '-18rem' : '0', 
+        width: sidebarOpen ? 'calc(100% + 18rem)' : '100%',
       }}
     >
       <div className="flex items-center gap-3">
@@ -18,10 +20,8 @@ const DashboardNavbar = ({ setCurrentPage, sidebarOpen, setSidebarOpen }) => {
         </button>
       </div>
       
+      {/* Home and Profile section */}
       <div className="flex items-center gap-4 md:gap-6">
-        <button className="text-white hover:text-[#B5D098] transition-colors cursor-pointer">
-          <i className="fas fa-newspaper text-2xl md:text-3xl"></i>
-        </button>
         <button 
           onClick={() => setCurrentPage('dashboard')}
           className="text-white hover:text-[#B5D098] transition-colors cursor-pointer"
