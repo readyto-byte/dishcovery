@@ -142,6 +142,8 @@ const DashboardPage = () => {
   const [generatedRecipe, setGeneratedRecipe] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateError, setGenerateError] = useState("");
+  const [aiResponse, setAiResponse] = useState(null);
+  const [lastRequestTime, setLastRequestTime] = useState(0);
 
   const [activeProfile, setActiveProfile] = useState(null);
 
@@ -164,15 +166,35 @@ const DashboardPage = () => {
     instructions: Array.isArray(suggestion?.instructions) ? suggestion.instructions : [],
   });
 
-  const handleGenerateRecipe = async (promptText) => {
+  const handleGenerateRecipe = async (promptText, history) => {
+    const now = Date.now();
+    const timeSinceLastRequest = now - lastRequestTime;
+    if (timeSinceLastRequest < 2000 && lastRequestTime !== 0) {
+      setGenerateError(`Please wait ${Math.ceil((2000 - timeSinceLastRequest) / 1000)} seconds between requests.`);
+      return;
+    }
+    
     try {
       setIsGenerating(true);
       setGenerateError("");
+      setLastRequestTime(now);
+
+      let finalPrompt = promptText;
+
+      if (history && history.length > 0 && aiResponse) {
+        const lastRecipeTitle = aiResponse.headline;
+        finalPrompt = `Previous recipe: "${lastRecipeTitle}". 
+        
+User request: ${promptText}
+
+Please modify the previous recipe based on this request. Return a complete updated recipe with title, description, ingredients, and instructions.`;
+      }
+      
       const response = await apiCall("/api/recipes", {
         method: "POST",
         body: JSON.stringify({
           profiles: activeProfile ? [activeProfile] : [],
-          conversation: [{ role: "user", content: promptText }],
+          conversation: [{ role: "user", content: finalPrompt }],
         }),
       });
 
@@ -182,15 +204,36 @@ const DashboardPage = () => {
         throw new Error("No recipe suggestions were returned.");
       }
 
-      setGeneratedRecipe(
-        mapSuggestionToCard(firstSuggestion, recipeResponse?.estimatedTime, firstSuggestion?.id ?? null)
+      const card = mapSuggestionToCard(
+        firstSuggestion,
+        recipeResponse?.estimatedTime,
+        firstSuggestion?.id ?? null
       );
+
+      setGeneratedRecipe(card);
+      setAiResponse({
+        headline: card.title,
+        summary: card.description || "Your recipe is ready! Ask a follow-up to refine it.",
+      });
     } catch (error) {
-      setGenerateError(error.message || "Failed to generate recipe.");
+      console.error("Recipe generation error:", error);
+      
+      if (error.message?.includes("503") || error.message?.includes("high demand") || error.message?.includes("UNAVAILABLE")) {
+        setGenerateError("Gemini is currently busy. Please wait a few seconds and try again.");
+      } else {
+        setGenerateError(error.message || "Failed to generate recipe.");
+      }
       setGeneratedRecipe(null);
+      setAiResponse(null);
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const handleResetRecipe = () => {
+    setAiResponse(null);
+    setGeneratedRecipe(null);
+    setGenerateError("");
   };
 
   const renderPage = () => {
@@ -199,7 +242,12 @@ const DashboardPage = () => {
         return (
           <>
             <WelcomeBanner />
-            <CreateRecipeSection onGenerate={handleGenerateRecipe} isLoading={isGenerating} />
+            <CreateRecipeSection 
+              onGenerate={handleGenerateRecipe} 
+              isLoading={isGenerating}
+              aiResponse={aiResponse}
+              onReset={handleResetRecipe}
+            />
             {generateError && (
               <div className="mx-4 md:mx-8 mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 {generateError}
