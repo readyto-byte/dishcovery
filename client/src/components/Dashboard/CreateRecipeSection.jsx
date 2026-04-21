@@ -30,7 +30,7 @@ const CreateRecipeSection = ({ onGenerate, isLoading }) => {
         <div className="p-6 md:p-8">
           <h3 className="text-2xl md:text-3xl font-bold text-[#F0E6D1] mb-3">What do you want to cook today?</h3>
           <p className="text-[#F0E6D1]/90 text-lg md:text-xl mb-6">
-            Share an idea, ingredients, or a cooking goal and FoodGPT will help turn it into a recipe you can actually make.
+            Share an idea, ingredients, or a cooking goal and Dishcovery will help turn it into a recipe you can actually make.
           </p>
           
           <div className="relative mb-6">
@@ -56,7 +56,7 @@ const CreateRecipeSection = ({ onGenerate, isLoading }) => {
           </div>
           
           <p className="text-[#F0E6D1]/80 text-sm md:text-base mb-6">
-            <i className="fas fa-info-circle mr-1"></i> Use ingredients, constraints, servings, or tap a chip and let FoodGPT guide the next step.
+            <i className="fas fa-info-circle mr-1"></i> Use ingredients, constraints, servings, or tap a chip and let Dishcovery guide the next step.
           </p>
           
           <button 

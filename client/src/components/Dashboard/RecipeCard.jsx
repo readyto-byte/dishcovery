@@ -53,7 +53,7 @@ const RecipeCard = ({ recipeData, isLoading }) => {
       <div className="mx-4 md:mx-8">
         <div className="bg-[#587A34] rounded-2xl shadow-xl overflow-hidden p-12 text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#F0E6D1] border-t-[#95A131] mb-4"></div>
-          <p className="text-[#F0E6D1] text-xl font-semibold">FoodGPT is cooking up something delicious...</p>
+          <p className="text-[#F0E6D1] text-xl font-semibold">Dishcovery is cooking up something delicious...</p>
         </div>
       </div>
     );
