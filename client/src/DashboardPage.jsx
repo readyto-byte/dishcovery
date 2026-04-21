@@ -8,7 +8,7 @@ import CreateRecipeSection from "./components/Dashboard/CreateRecipeSection";
 import RecipeCard from "./components/Dashboard/RecipeCard";
 import HistoryPage from "./components/Dashboard/HistoryPage";  
 import ProfilePage from "./components/Dashboard/ProfilePage";  
-// import SettingsPage from "./components/Dashboard/SettingsPage";  // COMMENT OUT - doesn't exist yet
+import SettingsPage from "./components/Dashboard/SettingsPage";
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -90,7 +90,7 @@ const renderPage = () => {
     case 'profile':
       return <ProfilePage />;   
     case 'settings':
-      return <div className="mx-4 md:mx-8 mt-6">...</div>;
+      return <SettingsPage />;
     default:
       return null;
   }
