@@ -54,7 +54,7 @@ function isRetryableAiError(error) {
   return RETRYABLE_ERROR_PATTERNS.test(message);
 }
 
-async function searchRecipes({ profiles, conversation = [] }) {
+async function searchRecipes({ profiles, conversation = [], avoidTitles = [] }) {
   let profileInfo = 'No profiles specified.';
   if (profiles && profiles.length > 0) {
     profileInfo = profiles.map((p) => {
@@ -65,6 +65,9 @@ async function searchRecipes({ profiles, conversation = [] }) {
   }
 
   const conversationText = buildConversationText(conversation);
+  const avoidTitlesText = Array.isArray(avoidTitles) && avoidTitles.length > 0
+    ? avoidTitles.map((title) => `- ${String(title)}`).join('\n')
+    : '- none';
 
   const prompt = `You are an AI recipe chatbot. Your role is to help users find delicious recipes based on their needs in a conversational way.
 
@@ -72,6 +75,9 @@ Who's eating: ${profileInfo}
 
 Conversation history:
 ${conversationText}
+
+Avoid repeating these already-shown recipe titles:
+${avoidTitlesText}
 
 Respond as a friendly expert chef chatbot that is giving recipes to a not very proficient user in cooking.
 PRIORITY: The latest user request in the conversation is the top instruction and must be followed exactly unless it conflicts with safety constraints.

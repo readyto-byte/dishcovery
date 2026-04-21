@@ -268,7 +268,9 @@ const DashboardPage = () => {
           ]
         : [];
       const normalizedPrompt = String(userInput || "").trim().toLowerCase();
-      const shouldBypassCache = normalizedPrompt.length > 0 && normalizedPrompt === lastPrompt;
+      // Always fetch a fresh generation to avoid repeated cached recipes.
+      const shouldBypassCache = true;
+      const avoidTitles = recipeData?.title ? [recipeData.title] : [];
 
       const response = await apiCall("/api/recipes", {
         method: "POST",
@@ -277,6 +279,7 @@ const DashboardPage = () => {
           conversation: [{ role: "user", content: userInput }],
           searchQuery: userInput,
           bypassCache: shouldBypassCache,
+          avoidTitles,
         }),
       });
       const suggestions = response?.response?.suggestions;
