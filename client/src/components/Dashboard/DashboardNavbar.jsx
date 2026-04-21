@@ -5,27 +5,30 @@ const DashboardNavbar = ({ setCurrentPage, sidebarOpen, setSidebarOpen, activePr
   const [activeProfile, setActiveProfile] = useState(activeProfileProp);
   const [profiles, setProfiles] = useState([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [switching, setSwitching] = useState(null); 
+  const [switching, setSwitching] = useState(null);
   const dropdownRef = useRef(null);
 
-  useEffect(() => {
-    const fetchProfiles = async () => {
-      try {
-        const response = await apiCall("/api/profiles");
-        const rows = Array.isArray(response?.data) ? response.data : [];
-        setProfiles(rows);
-        if (!activeProfileProp) {
-          const active = rows.find((p) => p.is_active) || rows[0] || null;
-          if (active) {
-            setActiveProfile({ id: active.id, name: active.name ?? "", avatar: active.avatar_url ?? null });
-          }
+  const fetchProfiles = async () => {
+    try {
+      const response = await apiCall("/api/profiles");
+      const rows = Array.isArray(response?.data) ? response.data : [];
+      setProfiles(rows);
+      if (!activeProfileProp) {
+        const active = rows.find((p) => p.is_active) || rows[0] || null;
+        if (active) {
+          setActiveProfile({ id: active.id, name: active.name ?? "", avatar: active.avatar_url ?? null });
         }
-      } catch {
-
       }
-    };
+    } catch {}
+  };
+
+  useEffect(() => {
     fetchProfiles();
   }, []);
+
+  useEffect(() => {
+    if (dropdownOpen) fetchProfiles();
+  }, [dropdownOpen]);
 
   useEffect(() => {
     if (activeProfileProp) setActiveProfile(activeProfileProp);
@@ -45,17 +48,14 @@ const DashboardNavbar = ({ setCurrentPage, sidebarOpen, setSidebarOpen, activePr
     if (profile.id === activeProfile?.id) { setDropdownOpen(false); return; }
     setSwitching(profile.id);
     try {
-
       await apiCall(`/api/profiles/${profile.id}`, {
         method: "PUT",
         body: JSON.stringify({ isDefault: true }),
       });
-
       setProfiles((prev) => prev.map((p) => ({ ...p, is_active: p.id === profile.id })));
       setActiveProfile({ id: profile.id, name: profile.name ?? "", avatar: profile.avatar_url ?? null });
-    } catch {
-
-    } finally {
+    } catch {}
+    finally {
       setSwitching(null);
       setDropdownOpen(false);
     }
@@ -80,7 +80,6 @@ const DashboardNavbar = ({ setCurrentPage, sidebarOpen, setSidebarOpen, activePr
         width: sidebarOpen ? "calc(100% + 18rem)" : "100%",
       }}
     >
-
       <div className="flex items-center gap-3">
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -122,7 +121,6 @@ const DashboardNavbar = ({ setCurrentPage, sidebarOpen, setSidebarOpen, activePr
                 <span className="text-[#32491B] font-bold text-base">{initials}</span>
               </div>
             )}
-
             <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-[#32491B] border border-[#B5D098] flex items-center justify-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="w-2.5 h-2.5 text-[#B5D098]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -139,77 +137,91 @@ const DashboardNavbar = ({ setCurrentPage, sidebarOpen, setSidebarOpen, activePr
 
               <div className="px-4 py-3 border-b border-[#B5D098]/30">
                 <p className="text-[#32491B] text-xs font-bold uppercase tracking-widest">Switch Profile</p>
+                <p className="text-[#587A34] text-[10px] mt-0.5">{profiles.length} profile{profiles.length !== 1 ? 's' : ''}</p>
               </div>
 
-              <div className="py-2 max-h-64 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
+              <div
+                className="py-2 overflow-y-auto"
+                style={{
+                  maxHeight: '240px',
+
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: '#B5D098 transparent',
+                }}
+              >
+                <style>{`
+                  .profile-scroll::-webkit-scrollbar { width: 4px; }
+                  .profile-scroll::-webkit-scrollbar-track { background: transparent; }
+                  .profile-scroll::-webkit-scrollbar-thumb { background: #B5D098; border-radius: 4px; }
+                `}</style>
+
                 {profiles.length === 0 && (
                   <p className="text-center text-[#4a5e30] text-xs py-4">No profiles found.</p>
                 )}
-                {profiles.map((profile) => {
-                  const isActive = profile.id === activeProfile?.id || profile.is_active;
-                  const isLoading = switching === profile.id;
-                  return (
-                    <button
-                      key={profile.id}
-                      onClick={() => handleSwitchProfile(profile)}
-                      disabled={!!switching}
-                      className={`w-full flex items-center gap-3 px-4 py-2.5 transition-all cursor-pointer disabled:opacity-60 ${
-                        isActive
-                          ? "bg-[#32491B]/10"
-                          : "hover:bg-[#B5D098]/30"
-                      }`}
-                    >
 
-                      <div className="relative shrink-0">
-                        {profile.avatar_url ? (
-                          <img
-                            src={profile.avatar_url}
-                            alt={profile.name}
-                            className={`w-9 h-9 rounded-full object-cover border-2 transition-all ${
-                              isActive ? "border-[#32491B]" : "border-[#B5D098]/50"
-                            }`}
-                          />
-                        ) : (
-                          <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${
-                            isActive
-                              ? "bg-[#32491B] text-[#F0E6D1] border-[#32491B]"
-                              : "bg-[#3a5220] text-[#F0E6D1] border-[#B5D098]/50"
-                          }`}>
-                            {getInitials(profile.name)}
-                          </div>
-                        )}
+                <div className="profile-scroll" style={{ maxHeight: '240px', overflowY: 'auto' }}>
+                  {profiles.map((profile) => {
+                    const isActive = profile.id === activeProfile?.id || profile.is_active;
+                    const isLoadingProfile = switching === profile.id;
+                    return (
+                      <button
+                        key={profile.id}
+                        onClick={() => handleSwitchProfile(profile)}
+                        disabled={!!switching}
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 transition-all cursor-pointer disabled:opacity-60 ${
+                          isActive ? "bg-[#32491B]/10" : "hover:bg-[#B5D098]/30"
+                        }`}
+                      >
+                        <div className="relative shrink-0">
+                          {profile.avatar_url ? (
+                            <img
+                              src={profile.avatar_url}
+                              alt={profile.name}
+                              className={`w-9 h-9 rounded-full object-cover border-2 transition-all ${
+                                isActive ? "border-[#32491B]" : "border-[#B5D098]/50"
+                              }`}
+                            />
+                          ) : (
+                            <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${
+                              isActive
+                                ? "bg-[#32491B] text-[#F0E6D1] border-[#32491B]"
+                                : "bg-[#3a5220] text-[#F0E6D1] border-[#B5D098]/50"
+                            }`}>
+                              {getInitials(profile.name)}
+                            </div>
+                          )}
+                          {isActive && (
+                            <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-[#587A34] border-2 border-[#f7f0e3] flex items-center justify-center">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                            </span>
+                          )}
+                        </div>
 
-                        {isActive && (
-                          <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-[#587A34] border-2 border-[#f7f0e3] flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
-                          </span>
-                        )}
-                      </div>
+                        <div className="flex-1 text-left min-w-0">
+                          <p className={`text-sm font-semibold truncate ${isActive ? "text-[#32491B]" : "text-[#2d3f1a]"}`}>
+                            {profile.name}
+                          </p>
+                          {isActive && (
+                            <p className="text-[10px] text-[#587A34] font-semibold uppercase tracking-wider">Active</p>
+                          )}
+                        </div>
 
-                      <div className="flex-1 text-left min-w-0">
-                        <p className={`text-sm font-semibold truncate ${isActive ? "text-[#32491B]" : "text-[#2d3f1a]"}`}>
-                          {profile.name}
-                        </p>
-                        {isActive && (
-                          <p className="text-[10px] text-[#587A34] font-semibold uppercase tracking-wider">Active</p>
-                        )}
-                      </div>
-
-                      {isLoading ? (
-                        <svg className="animate-spin w-4 h-4 text-[#587A34] shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                        </svg>
-                      ) : !isActive ? (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-[#587A34]/50 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                        </svg>
-                      ) : null}
-                    </button>
-                  );
-                })}
+                        {isLoadingProfile ? (
+                          <svg className="animate-spin w-4 h-4 text-[#587A34] shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                          </svg>
+                        ) : !isActive ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-[#587A34]/50 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                          </svg>
+                        ) : null}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="px-4 py-3 border-t border-[#B5D098]/30">
