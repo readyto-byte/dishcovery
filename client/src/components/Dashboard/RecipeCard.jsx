@@ -1,29 +1,25 @@
+import { useState } from 'react';
+
 const RecipeCard = ({ recipeData, isLoading }) => {
-  
-  // Add to Favorites function
+
+  const [favAdded, setFavAdded] = useState(false);
+  const [copied, setCopied] = useState(false);
+
   const addToFavorites = () => {
     try {
       const savedFavorites = localStorage.getItem('favoriteRecipes');
       let favorites = [];
-      
-      // Safely parse existing favorites
       if (savedFavorites) {
         try {
           const parsed = JSON.parse(savedFavorites);
-          if (Array.isArray(parsed)) {
-            favorites = parsed;
-          }
+          if (Array.isArray(parsed)) favorites = parsed;
         } catch (e) {
-          console.error('Error parsing favorites:', e);
           favorites = [];
         }
       }
-      
-      // Check if recipe already exists
       const exists = favorites.some(fav => fav.title === recipeData.title);
-      
       if (!exists) {
-        const newFavorite = {
+        favorites.push({
           id: Date.now(),
           title: recipeData.title,
           description: recipeData.description,
@@ -34,113 +30,160 @@ const RecipeCard = ({ recipeData, isLoading }) => {
           tags: recipeData.tags,
           type: recipeData.tags?.[0] || 'Saved Recipe',
           time: recipeData.prepTime,
-        };
-        
-        favorites.push(newFavorite);
+        });
         localStorage.setItem('favoriteRecipes', JSON.stringify(favorites));
-        alert('❤️ Recipe added to favorites!');
-      } else {
-        alert('This recipe is already in your favorites! ❤️');
       }
+      setFavAdded(true);
+      setTimeout(() => setFavAdded(false), 2000);
     } catch (error) {
       console.error('Error adding to favorites:', error);
-      alert('Sorry, there was an error adding to favorites.');
     }
   };
+
+  const handleShare = () => {
+    navigator.clipboard?.writeText(
+      `${recipeData.title}\n\nIngredients:\n${recipeData.ingredients.join('\n')}\n\nInstructions:\n${recipeData.instructions.map((s, i) => `${i + 1}. ${s}`).join('\n')}`
+    );
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const difficultyColor = {
+    easy: 'text-emerald-400',
+    medium: 'text-amber-400',
+    hard: 'text-red-400',
+  }[recipeData?.difficulty?.toLowerCase()] || 'text-emerald-400';
 
   if (isLoading) {
     return (
       <div className="mx-4 md:mx-8">
-        <div className="bg-[#587A34] rounded-2xl shadow-xl overflow-hidden p-12 text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#F0E6D1] border-t-[#95A131] mb-4"></div>
-          <p className="text-[#F0E6D1] text-xl font-semibold">Dishcovery is cooking up something delicious...</p>
+        <div className="rounded-3xl border border-[#d6e8c0] shadow-xl p-14 flex flex-col items-center justify-center gap-4" style={{ background: 'linear-gradient(160deg, #f7f0e3 0%, #ede0c4 100%)' }}>
+          <div className="relative w-14 h-14">
+            <div className="absolute inset-0 rounded-full border-4 border-[#587A34]/20"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-t-[#587A34] animate-spin"></div>
+          </div>
+          <p className="text-[#3a5220] text-lg font-semibold tracking-wide">Cooking up something delicious…</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-4 md:mx-8 recipe-card">
-      <div className="bg-[#587A34] rounded-2xl shadow-xl overflow-hidden">
-        <div className="bg-[#95A131] p-5 md:p-6">
-          <div className="flex items-center gap-2 mb-2">
-            <i className="fas fa-check-circle text-[#F0E6D1] text-2xl"></i>
-            <span className="text-[#F0E6D1] text-lg font-semibold">Here's a recipe you can cook right now.</span>
-          </div>
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <p className="text-[#F0E6D1]/80 text-base">Classic Recipe</p>
-              <h3 className="text-3xl md:text-4xl font-bold text-[#F0E6D1]">{recipeData.title}</h3>
+    <div className="mx-4 md:mx-8">
+      <div className="rounded-3xl overflow-hidden shadow-xl border border-[#d6e8c0]" style={{ background: 'linear-gradient(160deg, #f7f0e3 0%, #ede0c4 100%)' }}>
+
+        <div className="relative px-5 pt-5 pb-4" style={{ background: 'linear-gradient(135deg, #587A34 0%, #3a5220 100%)' }}>
+          <div className="relative">
+
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <div className="w-1 h-1 rounded-full bg-[#B5D098]"></div>
+              <span className="text-[#B5D098] text-[10px] font-semibold uppercase tracking-[0.15em]">Classic Recipe</span>
             </div>
-            <button className="bg-[#587A34] hover:bg-[#32491B] transition-all px-6 py-2 rounded-lg font-bold text-white text-lg shadow-md">
-              Start Cooking <i className="fas fa-arrow-right ml-2"></i>
-            </button>
+
+            <h3 className="text-xl md:text-2xl font-extrabold text-[#F0E6D1] leading-tight tracking-tight mb-3">
+              {recipeData.title}
+            </h3>
+
+            <div className="flex flex-wrap gap-2">
+              {[
+                { icon: 'fa-kitchen-set', label: 'Prep', value: recipeData.prepTime },
+                { icon: 'fa-clock', label: 'Cook', value: recipeData.cookTime },
+                { icon: 'fa-users', label: 'Serves', value: recipeData.servings },
+              ].map(({ icon, label, value }) => (
+                <div key={label} className="flex items-center gap-1.5 bg-white/10 rounded-lg px-2.5 py-1">
+                  <i className={`fas ${icon} text-[#B5D098] text-xs`}></i>
+                  <span className="text-[#F0E6D1]/60 text-[11px]">{label}</span>
+                  <span className="text-[#F0E6D1] text-[11px] font-bold">{value}</span>
+                </div>
+              ))}
+              <div className="flex items-center gap-1.5 bg-white/10 rounded-lg px-2.5 py-1">
+                <i className="fas fa-chart-simple text-[#B5D098] text-xs"></i>
+                <span className="text-[#F0E6D1]/60 text-[11px]">Difficulty</span>
+                <span className={`text-[11px] font-bold capitalize ${difficultyColor}`}>{recipeData.difficulty}</span>
+              </div>
+            </div>
           </div>
         </div>
-        
-        <div className="p-6 md:p-8">
-          <p className="text-[#F0E6D1] text-lg md:text-xl mb-6">{recipeData.description}</p>
-          
-          <div className="flex flex-wrap gap-6 mb-6 pb-6 border-b border-[#F0E6D1]/20">
-            <div className="flex items-center gap-2">
-              <i className="fas fa-kitchen-set text-[#F0E6D1] text-xl"></i>
-              <span className="text-[#F0E6D1] font-semibold">Prep: {recipeData.prepTime}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <i className="fas fa-clock text-[#F0E6D1] text-xl"></i>
-              <span className="text-[#F0E6D1] font-semibold">Cook: {recipeData.cookTime}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <i className="fas fa-users text-[#F0E6D1] text-xl"></i>
-              <span className="text-[#F0E6D1] font-semibold">Serves: {recipeData.servings}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <i className="fas fa-chart-line text-[#F0E6D1] text-xl"></i>
-              <span className="text-[#F0E6D1] font-semibold">Difficulty: {recipeData.difficulty}</span>
-            </div>
-          </div>
-          
-          <div className="flex flex-wrap gap-3 mb-8">
+
+        <div className="px-5 py-5 space-y-4">
+
+          <p className="text-[#3a5220]/80 text-sm leading-relaxed border-l-2 border-[#587A34]/30 pl-3">
+            {recipeData.description}
+          </p>
+
+          <div className="flex flex-wrap gap-1.5">
             {recipeData.tags.map((tag, idx) => (
-              <span key={idx} className="bg-[#839705] text-white px-4 py-1.5 rounded-full text-sm font-semibold">{tag}</span>
+              <span
+                key={idx}
+                className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full border border-[#587A34]/30 text-[#587A34] tracking-wide uppercase"
+              >
+                {tag}
+              </span>
             ))}
           </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <div className="bg-[#F0E6D1]/10 rounded-xl p-5">
-              <h4 className="text-2xl font-bold text-[#F0E6D1] mb-4 flex items-center gap-2">
-                <i className="fas fa-shopping-basket"></i> Ingredients
+
+          <div className="h-px bg-gradient-to-r from-transparent via-[#587A34]/20 to-transparent" />
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+            <div className="rounded-xl p-4 bg-white/60 border border-[#d6e8c0]">
+              <h4 className="text-[#2d3f1a] font-bold text-sm mb-3 flex items-center gap-2">
+                <span className="w-6 h-6 rounded-md bg-[#587A34]/15 flex items-center justify-center">
+                  <i className="fas fa-shopping-basket text-[#587A34] text-[10px]"></i>
+                </span>
+                Ingredients
               </h4>
-              <ul className="space-y-2 text-[#F0E6D1]/90 text-base md:text-lg">
+              <ul className="space-y-1.5">
                 {recipeData.ingredients.map((ing, idx) => (
-                  <li key={idx}>• {ing}</li>
+                  <li key={idx} className="flex items-start gap-2 text-[#3a5220]/80 text-xs leading-relaxed">
+                    <span className="mt-1.5 w-1 h-1 rounded-full bg-[#587A34]/50 shrink-0"></span>
+                    {ing}
+                  </li>
                 ))}
               </ul>
             </div>
-            <div className="bg-[#F0E6D1]/10 rounded-xl p-5">
-              <h4 className="text-2xl font-bold text-[#F0E6D1] mb-4 flex items-center gap-2">
-                <i className="fas fa-list-ol"></i> Instructions
+
+            <div className="rounded-xl p-4 bg-white/60 border border-[#d6e8c0]">
+              <h4 className="text-[#2d3f1a] font-bold text-sm mb-3 flex items-center gap-2">
+                <span className="w-6 h-6 rounded-md bg-[#587A34]/15 flex items-center justify-center">
+                  <i className="fas fa-list-ol text-[#587A34] text-[10px]"></i>
+                </span>
+                Instructions
               </h4>
-              <ol className="space-y-2 text-[#F0E6D1]/90 text-base md:text-lg list-decimal list-inside">
+              <ol className="space-y-2">
                 {recipeData.instructions.map((inst, idx) => (
-                  <li key={idx}>{inst}</li>
+                  <li key={idx} className="flex gap-2 text-xs leading-relaxed text-[#3a5220]/80">
+                    <span className="shrink-0 w-4 h-4 rounded-full bg-[#587A34] text-white text-[10px] font-bold flex items-center justify-center mt-0.5">
+                      {idx + 1}
+                    </span>
+                    {inst}
+                  </li>
                 ))}
               </ol>
             </div>
           </div>
-          
-          <div className="flex flex-wrap gap-4 pt-4 border-t border-[#F0E6D1]/20">
-            {/* Save Recipe button REMOVED - only Add to Favorites remains */}
-            <button 
+
+          <div className="h-px bg-gradient-to-r from-transparent via-[#587A34]/20 to-transparent" />
+
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <button
               onClick={addToFavorites}
-              className="bg-[#839705] hover:bg-[#95A131] transition-all px-6 py-3 rounded-lg font-bold text-white text-lg shadow-md flex items-center gap-2"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg font-semibold text-xs transition-all duration-200 shadow-sm cursor-pointer"
+              style={{ background: favAdded ? '#3a5220' : '#587A34', color: '#F0E6D1' }}
             >
-              <i className="far fa-heart"></i> Add to Favorites
+              <i className={`${favAdded ? 'fas' : 'far'} fa-heart text-xs`}></i>
+              {favAdded ? 'Saved!' : 'Add to Favorites'}
             </button>
-            <button className="bg-[#587A34] hover:bg-[#32491B] transition-all px-6 py-3 rounded-lg font-bold text-white text-lg shadow-md flex items-center gap-2 ml-auto">
-              <i className="fas fa-share-alt"></i> Share
+
+            <button
+              onClick={handleShare}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg font-semibold text-xs border border-[#587A34]/30 text-[#587A34] hover:bg-[#587A34]/10 transition-all duration-200 cursor-pointer ml-auto"
+            >
+              <i className={`fas ${copied ? 'fa-check' : 'fa-copy'} text-xs`}></i>
+              {copied ? 'Copied!' : 'Copy'}
             </button>
           </div>
+
         </div>
       </div>
     </div>
