@@ -7,25 +7,30 @@ const FavoritesPage = () => {
 
   useEffect(() => {
     // Load favorites from localStorage with error handling
-    try {
-      const savedFavorites = localStorage.getItem('favoriteRecipes');
-      if (savedFavorites) {
-        const parsedFavorites = JSON.parse(savedFavorites);
-        // Make sure it's an array
-        if (Array.isArray(parsedFavorites)) {
-          setFavorites(parsedFavorites);
+    const loadFavorites = () => {
+      try {
+        const savedFavorites = localStorage.getItem('favoriteRecipes');
+        if (savedFavorites) {
+          const parsedFavorites = JSON.parse(savedFavorites);
+          // Make sure it's an array
+          if (Array.isArray(parsedFavorites)) {
+            setFavorites(parsedFavorites);
+          } else {
+            setFavorites([]);
+          }
         } else {
           setFavorites([]);
         }
-      } else {
+      } catch (error) {
+        console.error('Error loading favorites:', error);
         setFavorites([]);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Error loading favorites:', error);
-      setFavorites([]);
-    }
-    setLoading(false);
-  }, []);
+    };
+    
+    loadFavorites();
+  }, []); // Empty dependency array - only runs once on mount
 
   const removeFromFavorites = (recipeId) => {
     if (confirm('Remove this recipe from your favorites?')) {

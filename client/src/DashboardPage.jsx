@@ -7,8 +7,9 @@ import WelcomeBanner from "./components/Dashboard/WelcomeBanner";
 import CreateRecipeSection from "./components/Dashboard/CreateRecipeSection";
 import RecipeCard from "./components/Dashboard/RecipeCard";
 import HistoryPage from "./components/Dashboard/HistoryPage";  
-import ProfilePage from "./components/Dashboard/ProfilePage";  
-// import SettingsPage from "./components/Dashboard/SettingsPage";  // COMMENT OUT - doesn't exist yet
+import ProfilePage from "./components/Dashboard/ProfilePage";
+import FavoritesPage from "./components/Dashboard/FavoritesPage";  
+// import SettingsPage from "./components/Dashboard/SettingsPage";  
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -75,26 +76,28 @@ const DashboardPage = () => {
     setIsLoading(false);
   };
 
-const renderPage = () => {
-  switch(currentPage) {
-    case 'dashboard':
-      return (
-        <>
-          <WelcomeBanner />
-          <CreateRecipeSection onGenerate={generateRecipe} isLoading={isLoading} />
-          <RecipeCard recipeData={recipeData} isLoading={isLoading} />
-        </>
-      );
-    case 'history':
-      return <HistoryPage />;
-    case 'profile':
-      return <ProfilePage />;   
-    case 'settings':
-      return <div className="mx-4 md:mx-8 mt-6">...</div>;
-    default:
-      return null;
-  }
-};
+  const renderPage = () => {
+    switch(currentPage) {
+      case 'dashboard':
+        return (
+          <>
+            <WelcomeBanner />
+            <CreateRecipeSection onGenerate={generateRecipe} isLoading={isLoading} />
+            <RecipeCard recipeData={recipeData} isLoading={isLoading} />
+          </>
+        );
+      case 'favorites':  // ADD THIS CASE
+        return <FavoritesPage />;
+      case 'history':
+        return <HistoryPage />;
+      case 'profile':
+        return <ProfilePage />;   
+      case 'settings':
+        return <div className="mx-4 md:mx-8 mt-6">...</div>;
+      default:
+        return null;
+    }
+  };
 
   const handleLogout = async () => {
     try {

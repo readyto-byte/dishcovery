@@ -1,4 +1,53 @@
 const RecipeCard = ({ recipeData, isLoading }) => {
+  
+  // Add to Favorites function
+  const addToFavorites = () => {
+    try {
+      const savedFavorites = localStorage.getItem('favoriteRecipes');
+      let favorites = [];
+      
+      // Safely parse existing favorites
+      if (savedFavorites) {
+        try {
+          const parsed = JSON.parse(savedFavorites);
+          if (Array.isArray(parsed)) {
+            favorites = parsed;
+          }
+        } catch (e) {
+          console.error('Error parsing favorites:', e);
+          favorites = [];
+        }
+      }
+      
+      // Check if recipe already exists
+      const exists = favorites.some(fav => fav.title === recipeData.title);
+      
+      if (!exists) {
+        const newFavorite = {
+          id: Date.now(),
+          title: recipeData.title,
+          description: recipeData.description,
+          prepTime: recipeData.prepTime,
+          cookTime: recipeData.cookTime,
+          servings: recipeData.servings,
+          difficulty: recipeData.difficulty,
+          tags: recipeData.tags,
+          type: recipeData.tags?.[0] || 'Saved Recipe',
+          time: recipeData.prepTime,
+        };
+        
+        favorites.push(newFavorite);
+        localStorage.setItem('favoriteRecipes', JSON.stringify(favorites));
+        alert('❤️ Recipe added to favorites!');
+      } else {
+        alert('This recipe is already in your favorites! ❤️');
+      }
+    } catch (error) {
+      console.error('Error adding to favorites:', error);
+      alert('Sorry, there was an error adding to favorites.');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="mx-4 md:mx-8">
@@ -81,10 +130,11 @@ const RecipeCard = ({ recipeData, isLoading }) => {
           </div>
           
           <div className="flex flex-wrap gap-4 pt-4 border-t border-[#F0E6D1]/20">
-            <button className="bg-[#839705] hover:bg-[#95A131] transition-all px-6 py-3 rounded-lg font-bold text-white text-lg shadow-md flex items-center gap-2">
-              <i className="far fa-bookmark"></i> Save Recipe
-            </button>
-            <button className="bg-[#839705] hover:bg-[#95A131] transition-all px-6 py-3 rounded-lg font-bold text-white text-lg shadow-md flex items-center gap-2">
+            {/* Save Recipe button REMOVED - only Add to Favorites remains */}
+            <button 
+              onClick={addToFavorites}
+              className="bg-[#839705] hover:bg-[#95A131] transition-all px-6 py-3 rounded-lg font-bold text-white text-lg shadow-md flex items-center gap-2"
+            >
               <i className="far fa-heart"></i> Add to Favorites
             </button>
             <button className="bg-[#587A34] hover:bg-[#32491B] transition-all px-6 py-3 rounded-lg font-bold text-white text-lg shadow-md flex items-center gap-2 ml-auto">
@@ -97,4 +147,4 @@ const RecipeCard = ({ recipeData, isLoading }) => {
   );
 };
 
-export default RecipeCard;  // ← MAKE SURE THIS IS AT THE BOTTOM!
+export default RecipeCard;
