@@ -6,19 +6,45 @@ const HistoryPage = ({ onViewRecipe }) => {
   const [historyRecipes, setHistoryRecipes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isClearing, setIsClearing] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [error, setError] = useState("");
   const [favorites, setFavorites] = useState(new Set());
 
-  const toggleFavorite = (id) => {
-    setFavorites((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
+  const syncFavoriteStateFromApi = async () => {
+    try {
+      const response = await apiCall("/api/favorites");
+      const rows = Array.isArray(response?.data) ? response.data : [];
+      setFavorites(new Set(rows.map((fav) => Number(fav.recipe_id)).filter((id) => Number.isFinite(id))));
+    } catch (err) {
+      console.error("Failed to sync favorites:", err);
+    }
+  };
+
+  const toggleFavorite = async (recipe) => {
+    if (!recipe.recipeId) {
+      setError("This recipe cannot be favorited because it has no recipe_id.");
+      return;
+    }
+
+    try {
+      setError("");
+      if (favorites.has(recipe.recipeId)) {
+        const response = await apiCall("/api/favorites");
+        const rows = Array.isArray(response?.data) ? response.data : [];
+        const match = rows.find((fav) => Number(fav.recipe_id) === Number(recipe.recipeId));
+        if (match?.id) {
+          await apiCall(`/api/favorites/${match.id}`, { method: "DELETE" });
+        }
       } else {
-        next.add(id);
+        await apiCall("/api/favorites", {
+          method: "POST",
+          body: JSON.stringify({ recipe_id: recipe.recipeId }),
+        });
       }
-      return next;
-    });
+      await syncFavoriteStateFromApi();
+    } catch (err) {
+      setError(err.message || "Failed to update favorites.");
+    }
   };
 
   const getRelativeViewedTime = (isoDate) => {
@@ -67,6 +93,7 @@ const HistoryPage = ({ onViewRecipe }) => {
 
     return {
       id: item.id,
+      recipeId: item.recipe_id ?? null,
       title: firstSuggestion.title || item.search_query || "Generated Recipe",
       type: item.source_api === "cache" ? "Cached Recipe" : "AI Generated",
       difficulty: "Medium",
@@ -96,15 +123,16 @@ const HistoryPage = ({ onViewRecipe }) => {
     };
 
     loadHistory();
+    syncFavoriteStateFromApi();
   }, []);
 
   const handleClearHistory = async () => {
-    if (!confirm("Are you sure you want to clear your entire recipe history?")) return;
     try {
       setIsClearing(true);
       setError("");
       await apiCall("/api/history", { method: "DELETE" });
       setHistoryRecipes([]);
+      setShowClearConfirm(false);
     } catch (err) {
       setError(err.message || "Failed to clear history.");
     } finally {
@@ -130,7 +158,7 @@ const HistoryPage = ({ onViewRecipe }) => {
             </p>
           </div>
           <button
-            onClick={handleClearHistory}
+            onClick={() => setShowClearConfirm(true)}
             disabled={isClearing || isLoading || historyRecipes.length === 0}
             className="shrink-0 bg-[#587A34] hover:bg-[#32491B] transition-all px-5 py-2 rounded-lg text-white font-semibold text-sm shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -161,7 +189,7 @@ const HistoryPage = ({ onViewRecipe }) => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {historyRecipes.map((recipe) => {
-            const isFavorited = favorites.has(recipe.id);
+            const isFavorited = recipe.recipeId ? favorites.has(Number(recipe.recipeId)) : false;
             return (
               <div
                 key={recipe.id}
@@ -171,7 +199,7 @@ const HistoryPage = ({ onViewRecipe }) => {
                 <div className="relative h-12 bg-[#587A34] flex items-center justify-between px-4">
 
                   <button
-                    onClick={() => toggleFavorite(recipe.id)}
+                    onClick={() => toggleFavorite(recipe)}
                     title={isFavorited ? "Remove from favorites" : "Add to favorites"}
                     className="flex items-center justify-center w-7 h-7 rounded-full transition-all duration-200 active:scale-90"
                     style={{
@@ -237,6 +265,45 @@ const HistoryPage = ({ onViewRecipe }) => {
           })}
         </div>
       </div>
+
+      {showClearConfirm && (
+        <>
+          <div
+            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
+            onClick={!isClearing ? () => setShowClearConfirm(false) : undefined}
+          />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div
+              className="w-full max-w-md rounded-2xl shadow-2xl overflow-hidden"
+              style={{ background: 'linear-gradient(160deg, #f7f0e3 0%, #ede0c4 100%)' }}
+            >
+              <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg, #32491B, #839705, #B5D098)' }} />
+              <div className="px-6 pt-6 pb-5">
+                <h3 className="text-xl font-bold text-[#1B211A] mb-2">Clear history?</h3>
+                <p className="text-sm text-[#4a5e30] mb-6">
+                  This will permanently remove all recipe history entries.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowClearConfirm(false)}
+                    disabled={isClearing}
+                    className="flex-1 py-2.5 rounded-xl border border-[#32491B]/20 bg-white/50 hover:bg-white/80 text-[#32491B] font-semibold text-sm transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleClearHistory}
+                    disabled={isClearing}
+                    className="flex-1 py-2.5 rounded-xl bg-[#32491B] hover:bg-[#253813] text-[#F0E6D1] font-semibold text-sm transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {isClearing ? 'Clearing...' : 'Yes, Clear'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

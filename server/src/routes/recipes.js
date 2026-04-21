@@ -59,15 +59,24 @@ router.post('/', async (req, res) => {
       avoidTitles: Array.isArray(avoid_titles) ? avoid_titles : (Array.isArray(avoidTitles) ? avoidTitles : []),
     });
     const cachedRows = await cacheRecipeResponse(cacheQuery, response);
+    const responseWithIds = {
+      ...response,
+      suggestions: Array.isArray(response?.suggestions)
+        ? response.suggestions.map((suggestion, index) => ({
+            ...suggestion,
+            id: cachedRows?.[index]?.id ?? suggestion?.id ?? null,
+          }))
+        : [],
+    };
 
     await addHistoryRecord(accountId, {
       search_query: query,
       recipe_id: cachedRows?.[0]?.id ?? null,
       source_api: 'gemini-2.5-flash',
-      output_response: response,
+      output_response: responseWithIds,
     });
 
-    res.json({ success: true, response });
+    res.json({ success: true, response: responseWithIds });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

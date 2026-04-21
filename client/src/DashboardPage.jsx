@@ -5,10 +5,73 @@ import Sidebar from "./components/Dashboard/Sidebar";
 import DashboardNavbar from "./components/Dashboard/DashboardNavbar";
 import WelcomeBanner from "./components/Dashboard/WelcomeBanner";
 import CreateRecipeSection from "./components/Dashboard/CreateRecipeSection";
+import RecipeCard from "./components/Dashboard/RecipeCard";
 import HistoryPage from "./components/Dashboard/HistoryPage";
 import ProfilePage from "./components/Dashboard/ProfilePage";
 import SettingsPage from "./components/Dashboard/SettingsPage";
 import FavoritesPage from "./components/Dashboard/FavoritesPage";
+
+const RecipeDetailsModal = ({ recipe, onClose }) => {
+  if (!recipe) return null;
+
+  return (
+    <>
+      <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div
+          className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl bg-[#F0E6D1]"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-[#32491B] text-[#F0E6D1]">
+            <h2 className="text-xl font-bold">{recipe.title || "Recipe Details"}</h2>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 transition-all cursor-pointer"
+              aria-label="Close recipe details"
+            >
+              <i className="fas fa-times"></i>
+            </button>
+          </div>
+
+          <div className="p-6 space-y-5 text-[#1B211A]">
+            <p className="text-sm text-black/70">{recipe.description || "No description available."}</p>
+
+            <div className="flex gap-4 text-sm text-black/70">
+              <span><i className="far fa-clock mr-1"></i>{recipe.time || recipe.prepTime || "N/A"}</span>
+              <span><i className="fas fa-users mr-1"></i>{recipe.servings || "-"}</span>
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-[#32491B] mb-2">Ingredients</h3>
+              {Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0 ? (
+                <ul className="list-disc pl-5 space-y-1 text-sm">
+                  {recipe.ingredients.map((item, index) => (
+                    <li key={`${item}-${index}`}>{item}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-black/60">No ingredients listed.</p>
+              )}
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-[#32491B] mb-2">Instructions</h3>
+              {Array.isArray(recipe.instructions) && recipe.instructions.length > 0 ? (
+                <ol className="list-decimal pl-5 space-y-2 text-sm">
+                  {recipe.instructions.map((step, index) => (
+                    <li key={`${step}-${index}`}>{step}</li>
+                  ))}
+                </ol>
+              ) : (
+                <p className="text-sm text-black/60">No instructions listed.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
 
 const LogoutConfirmModal = ({ onConfirm, onCancel, isLoggingOut }) => (
   <>
@@ -74,11 +137,59 @@ const DashboardPage = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [generatedRecipe, setGeneratedRecipe] = useState(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState("");
 
   const [activeProfile, setActiveProfile] = useState(null);
 
   const handleActiveProfileChange = (profile) => {
     setActiveProfile(profile);
+  };
+
+  const mapSuggestionToCard = (suggestion, fallbackEstimatedTime, recipeId) => ({
+    id: recipeId,
+    title: suggestion?.title || "Generated Recipe",
+    description: suggestion?.description || "",
+    prepTime: fallbackEstimatedTime || "N/A",
+    cookTime: suggestion?.cookTimeMin ? `${suggestion.cookTimeMin} min` : "N/A",
+    servings: suggestion?.servings || "-",
+    difficulty: "Medium",
+    tags: Array.isArray(suggestion?.keyIngredients) && suggestion.keyIngredients.length > 0
+      ? ["ai", "generated", "recipe"]
+      : ["ai", "generated"],
+    ingredients: Array.isArray(suggestion?.keyIngredients) ? suggestion.keyIngredients : [],
+    instructions: Array.isArray(suggestion?.instructions) ? suggestion.instructions : [],
+  });
+
+  const handleGenerateRecipe = async (promptText) => {
+    try {
+      setIsGenerating(true);
+      setGenerateError("");
+      const response = await apiCall("/api/recipes", {
+        method: "POST",
+        body: JSON.stringify({
+          profiles: activeProfile ? [activeProfile] : [],
+          conversation: [{ role: "user", content: promptText }],
+        }),
+      });
+
+      const recipeResponse = response?.response;
+      const firstSuggestion = recipeResponse?.suggestions?.[0];
+      if (!firstSuggestion) {
+        throw new Error("No recipe suggestions were returned.");
+      }
+
+      setGeneratedRecipe(
+        mapSuggestionToCard(firstSuggestion, recipeResponse?.estimatedTime, firstSuggestion?.id ?? null)
+      );
+    } catch (error) {
+      setGenerateError(error.message || "Failed to generate recipe.");
+      setGeneratedRecipe(null);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const renderPage = () => {
@@ -87,11 +198,19 @@ const DashboardPage = () => {
         return (
           <>
             <WelcomeBanner />
-            <CreateRecipeSection />
+            <CreateRecipeSection onGenerate={handleGenerateRecipe} isLoading={isGenerating} />
+            {generateError && (
+              <div className="mx-4 md:mx-8 mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {generateError}
+              </div>
+            )}
+            {(isGenerating || generatedRecipe) && (
+              <RecipeCard recipeData={generatedRecipe || {}} isLoading={isGenerating} />
+            )}
           </>
         );
       case 'history':
-        return <HistoryPage />;
+        return <HistoryPage onViewRecipe={setSelectedRecipe} />;
       case 'profile':
         return (
           <ProfilePage
@@ -102,7 +221,7 @@ const DashboardPage = () => {
       case 'settings':
         return <SettingsPage />;
       case 'favorites':
-        return <FavoritesPage />;
+        return <FavoritesPage onViewRecipe={setSelectedRecipe} />;
       default:
         return null;
     }
@@ -147,6 +266,13 @@ const DashboardPage = () => {
           }}
           onCancel={() => setShowLogoutConfirm(false)}
           isLoggingOut={isLoggingOut}
+        />
+      )}
+
+      {selectedRecipe && (
+        <RecipeDetailsModal
+          recipe={selectedRecipe}
+          onClose={() => setSelectedRecipe(null)}
         />
       )}
     </div>

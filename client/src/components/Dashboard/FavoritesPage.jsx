@@ -1,29 +1,21 @@
 import { useState, useEffect } from 'react';
 import heroBg from "../../assets/hero-bg.jpg";
+import { apiCall } from "../../api/config";
 
 const FavoritesPage = ({ onViewRecipe }) => {
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    const loadFavorites = () => {
+    const loadFavorites = async () => {
       try {
-        const savedFavorites = localStorage.getItem('favoriteRecipes');
-        if (savedFavorites) {
-          const parsedFavorites = JSON.parse(savedFavorites);
-          const normalizedFavorites = Array.isArray(parsedFavorites)
-            ? parsedFavorites.map((recipe) => ({
-                ...recipe,
-                ingredients: Array.isArray(recipe?.ingredients) ? recipe.ingredients : [],
-                instructions: Array.isArray(recipe?.instructions) ? recipe.instructions : [],
-              }))
-            : [];
-          setFavorites(normalizedFavorites);
-        } else {
-          setFavorites([]);
-        }
+        setError("");
+        const response = await apiCall("/api/favorites");
+        const rows = Array.isArray(response?.data) ? response.data : [];
+        setFavorites(rows);
       } catch (error) {
-        console.error('Error loading favorites:', error);
+        setError(error.message || "Failed to load favorites.");
         setFavorites([]);
       } finally {
         setLoading(false);
@@ -32,18 +24,27 @@ const FavoritesPage = ({ onViewRecipe }) => {
     loadFavorites();
   }, []);
 
-  const removeFromFavorites = (recipeId) => {
+  const removeFromFavorites = async (favoriteId) => {
     if (confirm('Remove this recipe from your favorites?')) {
-      const updatedFavorites = favorites.filter(recipe => recipe.id !== recipeId);
-      setFavorites(updatedFavorites);
-      localStorage.setItem('favoriteRecipes', JSON.stringify(updatedFavorites));
+      try {
+        setError("");
+        await apiCall(`/api/favorites/${favoriteId}`, { method: "DELETE" });
+        setFavorites((prev) => prev.filter((recipe) => recipe.id !== favoriteId));
+      } catch (err) {
+        setError(err.message || "Failed to remove favorite.");
+      }
     }
   };
 
-  const handleClearAllFavorites = () => {
+  const handleClearAllFavorites = async () => {
     if (confirm('Are you sure you want to remove ALL recipes from your favorites?')) {
-      setFavorites([]);
-      localStorage.setItem('favoriteRecipes', JSON.stringify([]));
+      try {
+        setError("");
+        await apiCall("/api/favorites", { method: "DELETE" });
+        setFavorites([]);
+      } catch (err) {
+        setError(err.message || "Failed to clear favorites.");
+      }
     }
   };
 
@@ -88,6 +89,11 @@ const FavoritesPage = ({ onViewRecipe }) => {
       </div>
 
       <div className="mx-4 md:mx-8">
+        {error && (
+          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
         {favorites.length === 0 ? (
           <div className="bg-[#F0E6D1]/50 backdrop-blur-sm rounded-2xl p-16 text-center">
             <div className="flex justify-center mb-6">
