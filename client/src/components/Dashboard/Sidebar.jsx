@@ -41,7 +41,7 @@ const Sidebar = ({ currentPage, setCurrentPage, sidebarOpen, setSidebarOpen, onL
       >
         <div className="relative h-full flex flex-col">
 
-          <div className="flex items-center justify-center px-6 pt-10 pb-7">
+          <div className="flex items-center justify-center px-6 pt-10 pb-7 shrink-0">
             <div className="flex items-center gap-2 cursor-pointer">
               <div className="w-8 h-8 rounded-lg bg-[#32491B] flex items-center justify-center shadow-md">
                 <i className="fas fa-utensils text-[#F0E6D1] text-sm"></i>
@@ -53,13 +53,23 @@ const Sidebar = ({ currentPage, setCurrentPage, sidebarOpen, setSidebarOpen, onL
             </div>
           </div>
 
-          <div className="mx-6 h-px bg-gradient-to-r from-transparent via-[#B5D098] to-transparent mb-6" />
+          <div className="mx-6 h-px bg-gradient-to-r from-transparent via-[#B5D098] to-transparent mb-6 shrink-0" />
 
-          <div className="flex-1 py-2 space-y-1 overflow-hidden">
+          <div
+            className="flex-1 py-2 space-y-1 overflow-y-auto"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            <style>{`
+              .sidebar-nav::-webkit-scrollbar { display: none; }
+            `}</style>
+
             {navItems.map(item => (
               <button
                 key={item.id}
-                onClick={() => setCurrentPage(item.id)}
+                onClick={() => {
+                  setCurrentPage(item.id);
+                  if (window.innerWidth < 1024) setSidebarOpen(false);
+                }}
                 className={`relative flex items-center gap-4 pl-6 pr-0 py-3.5 w-full text-left transition-all duration-200 group cursor-pointer ${
                   currentPage === item.id
                     ? ''
@@ -80,16 +90,15 @@ const Sidebar = ({ currentPage, setCurrentPage, sidebarOpen, setSidebarOpen, onL
                   }`}></i>
                 </div>
 
-                <span className={`font-semibold text-base tracking-wide transition-colors duration-200 relative z-10 ${
-                  currentPage === item.id ? 'text-[#2d3f1a]' : 'text-[#2d3f1a]'
-                }`}>
+                <span className="font-semibold text-base tracking-wide transition-colors duration-200 relative z-10 text-[#2d3f1a]">
                   {item.label}
                 </span>
               </button>
             ))}
           </div>
 
-          <div className="px-3 pb-8 pt-4">
+          {/* Logout */}
+          <div className="px-3 pb-8 pt-4 shrink-0">
             <button
               onClick={onLogout}
               className="group flex items-center gap-4 w-full px-5 py-3.5 rounded-xl border border-[#32491B]/20 bg-[#32491B]/5 hover:bg-[#32491B] transition-all duration-300 cursor-pointer"
