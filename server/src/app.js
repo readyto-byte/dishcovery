@@ -36,3 +36,5 @@ app.use('/api/favorites', authMiddleware, favoritesRoutes);
 app.use('/api/generate', generateRoutes);
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+console.log(process.env.GEMINI_API_KEY);
