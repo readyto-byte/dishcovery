@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Mail,
   User,
@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import heroBg from "../../assets/hero-bg.jpg";
+import { apiCall } from "../../api/config";
 
 // ── Moved outside SettingsPage so they never remount on parent re-render ──
 
@@ -93,12 +94,36 @@ const SettingsPage = () => {
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isBootstrapping, setIsBootstrapping] = useState(true);
 
   const [userData, setUserData] = useState({
-    firstName: "Tyron",
-    lastName: "Sangalang",
-    email: "ty.sangalang@example.com",
+    firstName: "",
+    lastName: "",
+    username: "",
+    email: "",
   });
+
+  useEffect(() => {
+    const loadAccount = async () => {
+      try {
+        setIsBootstrapping(true);
+        const response = await apiCall("/api/account/me");
+        const account = response?.data ?? {};
+        setUserData({
+          firstName: account.first_name ?? "",
+          lastName: account.last_name ?? "",
+          username: account.username ?? "",
+          email: account.email ?? "",
+        });
+      } catch (error) {
+        setErrors({ account: error.message || "Failed to load account info." });
+      } finally {
+        setIsBootstrapping(false);
+      }
+    };
+
+    loadAccount();
+  }, []);
 
   const handleToggle = (sectionKey) => {
     setActiveSection((prev) => (prev === sectionKey ? null : sectionKey));
@@ -113,7 +138,7 @@ const SettingsPage = () => {
 
   const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  const handleChangeEmail = (e) => {
+  const handleChangeEmail = async (e) => {
     e.preventDefault();
     const { newEmail, confirmEmail } = formData;
     if (!newEmail || !confirmEmail) return setErrors({ email: "Both email fields are required" });
@@ -121,17 +146,25 @@ const SettingsPage = () => {
     if (!validateEmail(newEmail)) return setErrors({ email: "Please enter a valid email address" });
     if (newEmail === userData.email) return setErrors({ email: "New email must be different from current email" });
     setIsLoading(true);
-    setTimeout(() => {
-      setUserData((prev) => ({ ...prev, email: newEmail }));
-      setSuccessMessage(`Email changed to: ${newEmail}`);
+    try {
+      const response = await apiCall("/api/account/me", {
+        method: "PUT",
+        body: JSON.stringify({ email: newEmail.trim() }),
+      });
+      const account = response?.data ?? {};
+      setUserData((prev) => ({ ...prev, email: account.email ?? newEmail.trim() }));
+      setSuccessMessage(`Email changed to: ${account.email ?? newEmail.trim()}`);
       setFormData((prev) => ({ ...prev, newEmail: "", confirmEmail: "" }));
       setActiveSection(null);
-      setIsLoading(false);
       setTimeout(() => setSuccessMessage(""), 3000);
-    }, 500);
+    } catch (error) {
+      setErrors({ email: error.message || "Failed to change email." });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleChangePassword = (e) => {
+  const handleChangePassword = async (e) => {
     e.preventDefault();
     const { currentPassword, newPassword, confirmNewPassword } = formData;
     if (!currentPassword || !newPassword || !confirmNewPassword)
@@ -140,22 +173,54 @@ const SettingsPage = () => {
     if (newPassword.length < 6) return setErrors({ password: "Password must be at least 6 characters" });
     if (newPassword === currentPassword) return setErrors({ password: "New password must be different from current password" });
     setIsLoading(true);
-    setTimeout(() => {
+    try {
+      await apiCall("/api/account/me", {
+        method: "PUT",
+        body: JSON.stringify({ newPassword }),
+      });
       setSuccessMessage("Password changed successfully!");
       setFormData((prev) => ({ ...prev, currentPassword: "", newPassword: "", confirmNewPassword: "" }));
       setActiveSection(null);
-      setIsLoading(false);
       setTimeout(() => setSuccessMessage(""), 3000);
-    }, 500);
+    } catch (error) {
+      setErrors({ password: error.message || "Failed to change password." });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleUpdateName = (field, value) => {
+  const handleUpdateIdentity = async (field, value) => {
     if (!value.trim()) return setErrors({ [field]: `${field} cannot be empty` });
     if (value.length < 2) return setErrors({ [field]: `${field} must be at least 2 characters` });
-    setUserData((prev) => ({ ...prev, [field]: value }));
-    setSuccessMessage(`${field === "firstName" ? "First" : "Last"} name updated!`);
-    setActiveSection(null);
-    setTimeout(() => setSuccessMessage(""), 3000);
+    setIsLoading(true);
+    try {
+      let payload = {};
+      if (field === "firstName") payload = { firstName: value.trim() };
+      if (field === "lastName") payload = { lastName: value.trim() };
+      if (field === "username") payload = { username: value.trim() };
+      const response = await apiCall("/api/account/me", {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      });
+      const account = response?.data ?? {};
+      setUserData({
+        firstName: account.first_name ?? "",
+        lastName: account.last_name ?? "",
+        username: account.username ?? "",
+        email: account.email ?? "",
+      });
+      if (field === "username") {
+        setSuccessMessage("Username updated!");
+      } else {
+        setSuccessMessage(`${field === "firstName" ? "First" : "Last"} name updated!`);
+      }
+      setActiveSection(null);
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch (error) {
+      setErrors({ [field]: error.message || "Failed to update profile field." });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDeleteAccount = () => {
@@ -210,6 +275,18 @@ const SettingsPage = () => {
           </div>
         </div>
 
+        {errors.account && (
+          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {errors.account}
+          </div>
+        )}
+
+        {isBootstrapping ? (
+          <div className="mb-4 rounded-xl border border-[#c8b99a] bg-[#f0e6ce] px-4 py-3 text-sm text-[#4a3a1e]">
+            Loading account settings...
+          </div>
+        ) : null}
+
         {/* Account Settings Card */}
         <div className="bg-[#587A34] rounded-2xl border-2 border-[#587A34] overflow-hidden mb-4 shadow-lg">
           <div className="p-4 space-y-3">
@@ -222,7 +299,7 @@ const SettingsPage = () => {
                 className={inputClass(errors.firstName)}
                 style={{ marginTop: "12px" }}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") handleUpdateName("firstName", e.target.value);
+                  if (e.key === "Enter") handleUpdateIdentity("firstName", e.target.value);
                 }}
               />
               {errors.firstName && (
@@ -241,12 +318,31 @@ const SettingsPage = () => {
                 className={inputClass(errors.lastName)}
                 style={{ marginTop: "12px" }}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") handleUpdateName("lastName", e.target.value);
+                  if (e.key === "Enter") handleUpdateIdentity("lastName", e.target.value);
                 }}
               />
               {errors.lastName && (
                 <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
                   <XCircle className="w-3 h-3" /> {errors.lastName}
+                </p>
+              )}
+              <p className="text-xs text-[#6b5a3a] mt-1">Press Enter to save</p>
+            </Row>
+
+            <Row icon={User} label="Username" value={userData.username} sectionKey="username" activeSection={activeSection} onToggle={handleToggle}>
+              <input
+                type="text"
+                placeholder="Enter new username"
+                defaultValue={userData.username}
+                className={inputClass(errors.username)}
+                style={{ marginTop: "12px" }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleUpdateIdentity("username", e.target.value);
+                }}
+              />
+              {errors.username && (
+                <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                  <XCircle className="w-3 h-3" /> {errors.username}
                 </p>
               )}
               <p className="text-xs text-[#6b5a3a] mt-1">Press Enter to save</p>
