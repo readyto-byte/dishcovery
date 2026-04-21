@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { apiCall } from "../../api/config";
 
-const DashboardNavbar = ({ setCurrentPage, sidebarOpen, setSidebarOpen, activeProfile: activeProfileProp }) => {
-  const [activeProfile, setActiveProfile] = useState(activeProfileProp);
+const DashboardNavbar = ({ setCurrentPage, sidebarOpen, setSidebarOpen, activeProfile, onActiveProfileChange }) => {
   const [profiles, setProfiles] = useState([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [switching, setSwitching] = useState(null);
@@ -13,28 +12,24 @@ const DashboardNavbar = ({ setCurrentPage, sidebarOpen, setSidebarOpen, activePr
       const response = await apiCall("/api/profiles");
       const rows = Array.isArray(response?.data) ? response.data : [];
       setProfiles(rows);
-      if (!activeProfileProp) {
+      if (!activeProfile) {
         const active = rows.find((p) => p.is_active) || null;
         if (active) {
-          setActiveProfile({ id: active.id, name: active.name ?? "", avatar: active.avatar_url ?? null });
+          onActiveProfileChange?.({ id: active.id, name: active.name ?? "", avatar: active.avatar_url ?? null });
         }
       }
     } catch {}
   };
 
-  // Fetch on mount
   useEffect(() => {
     fetchProfiles();
   }, []);
 
-  // Re-fetch every time dropdown opens so changes from Profile page are reflected
   useEffect(() => {
     if (dropdownOpen) fetchProfiles();
   }, [dropdownOpen]);
 
-  useEffect(() => {
-    if (activeProfileProp) setActiveProfile(activeProfileProp);
-  }, [activeProfileProp]);
+
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -55,7 +50,7 @@ const DashboardNavbar = ({ setCurrentPage, sidebarOpen, setSidebarOpen, activePr
         body: JSON.stringify({ isDefault: true }),
       });
       setProfiles((prev) => prev.map((p) => ({ ...p, is_active: p.id === profile.id })));
-      setActiveProfile({ id: profile.id, name: profile.name ?? "", avatar: profile.avatar_url ?? null });
+      onActiveProfileChange?.({ id: profile.id, name: profile.name ?? "", avatar: profile.avatar_url ?? null });
     } catch {}
     finally {
       setSwitching(null);
@@ -142,13 +137,12 @@ const DashboardNavbar = ({ setCurrentPage, sidebarOpen, setSidebarOpen, activePr
                 <p className="text-[#587A34] text-[10px] mt-0.5">{profiles.length} profile{profiles.length !== 1 ? 's' : ''}</p>
               </div>
 
-              {/* Scrollable profile list — shows ALL profiles */}
               <div
                 className="py-2 overflow-y-auto"
                 style={{
                   maxHeight: '240px',
                   overflowY: 'auto',
-                  // Custom scrollbar
+
                   scrollbarWidth: 'thin',
                   scrollbarColor: '#B5D098 transparent',
                 }}

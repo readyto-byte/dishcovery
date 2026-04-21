@@ -142,7 +142,6 @@ const CustomTagInput = ({ onAdd, placeholder, accentClass }) => {
   );
 };
 
-/* ── Delete Confirmation Modal ─────────────────────────────────────── */
 const DeleteConfirmModal = ({ profileName, onConfirm, onCancel, isDeleting }) => (
   <>
     <div
@@ -177,7 +176,7 @@ const DeleteConfirmModal = ({ profileName, onConfirm, onCancel, isDeleting }) =>
           <p className="text-center text-[#4a5e30] text-sm leading-relaxed mb-7">
             {isDeleting
               ? "Please wait while we remove this profile."
-              : <>This will permanently delete <span className="font-semibold text-[#32491B]">{profileName}</span>. This action cannot be undone.</>}
+              : <><span className="font-semibold text-[#32491B]">{profileName}</span> will be permanently deleted. This cannot be undone.</>}
           </p>
           <div className="h-px bg-gradient-to-r from-transparent via-[#B5D098] to-transparent mb-6" />
           <div className="flex gap-3">
@@ -196,7 +195,6 @@ const DeleteConfirmModal = ({ profileName, onConfirm, onCancel, isDeleting }) =>
   </>
 );
 
-/* ── Profile Modal ─────────────────────────────────────────────────── */
 const ProfileModal = ({ profile, onSave, onClose }) => {
   const [name, setName] = useState(profile?.name || "");
   const [dateOfBirth, setDateOfBirth] = useState(profile?.dateOfBirth || "");
@@ -295,7 +293,6 @@ const ProfileModal = ({ profile, onSave, onClose }) => {
   );
 };
 
-/* ── Profile Card ──────────────────────────────────────────────────── */
 const ProfileCard = ({ profile, onEdit, onDelete, onSetActive }) => {
   const hasRestrictions = profile.dietaryRestrictions.length > 0;
   const hasAllergies = profile.allergies.length > 0;
@@ -389,7 +386,6 @@ const ProfileCard = ({ profile, onEdit, onDelete, onSetActive }) => {
   );
 };
 
-/* ── Add Profile Card ──────────────────────────────────────────────── */
 const AddProfileCard = ({ onClick }) => (
   <button onClick={onClick}
     className="bg-[#c8dba8]/50 border-2 border-dashed border-[#587A34]/40 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 hover:bg-[#c8dba8] hover:border-[#587A34] transition-all min-h-[180px] group">
@@ -402,8 +398,7 @@ const AddProfileCard = ({ onClick }) => (
   </button>
 );
 
-/* ── Profile Page ──────────────────────────────────────────────────── */
-const ProfilePage = ({ onActiveProfileChange }) => {
+const ProfilePage = ({ activeProfile, onActiveProfileChange }) => {
   const [profiles, setProfiles] = useState([]);
   const [modal, setModal] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -429,7 +424,16 @@ const ProfilePage = ({ onActiveProfileChange }) => {
         setError("");
         const response = await apiCall("/api/profiles");
         const rows = Array.isArray(response?.data) ? response.data : [];
-        setProfiles(rows.map(mapApiProfileToUi));
+        const mapped = rows.map(mapApiProfileToUi);
+
+        const activeId = activeProfile?.id ?? mapped.find((p) => p.isDefault)?.id ?? null;
+        const normalized = mapped.map((p) => ({ ...p, isDefault: p.id === activeId }));
+        setProfiles(normalized);
+
+        if (!activeProfile?.id && activeId) {
+          const active = mapped.find((p) => p.id === activeId);
+          if (active) onActiveProfileChange?.({ id: active.id, name: active.name, avatar: active.avatar });
+        }
       } catch (err) {
         setError(err.message || "Failed to load profiles.");
       } finally {
@@ -437,6 +441,7 @@ const ProfilePage = ({ onActiveProfileChange }) => {
       }
     };
     loadProfiles();
+
   }, []);
 
   const handleEdit = (profile) => setModal({ mode: "edit", profile });
@@ -460,7 +465,7 @@ const ProfilePage = ({ onActiveProfileChange }) => {
             isDefault: profiles.length === 0,
           }),
         });
-        if (!response?.data) throw new Error("Profile created but no profile data was returned.");
+        if (!response?.data) throw new Error("Profile created but no data returned.");
         setProfiles((prev) => [...prev, mapApiProfileToUi(response.data)]);
       } else {
         const response = await apiCall(`/api/profiles/${data.id}`, {
@@ -473,7 +478,7 @@ const ProfilePage = ({ onActiveProfileChange }) => {
             allergies: data.allergies,
           }),
         });
-        if (!response?.data) throw new Error("Profile updated but no profile data was returned.");
+        if (!response?.data) throw new Error("Profile updated but no data returned.");
         const updated = mapApiProfileToUi(response.data);
         setProfiles((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
       }
@@ -485,9 +490,12 @@ const ProfilePage = ({ onActiveProfileChange }) => {
     }
   };
 
-  const handleDelete = (profile) => {
-    setDeleteTarget({ id: profile.id, name: profile.name });
-  };
+  useEffect(() => {
+    if (!activeProfile?.id) return;
+    setProfiles((prev) => prev.map((p) => ({ ...p, isDefault: p.id === activeProfile.id })));
+  }, [activeProfile?.id]);
+
+  const handleDelete = (profile) => setDeleteTarget({ id: profile.id, name: profile.name });
 
   const confirmDelete = async () => {
     if (!deleteTarget) return;
@@ -507,6 +515,7 @@ const ProfilePage = ({ onActiveProfileChange }) => {
   const handleSetActive = async (id) => {
     setError("");
     const previous = profiles;
+
     const next = previous.map((p) => ({ ...p, isDefault: p.id === id }));
     setProfiles(next);
 
@@ -516,14 +525,10 @@ const ProfilePage = ({ onActiveProfileChange }) => {
     }
 
     try {
-      await Promise.all(
-        next.map((p) =>
-          apiCall(`/api/profiles/${p.id}`, {
-            method: "PUT",
-            body: JSON.stringify({ isDefault: p.id === id }),
-          })
-        )
-      );
+      await apiCall(`/api/profiles/${id}`, {
+        method: "PUT",
+        body: JSON.stringify({ isDefault: true }),
+      });
     } catch (err) {
       setProfiles(previous);
       setError(err.message || "Failed to update active profile.");
@@ -532,7 +537,6 @@ const ProfilePage = ({ onActiveProfileChange }) => {
 
   return (
     <div className="mx-4 md:mx-8 mt-6">
-
       <div
         className="relative rounded-2xl shadow-xl overflow-hidden px-8 py-7 mb-6 flex items-center gap-5"
         style={{ backgroundImage: `url(${heroBg})`, backgroundSize: "cover", backgroundPosition: "center" }}
@@ -567,9 +571,7 @@ const ProfilePage = ({ onActiveProfileChange }) => {
         <AddProfileCard onClick={handleAdd} />
       </div>
 
-      {modal && (
-        <ProfileModal profile={modal.profile} onSave={handleSave} onClose={handleClose} />
-      )}
+      {modal && <ProfileModal profile={modal.profile} onSave={handleSave} onClose={handleClose} />}
 
       {deleteTarget && (
         <DeleteConfirmModal
