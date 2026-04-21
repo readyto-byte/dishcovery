@@ -26,7 +26,11 @@ const Sidebar = ({ currentPage, setCurrentPage, sidebarOpen, setSidebarOpen, onL
   return (
     <>
       <div
+<<<<<<< Updated upstream
         className={`fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm transition-opacity duration-300 ${
+=======
+        className={`fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm transition-all duration-300 ${
+>>>>>>> Stashed changes
           sidebarOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'
         }`}
         onClick={() => setSidebarOpen(false)}
@@ -52,13 +56,24 @@ const Sidebar = ({ currentPage, setCurrentPage, sidebarOpen, setSidebarOpen, onL
             </div>
           </div>
 
+<<<<<<< Updated upstream
           <div className="flex-1 py-2 space-y-1">
+=======
+          {/* Optional: Remove the line if it's still causing visual issues */}
+          <div className="mx-6 h-px bg-gradient-to-r from-transparent via-[#B5D098] to-transparent mb-6" />
+
+          <div className="flex-1 py-2 space-y-1 overflow-y-auto">
+>>>>>>> Stashed changes
             {navItems.map(item => (
               <button
                 key={item.id}
                 onClick={() => {
                   setCurrentPage(item.id);
+<<<<<<< Updated upstream
                   if (window.innerWidth < 1024) setSidebarOpen(false);
+=======
+                  if (window.innerWidth < 1024) setSidebarOpen(false); // Auto-close on mobile selection
+>>>>>>> Stashed changes
                 }}
                 className={`relative flex items-center gap-4 pl-6 pr-0 py-3.5 w-full text-left transition-all duration-200 group cursor-pointer ${
                   currentPage === item.id
