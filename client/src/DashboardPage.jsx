@@ -11,6 +11,44 @@ import ProfilePage from "./components/Dashboard/ProfilePage";
 import SettingsPage from "./components/Dashboard/SettingsPage";
 import FavoritesPage from "./components/Dashboard/FavoritesPage";
 
+const getRecipeErrorMessage = (error) => {
+  const fallback = "Failed to generate recipe. Please try again.";
+  const rawMessage = typeof error?.message === "string" ? error.message : "";
+
+  const parseErrorPayload = (value) => {
+    if (!value) return null;
+    if (typeof value === "object") return value;
+    if (typeof value !== "string") return null;
+    try {
+      return JSON.parse(value);
+    } catch {
+      return null;
+    }
+  };
+
+  const parsed = parseErrorPayload(rawMessage);
+  const errorPayload = parsed?.error || parsed;
+  const serviceMessage =
+    errorPayload?.message ||
+    parsed?.message ||
+    (typeof rawMessage === "string" ? rawMessage : "");
+  const status = errorPayload?.status || parsed?.status || "";
+
+  // Gemini can return transient UNAVAILABLE/high-demand errors.
+  if (
+    status === "UNAVAILABLE" ||
+    /high demand|try again later|UNAVAILABLE/i.test(serviceMessage)
+  ) {
+    return "Dishcovery AI is busy right now. Please try again in a moment.";
+  }
+
+  if (serviceMessage && serviceMessage.trim().length > 0) {
+    return serviceMessage;
+  }
+
+  return fallback;
+};
+
 // ── Recipe Detail Modal ───────────────────────────────────────────────────────
 const RecipeDetailModal = ({ recipe, onClose }) => {
   if (!recipe) return null;
@@ -266,7 +304,7 @@ const DashboardPage = () => {
         instructions: Array.isArray(suggestion.instructions) ? suggestion.instructions : [],
       });
     } catch (error) {
-      setRecipeError(error.message || "Failed to generate recipe.");
+      setRecipeError(getRecipeErrorMessage(error));
     } finally {
       setHasGenerated(true);
       setIsLoading(false);
