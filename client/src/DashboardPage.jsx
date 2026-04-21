@@ -6,11 +6,124 @@ import DashboardNavbar from "./components/Dashboard/DashboardNavbar";
 import WelcomeBanner from "./components/Dashboard/WelcomeBanner";
 import CreateRecipeSection from "./components/Dashboard/CreateRecipeSection";
 import RecipeCard from "./components/Dashboard/RecipeCard";
+import RecipeOptionsGrid from "./components/Dashboard/RecipeOptionsGrid";
 import MealPlanPage from "./components/Dashboard/MealPlanPage";
 import HistoryPage from "./components/Dashboard/HistoryPage";
 import ProfilePage from "./components/Dashboard/ProfilePage";
 import SettingsPage from "./components/Dashboard/SettingsPage";
 import FavoritesPage from "./components/Dashboard/FavoritesPage";
+
+// ===== TEST MODE CONFIGURATION =====
+const TEST_MODE = true; // Set to false to use real Gemini API
+const USE_MOCK_OPTIONS = true; // Set to false to test single recipe mode
+const MOCK_DELAY_MS = 1500; // Simulate network delay in milliseconds
+
+// Mock data for testing multiple options
+const MOCK_RECIPE_OPTIONS = [
+  {
+    id: 'mock-1',
+    title: 'Classic Strawberry Cake',
+    description: 'A traditional strawberry cake with fresh strawberries and cream cheese frosting. Perfect for birthdays and special occasions.',
+    prepTime: '20 min',
+    cookTime: '35 min',
+    servings: 8,
+    difficulty: 'Medium',
+    tags: ['classic', 'birthday', 'dessert'],
+    ingredients: ['2 cups all-purpose flour', '1 cup fresh strawberries (mashed)', '3 large eggs', '1 cup granulated sugar', '1/2 cup unsalted butter', '1 tsp vanilla extract', '2 tsp baking powder', '1/4 tsp salt'],
+    instructions: [
+      'Preheat oven to 350°F (175°C)',
+      'Grease and flour a 9-inch cake pan',
+      'Cream butter and sugar until light and fluffy',
+      'Add eggs one at a time, beating well after each',
+      'Mix in vanilla extract and mashed strawberries',
+      'In separate bowl, whisk flour, baking powder, and salt',
+      'Gradually add dry ingredients to wet mixture, mixing until just combined',
+      'Pour batter into prepared pan and smooth the top',
+      'Bake for 35 minutes or until toothpick comes out clean',
+      'Let cool in pan for 10 minutes, then transfer to wire rack'
+    ],
+  },
+  {
+    id: 'mock-2',
+    title: 'Gluten-Free Strawberry Cake',
+    description: 'A delicious gluten-free version using almond flour. Moist, flavorful, and perfect for those with dietary restrictions.',
+    prepTime: '15 min',
+    cookTime: '30 min',
+    servings: 6,
+    difficulty: 'Easy',
+    tags: ['gluten-free', 'healthy', 'almond'],
+    ingredients: ['2 cups almond flour', '1 cup fresh strawberries (chopped)', '3 large eggs', '1/2 cup honey', '1/4 cup coconut oil (melted)', '1 tsp vanilla extract', '1 tsp baking soda', 'Pinch of salt'],
+    instructions: [
+      'Preheat oven to 350°F (175°C)',
+      'Line an 8-inch cake pan with parchment paper',
+      'In large bowl, whisk eggs, honey, coconut oil, and vanilla',
+      'Add almond flour, baking soda, and salt, mix until combined',
+      'Gently fold in chopped strawberries',
+      'Pour batter into prepared pan',
+      'Bake for 30 minutes until golden brown',
+      'Cool completely before serving'
+    ],
+  },
+  {
+    id: 'mock-3',
+    title: 'Vegan Strawberry Cake',
+    description: 'Plant-based strawberry cake that\'s just as delicious as the original. Dairy-free and egg-free!',
+    prepTime: '20 min',
+    cookTime: '35 min',
+    servings: 8,
+    difficulty: 'Medium',
+    tags: ['vegan', 'dairy-free', 'plant-based'],
+    ingredients: ['2 cups all-purpose flour', '1 cup fresh strawberries (pureed)', '2 flax eggs (2 tbsp flaxseed meal + 6 tbsp water)', '3/4 cup coconut sugar', '1/2 cup coconut oil', '1 cup plant-based milk (almond or oat)', '1 tbsp baking powder', '1 tsp vanilla extract'],
+    instructions: [
+      'Preheat oven to 350°F (175°C)',
+      'Prepare flax eggs and let sit for 5 minutes',
+      'In large bowl, mix coconut oil and coconut sugar',
+      'Add flax eggs, vanilla, and plant milk',
+      'In separate bowl, whisk flour and baking powder',
+      'Combine wet and dry ingredients, mix until just combined',
+      'Fold in strawberry puree',
+      'Pour into greased 9-inch cake pan',
+      'Bake for 35 minutes',
+      'Cool before frosting'
+    ],
+  },
+];
+
+// Mock data for single recipe (when USE_MOCK_OPTIONS is false)
+const MOCK_SINGLE_RECIPE = {
+  id: 'mock-single',
+  title: 'Homemade Strawberry Cake',
+  description: 'A delicious homemade strawberry cake made with fresh strawberries. Perfect for any celebration or weekend baking project.',
+  prepTime: '20 min',
+  cookTime: '35 min',
+  servings: 8,
+  difficulty: 'Medium',
+  tags: ['dessert', 'birthday', 'homemade', 'strawberry'],
+  ingredients: [
+    '2 1/2 cups all-purpose flour',
+    '1 1/2 cups fresh strawberries (mashed)',
+    '3 large eggs (room temperature)',
+    '1 3/4 cups granulated sugar',
+    '1 cup unsalted butter (softened)',
+    '1 tsp vanilla extract',
+    '2 tsp baking powder',
+    '1/2 tsp baking soda',
+    '1/2 tsp salt',
+    '1/2 cup buttermilk'
+  ],
+  instructions: [
+    'Preheat oven to 350°F (175°C) and grease two 9-inch cake pans',
+    'In a medium bowl, whisk together flour, baking powder, baking soda, and salt',
+    'In a large bowl, cream butter and sugar until light and fluffy (about 3-4 minutes)',
+    'Add eggs one at a time, beating well after each addition',
+    'Mix in vanilla extract and mashed strawberries',
+    'Alternately add dry ingredients and buttermilk, beginning and ending with dry ingredients',
+    'Divide batter evenly between prepared pans',
+    'Bake for 30-35 minutes or until toothpick comes out clean',
+    'Cool in pans for 10 minutes, then transfer to wire racks to cool completely',
+    'Frost with cream cheese frosting and garnish with fresh strawberries'
+  ],
+};
 
 const RecipeDetailsModal = ({ recipe, onClose }) => {
   if (!recipe) return null;
@@ -140,6 +253,8 @@ const DashboardPage = () => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [generatedRecipe, setGeneratedRecipe] = useState(null);
+  const [recipeOptions, setRecipeOptions] = useState([]);
+  const [showOptions, setShowOptions] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateError, setGenerateError] = useState("");
   const [aiResponse, setAiResponse] = useState(null);
@@ -166,7 +281,41 @@ const DashboardPage = () => {
     instructions: Array.isArray(suggestion?.instructions) ? suggestion.instructions : [],
   });
 
-  const handleGenerateRecipe = async (promptText, history) => {
+  const handleGenerateWithOptions = async (promptText, history, numOptions = 3) => {
+    if (TEST_MODE) {
+      console.log("🧪 TEST MODE: Using mock data instead of Gemini API");
+      console.log("📝 User prompt:", promptText);
+      console.log("📜 History length:", history?.length || 0);
+      
+      setIsGenerating(true);
+      setGenerateError("");
+      
+      await new Promise(resolve => setTimeout(resolve, MOCK_DELAY_MS));
+      
+      try {
+        if (USE_MOCK_OPTIONS && numOptions > 1) {
+          console.log("🎯 Returning multiple options (grid mode)");
+          setRecipeOptions(MOCK_RECIPE_OPTIONS);
+          setShowOptions(true);
+          setGeneratedRecipe(null);
+          setAiResponse(null);
+        } else {
+          console.log("🎯 Returning single recipe");
+          setGeneratedRecipe(MOCK_SINGLE_RECIPE);
+          setAiResponse({
+            headline: MOCK_SINGLE_RECIPE.title,
+            summary: MOCK_SINGLE_RECIPE.description,
+          });
+        }
+        setGenerateError("");
+      } catch (error) {
+        setGenerateError("Mock mode error: " + error.message);
+      } finally {
+        setIsGenerating(false);
+      }
+      return;
+    }
+    
     const now = Date.now();
     const timeSinceLastRequest = now - lastRequestTime;
     if (timeSinceLastRequest < 2000 && lastRequestTime !== 0) {
@@ -178,16 +327,32 @@ const DashboardPage = () => {
       setIsGenerating(true);
       setGenerateError("");
       setLastRequestTime(now);
-
-      let finalPrompt = promptText;
-
+      setShowOptions(false);
+      setRecipeOptions([]);
+      
+      let finalPrompt = `Generate ${numOptions} different recipe variations for: "${promptText}".
+      
+Return the response as a JSON object with this exact structure:
+{
+  "options": [
+    {
+      "title": "Option 1 title",
+      "description": "Brief description",
+      "keyIngredients": ["ingredient1", "ingredient2"],
+      "cookTimeMin": 30,
+      "servings": 4,
+      "instructions": ["step1", "step2"]
+    }
+  ]
+}`;
+      
       if (history && history.length > 0 && aiResponse) {
-        const lastRecipeTitle = aiResponse.headline;
-        finalPrompt = `Previous recipe: "${lastRecipeTitle}". 
+        finalPrompt = `Previous recipe context: "${aiResponse.headline}"
         
-User request: ${promptText}
+User request: Generate ${numOptions} variations for "${promptText}"
 
-Please modify the previous recipe based on this request. Return a complete updated recipe with title, description, ingredients, and instructions.`;
+Please provide ${numOptions} different ways to modify/adapt the previous recipe.
+Return as JSON with the structure above.`;
       }
       
       const response = await apiCall("/api/recipes", {
@@ -199,22 +364,46 @@ Please modify the previous recipe based on this request. Return a complete updat
       });
 
       const recipeResponse = response?.response;
-      const firstSuggestion = recipeResponse?.suggestions?.[0];
-      if (!firstSuggestion) {
-        throw new Error("No recipe suggestions were returned.");
+      
+      if (recipeResponse?.options && Array.isArray(recipeResponse.options)) {
+        const options = recipeResponse.options.map((opt, index) => ({
+          id: `option-${index}`,
+          title: opt.title || `Option ${index + 1}`,
+          description: opt.description || "",
+          prepTime: opt.cookTimeMin ? `${opt.cookTimeMin} min` : "N/A",
+          cookTime: opt.cookTimeMin ? `${opt.cookTimeMin} min` : "N/A",
+          servings: opt.servings || "-",
+          difficulty: ["Easy", "Medium", "Hard"][index % 3],
+          tags: ["ai", "generated"],
+          ingredients: Array.isArray(opt.keyIngredients) ? opt.keyIngredients : [],
+          instructions: Array.isArray(opt.instructions) ? opt.instructions : [],
+        }));
+        
+        if (options.length > 1) {
+          setRecipeOptions(options);
+          setShowOptions(true);
+        } else if (options.length === 1) {
+          setGeneratedRecipe(options[0]);
+          setAiResponse({
+            headline: options[0].title,
+            summary: options[0].description,
+          });
+        }
+      } else if (recipeResponse?.suggestions?.[0]) {
+        const card = mapSuggestionToCard(
+          recipeResponse.suggestions[0],
+          recipeResponse?.estimatedTime,
+          recipeResponse.suggestions[0]?.id ?? null
+        );
+        setGeneratedRecipe(card);
+        setAiResponse({
+          headline: card.title,
+          summary: card.description,
+        });
+      } else {
+        throw new Error("No recipe options were returned.");
       }
-
-      const card = mapSuggestionToCard(
-        firstSuggestion,
-        recipeResponse?.estimatedTime,
-        firstSuggestion?.id ?? null
-      );
-
-      setGeneratedRecipe(card);
-      setAiResponse({
-        headline: card.title,
-        summary: card.description || "Your recipe is ready! Ask a follow-up to refine it.",
-      });
+      
     } catch (error) {
       console.error("Recipe generation error:", error);
       
@@ -225,15 +414,36 @@ Please modify the previous recipe based on this request. Return a complete updat
       }
       setGeneratedRecipe(null);
       setAiResponse(null);
+      setShowOptions(false);
     } finally {
       setIsGenerating(false);
     }
   };
 
+  const handleSelectOption = (selectedRecipe) => {
+    console.log("✅ User selected option:", selectedRecipe.title);
+    setGeneratedRecipe(selectedRecipe);
+    setAiResponse({
+      headline: selectedRecipe.title,
+      summary: selectedRecipe.description || "You selected this recipe! Ask a follow-up to refine it further.",
+    });
+    setShowOptions(false);
+    setRecipeOptions([]);
+  };
+
+  const handleGenerateRecipe = async (promptText, history) => {
+    // For test mode, always show options if USE_MOCK_OPTIONS is true
+    const shouldShowOptions = TEST_MODE ? USE_MOCK_OPTIONS : true;
+    await handleGenerateWithOptions(promptText, history, shouldShowOptions ? 3 : 1);
+  };
+
   const handleResetRecipe = () => {
+    console.log("🔄 Resetting recipe conversation");
     setAiResponse(null);
     setGeneratedRecipe(null);
     setGenerateError("");
+    setShowOptions(false);
+    setRecipeOptions([]);
   };
 
   const renderPage = () => {
@@ -242,18 +452,38 @@ Please modify the previous recipe based on this request. Return a complete updat
         return (
           <>
             <WelcomeBanner />
+            
+            {/* Test Mode Indicator */}
+            {TEST_MODE && (
+              <div className="mx-4 md:mx-8 mb-4 rounded-xl border border-yellow-300 bg-yellow-50 px-4 py-2 text-sm text-yellow-700 flex items-center gap-2">
+                <span className="text-lg">🧪</span>
+                <span>Test Mode Active - Using Mock Data (No API calls)</span>
+                <span className="text-xs ml-auto opacity-70">Set TEST_MODE=false to use Gemini API</span>
+              </div>
+            )}
+            
             <CreateRecipeSection 
               onGenerate={handleGenerateRecipe} 
               isLoading={isGenerating}
               aiResponse={aiResponse}
               onReset={handleResetRecipe}
             />
+            
             {generateError && (
               <div className="mx-4 md:mx-8 mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 {generateError}
               </div>
             )}
-            {(isGenerating || generatedRecipe) && (
+            
+            {showOptions && recipeOptions.length > 0 && (
+              <RecipeOptionsGrid 
+                options={recipeOptions}
+                onSelectOption={handleSelectOption}
+                isLoading={isGenerating}
+              />
+            )}
+            
+            {!showOptions && (isGenerating || generatedRecipe) && (
               <RecipeCard recipeData={generatedRecipe || {}} isLoading={isGenerating} />
             )}
           </>
