@@ -3,6 +3,26 @@ const router = express.Router();
 const { searchRecipes, getCachedRecipeResponse, cacheRecipeResponse } = require('../controllers/recipes');
 const { addHistoryRecord } = require('../controllers/history');
 
+function normalizeProfileForCache(profile = {}) {
+  const restrictions = Array.isArray(profile.dietary_restrictions)
+    ? profile.dietary_restrictions
+    : Array.isArray(profile.dietaryRestrictions)
+      ? profile.dietaryRestrictions
+      : [];
+  const allergies = Array.isArray(profile.dietary_preferences)
+    ? profile.dietary_preferences
+    : Array.isArray(profile.allergies)
+      ? profile.allergies
+      : [];
+
+  return {
+    id: profile.id ?? null,
+    name: profile.name ?? '',
+    dietary_restrictions: [...restrictions].sort(),
+    dietary_preferences: [...allergies].sort(),
+  };
+}
+
 router.post('/', async (req, res) => {
   try {
     const accountId = req.user?.id;
@@ -17,7 +37,9 @@ router.post('/', async (req, res) => {
     }
 
     const query = search_query ?? searchQuery ?? conversation.map((msg) => msg.content).join(' ');
-    const cachedResponse = await getCachedRecipeResponse(query);
+    const cacheContext = JSON.stringify((profiles || []).map(normalizeProfileForCache));
+    const cacheQuery = `${query}||profiles:${cacheContext}`;
+    const cachedResponse = await getCachedRecipeResponse(cacheQuery);
 
     if (cachedResponse) {
       await addHistoryRecord(accountId, {
@@ -31,7 +53,7 @@ router.post('/', async (req, res) => {
     }
 
     const response = await searchRecipes({ profiles, conversation });
-    const cachedRows = await cacheRecipeResponse(query, response);
+    const cachedRows = await cacheRecipeResponse(cacheQuery, response);
 
     await addHistoryRecord(accountId, {
       search_query: query,

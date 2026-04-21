@@ -120,11 +120,30 @@ const DashboardPage = () => {
     try {
       const profilesResponse = await apiCall("/api/profiles");
       const profiles = Array.isArray(profilesResponse?.data) ? profilesResponse.data : [];
+      const selectedProfile =
+        profiles.find((profile) => profile?.is_active) ||
+        profiles[0] ||
+        null;
+
+      if (!selectedProfile) {
+        throw new Error("No profile found. Please create and select a profile first.");
+      }
 
       const response = await apiCall("/api/recipes", {
         method: "POST",
         body: JSON.stringify({
-          profiles,
+          profiles: [
+            {
+              id: selectedProfile.id,
+              name: selectedProfile.name,
+              dietary_restrictions: Array.isArray(selectedProfile.dietary_restrictions)
+                ? selectedProfile.dietary_restrictions
+                : [],
+              dietary_preferences: Array.isArray(selectedProfile.dietary_preferences)
+                ? selectedProfile.dietary_preferences
+                : [],
+            },
+          ],
           conversation: [{ role: "user", content: userInput }],
           searchQuery: userInput,
         }),

@@ -21,11 +21,24 @@ function parseMinutes(value) {
   return match ? Number(match[0]) : null;
 }
 
+function asArray(value) {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string' && value.trim()) return [value.trim()];
+  return [];
+}
+
+function toCsvOrNone(values) {
+  const list = asArray(values).map((item) => String(item).trim()).filter(Boolean);
+  return list.length > 0 ? list.join(', ') : 'none';
+}
+
 async function searchRecipes({ profiles, conversation = [] }) {
   let profileInfo = 'No profiles specified.';
   if (profiles && profiles.length > 0) {
     profileInfo = profiles.map((p) => {
-      return `${p.name}: Dietary Restrictions - ${p.dietary_restrictions || 'none'}, Preferences - ${p.dietary_preferences || 'none'}`;
+      const dietaryRestrictions = p.dietary_restrictions ?? p.dietaryRestrictions ?? [];
+      const allergies = p.dietary_preferences ?? p.allergies ?? [];
+      return `${p.name || 'Unknown profile'}: Dietary Restrictions - ${toCsvOrNone(dietaryRestrictions)}; Allergies - ${toCsvOrNone(allergies)}`;
     }).join('; ');
   }
 
@@ -39,6 +52,11 @@ Conversation history:
 ${conversationText}
 
 Respond as a friendly expert chef chatbot that is giving recipes to a not very proficient user in cooking. If this is the first message, acknowledge the profiles and the user's prompt, suggest 2-3 recipe ideas. For follow-up messages, continue the conversation naturally, refine suggestions based on new info, and provide more recipes if needed.
+
+CRITICAL SAFETY REQUIREMENT:
+- Never suggest ingredients that conflict with listed dietary restrictions.
+- Never include allergens listed for any profile.
+- If the request conflicts with restrictions/allergies, explain briefly and provide safe alternatives.
 
 Always include recipe recommendations at the end of your response when appropriate.
 
