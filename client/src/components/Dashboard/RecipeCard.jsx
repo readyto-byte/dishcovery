@@ -30,6 +30,8 @@ const RecipeCard = ({ recipeData, isLoading }) => {
           tags: recipeData.tags,
           type: recipeData.tags?.[0] || 'Saved Recipe',
           time: recipeData.prepTime,
+          ingredients: Array.isArray(recipeData.ingredients) ? recipeData.ingredients : [],
+          instructions: Array.isArray(recipeData.instructions) ? recipeData.instructions : [],
         });
         localStorage.setItem('favoriteRecipes', JSON.stringify(favorites));
       }

@@ -11,7 +11,14 @@ const FavoritesPage = ({ onViewRecipe }) => {  // ← accept prop
         const savedFavorites = localStorage.getItem('favoriteRecipes');
         if (savedFavorites) {
           const parsedFavorites = JSON.parse(savedFavorites);
-          setFavorites(Array.isArray(parsedFavorites) ? parsedFavorites : []);
+          const normalizedFavorites = Array.isArray(parsedFavorites)
+            ? parsedFavorites.map((recipe) => ({
+                ...recipe,
+                ingredients: Array.isArray(recipe?.ingredients) ? recipe.ingredients : [],
+                instructions: Array.isArray(recipe?.instructions) ? recipe.instructions : [],
+              }))
+            : [];
+          setFavorites(normalizedFavorites);
         } else {
           setFavorites([]);
         }
