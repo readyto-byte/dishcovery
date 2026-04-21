@@ -1,189 +1,104 @@
+import { useEffect, useState } from "react";
 import heroBg from "../../assets/hero-bg.jpg";
+import { apiCall } from "../../api/config";
 
 const HistoryPage = ({ onViewRecipe }) => {
+  const [historyRecipes, setHistoryRecipes] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isClearing, setIsClearing] = useState(false);
+  const [error, setError] = useState("");
 
-  const historyRecipes = [
-    {
-      id: 1,
-      title: "Strawberries with Yogurt & Honey",
-      type: "Classic Recipe",
-      difficulty: "Easy",
-      time: "10 min",
-      servings: 2,
-      viewed: "2 days ago",
-      tags: ["dessert", "healthy", "quick"],
-      description: "A refreshing and wholesome treat that combines sweet strawberries with creamy yogurt and a drizzle of honey.",
-      ingredients: [
-        "2 cups fresh strawberries, hulled and sliced",
-        "1 cup plain Greek yogurt",
-        "2 tablespoons honey",
-        "1 teaspoon vanilla extract",
-        "1 tablespoon chopped fresh mint (optional)"
-      ],
-      instructions: [
-        "Wash and hull the strawberries, then slice them evenly.",
-        "In a bowl, combine yogurt, honey, and vanilla extract. Mix well.",
-        "Gently fold the sliced strawberries into the yogurt mixture.",
-        "Garnish with fresh mint leaves if desired.",
-        "Serve immediately or refrigerate for up to 15 minutes before serving."
-      ]
-    },
-    {
-      id: 2,
-      title: "Classic Italian Lasagna",
-      type: "Italian",
-      difficulty: "Medium",
-      time: "45 min",
-      servings: 6,
-      viewed: "3 days ago",
-      tags: ["italian", "dinner"],
-      description: "A hearty, layered Italian classic with rich meat sauce, creamy béchamel, and melted cheese.",
-      ingredients: [
-        "12 lasagna noodles",
-        "500g ground beef",
-        "1 can (400g) crushed tomatoes",
-        "1 onion, diced",
-        "3 garlic cloves, minced",
-        "2 cups ricotta cheese",
-        "2 cups shredded mozzarella",
-        "½ cup grated Parmesan",
-        "2 tablespoons olive oil",
-        "Salt, pepper, and Italian seasoning to taste"
-      ],
-      instructions: [
-        "Preheat oven to 190°C (375°F). Cook lasagna noodles per package instructions.",
-        "Sauté onion and garlic in olive oil until soft. Add ground beef and cook until browned.",
-        "Stir in crushed tomatoes and seasoning. Simmer for 15 minutes.",
-        "Layer meat sauce, noodles, ricotta, and mozzarella in a baking dish. Repeat layers.",
-        "Top with remaining mozzarella and Parmesan.",
-        "Cover with foil and bake for 25 minutes, then uncover and bake 15 more minutes.",
-        "Let rest 10 minutes before serving."
-      ]
-    },
-    {
-      id: 3,
-      title: "Garlic Butter Salmon",
-      type: "Seafood",
-      difficulty: "Easy",
-      time: "20 min",
-      servings: 4,
-      viewed: "5 days ago",
-      tags: ["seafood", "healthy"],
-      description: "Pan-seared salmon fillets bathed in a rich garlic butter sauce — quick, elegant, and absolutely delicious.",
-      ingredients: [
-        "4 salmon fillets",
-        "3 tablespoons unsalted butter",
-        "4 garlic cloves, minced",
-        "1 lemon, juiced and zested",
-        "2 tablespoons fresh parsley, chopped",
-        "Salt and pepper to taste",
-        "1 tablespoon olive oil"
-      ],
-      instructions: [
-        "Season salmon fillets with salt and pepper on both sides.",
-        "Heat olive oil in a skillet over medium-high heat.",
-        "Sear salmon skin-side up for 4 minutes, then flip and cook 3 more minutes.",
-        "Reduce heat and add butter and garlic to the pan. Baste salmon with the melted butter.",
-        "Add lemon juice and zest. Cook 1 more minute.",
-        "Garnish with fresh parsley and serve immediately."
-      ]
-    },
-    {
-      id: 4,
-      title: "Vegetable Stir Fry",
-      type: "Asian",
-      difficulty: "Easy",
-      time: "15 min",
-      servings: 4,
-      viewed: "1 week ago",
-      tags: ["vegan", "quick"],
-      description: "A vibrant and colorful stir fry packed with fresh vegetables in a savory soy-ginger sauce.",
-      ingredients: [
-        "1 cup broccoli florets",
-        "1 red bell pepper, sliced",
-        "1 cup snap peas",
-        "1 carrot, julienned",
-        "2 tablespoons soy sauce",
-        "1 tablespoon sesame oil",
-        "1 teaspoon fresh ginger, grated",
-        "2 garlic cloves, minced",
-        "1 tablespoon vegetable oil",
-        "Sesame seeds to garnish"
-      ],
-      instructions: [
-        "Heat vegetable oil in a wok or large pan over high heat.",
-        "Add garlic and ginger, stir fry for 30 seconds.",
-        "Add carrots and broccoli, cook for 2 minutes.",
-        "Add bell pepper and snap peas, cook for another 2 minutes.",
-        "Pour in soy sauce and sesame oil, toss to combine.",
-        "Garnish with sesame seeds and serve over rice or noodles."
-      ]
-    },
-    {
-      id: 5,
-      title: "Homemade Tomato Soup",
-      type: "Comfort Food",
-      difficulty: "Easy",
-      time: "30 min",
-      servings: 4,
-      viewed: "1 week ago",
-      tags: ["soup", "vegetarian"],
-      description: "A velvety, warming tomato soup made from scratch — the ultimate comfort food on a cold day.",
-      ingredients: [
-        "6 ripe tomatoes, chopped",
-        "1 onion, diced",
-        "3 garlic cloves, minced",
-        "2 cups vegetable broth",
-        "2 tablespoons olive oil",
-        "1 teaspoon sugar",
-        "½ cup heavy cream (optional)",
-        "Fresh basil leaves",
-        "Salt and pepper to taste"
-      ],
-      instructions: [
-        "Heat olive oil in a large pot. Sauté onion and garlic until translucent.",
-        "Add chopped tomatoes and sugar. Cook for 10 minutes until softened.",
-        "Pour in vegetable broth and bring to a boil. Simmer for 15 minutes.",
-        "Blend the soup until smooth using an immersion blender.",
-        "Stir in heavy cream if using. Season with salt and pepper.",
-        "Serve hot with fresh basil and crusty bread."
-      ]
-    },
-    {
-      id: 6,
-      title: "Fluffy Pancakes",
-      type: "Breakfast",
-      difficulty: "Easy",
-      time: "20 min",
-      servings: 4,
-      viewed: "2 weeks ago",
-      tags: ["breakfast", "sweet"],
-      description: "Light, airy, golden pancakes that are perfectly fluffy inside — a breakfast classic everyone loves.",
-      ingredients: [
-        "1½ cups all-purpose flour",
-        "3½ teaspoons baking powder",
-        "1 tablespoon sugar",
-        "¼ teaspoon salt",
-        "1¼ cups milk",
-        "1 egg",
-        "3 tablespoons melted butter",
-        "1 teaspoon vanilla extract",
-        "Butter and maple syrup to serve"
-      ],
-      instructions: [
-        "In a large bowl, whisk together flour, baking powder, sugar, and salt.",
-        "In another bowl, beat together milk, egg, melted butter, and vanilla.",
-        "Pour wet ingredients into dry ingredients and stir until just combined — do not overmix.",
-        "Heat a lightly buttered griddle over medium heat.",
-        "Pour ¼ cup batter per pancake. Cook until bubbles form on surface, then flip.",
-        "Cook 1–2 more minutes until golden. Serve with butter and maple syrup."
-      ]
+  const getRelativeViewedTime = (isoDate) => {
+    if (!isoDate) return "recently";
+    const now = new Date();
+    const viewedAt = new Date(isoDate);
+    const diffMs = now - viewedAt;
+    const minute = 60 * 1000;
+    const hour = 60 * minute;
+    const day = 24 * hour;
+    const week = 7 * day;
+
+    if (diffMs < hour) {
+      const mins = Math.max(1, Math.floor(diffMs / minute));
+      return `${mins} min ago`;
     }
-  ];
+    if (diffMs < day) {
+      const hours = Math.floor(diffMs / hour);
+      return `${hours} hour${hours > 1 ? "s" : ""} ago`;
+    }
+    if (diffMs < week) {
+      const days = Math.floor(diffMs / day);
+      return `${days} day${days > 1 ? "s" : ""} ago`;
+    }
+    const weeks = Math.floor(diffMs / week);
+    return `${weeks} week${weeks > 1 ? "s" : ""} ago`;
+  };
 
-  const handleClearHistory = () => {
-    if (confirm('Are you sure you want to clear your entire recipe history?')) {
-      alert('History cleared!');
+  const parseOutputResponse = (outputResponse) => {
+    if (!outputResponse) return null;
+    if (typeof outputResponse === "object") return outputResponse;
+    if (typeof outputResponse === "string") {
+      try {
+        return JSON.parse(outputResponse);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  };
+
+  const mapHistoryToUi = (item) => {
+    const parsed = parseOutputResponse(item.output_response);
+    const firstSuggestion = parsed?.suggestions?.[0] || {};
+    const estimatedTime = parsed?.estimatedTime || "N/A";
+
+    return {
+      id: item.id,
+      title: firstSuggestion.title || item.search_query || "Generated Recipe",
+      type: item.source_api === "cache" ? "Cached Recipe" : "AI Generated",
+      difficulty: "Medium",
+      time: estimatedTime,
+      servings: firstSuggestion.servings || "-",
+      viewed: getRelativeViewedTime(item.searched_date),
+      tags: ["history", "dishcovery", item.source_api || "recipe"],
+      description: firstSuggestion.description || parsed?.message || "",
+      ingredients: Array.isArray(firstSuggestion.keyIngredients) ? firstSuggestion.keyIngredients : [],
+      instructions: Array.isArray(firstSuggestion.instructions) ? firstSuggestion.instructions : [],
+    };
+  };
+
+  useEffect(() => {
+    const loadHistory = async () => {
+      try {
+        setIsLoading(true);
+        setError("");
+        const response = await apiCall("/api/history");
+        const rows = Array.isArray(response?.data) ? response.data : [];
+        setHistoryRecipes(rows.map(mapHistoryToUi));
+      } catch (err) {
+        setError(err.message || "Failed to load history.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadHistory();
+  }, []);
+
+  const handleClearHistory = async () => {
+    if (!confirm("Are you sure you want to clear your entire recipe history?")) {
+      return;
+    }
+
+    try {
+      setIsClearing(true);
+      setError("");
+      await apiCall("/api/history", { method: "DELETE" });
+      setHistoryRecipes([]);
+    } catch (err) {
+      setError(err.message || "Failed to clear history.");
+    } finally {
+      setIsClearing(false);
     }
   };
 
@@ -207,14 +122,31 @@ const HistoryPage = ({ onViewRecipe }) => {
           </div>
           <button
             onClick={handleClearHistory}
-            className="shrink-0 bg-[#587A34] hover:bg-[#32491B] transition-all px-5 py-2 rounded-lg text-white font-semibold text-sm shadow-md cursor-pointer"
+            disabled={isClearing || isLoading || historyRecipes.length === 0}
+            className="shrink-0 bg-[#587A34] hover:bg-[#32491B] transition-all px-5 py-2 rounded-lg text-white font-semibold text-sm shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <i className="fas fa-trash-alt mr-2"></i> Clear History
+            <i className="fas fa-trash-alt mr-2"></i> {isClearing ? "Clearing..." : "Clear History"}
           </button>
         </div>
       </div>
 
       <div className="mx-4 md:mx-8">
+        {error ? (
+          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        ) : null}
+
+        {isLoading ? (
+          <div className="rounded-xl bg-white/70 px-4 py-5 text-sm text-[#2d3f1a]">Loading history...</div>
+        ) : null}
+
+        {!isLoading && historyRecipes.length === 0 ? (
+          <div className="rounded-xl bg-white/70 px-4 py-5 text-sm text-[#2d3f1a]">
+            No generated recipes in history yet. Create a recipe to see it here.
+          </div>
+        ) : null}
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {historyRecipes.map((recipe) => (
             <div
