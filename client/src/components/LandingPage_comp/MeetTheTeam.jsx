@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 
-// Simple SVG Icons
+import TyroneImg from '../../assets/Tyrone.jpg';
+import RachelleImg from '../../assets/Rachelle.jpg';
+import GinoImg from '../../assets/Gino.jpg';
+import MauiImg from '../../assets/Maui.jpg';
+import JosefImg from '../../assets/Josef.png';
+
 const ChevronLeft = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>;
 const ChevronRight = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>;
 const Github = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>;
@@ -11,67 +16,71 @@ const Sparkles = ({ className }) => <svg className={className} xmlns="http://www
 const teamMembers = [
   {
     id: 1,
-    name: "Alex Rivera",
-    role: "Frontend Lead",
-    contribution: "Architected responsive UI components and implemented the recipe carousel. Passionate about creating seamless experiences with React and Tailwind.",
-    image: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400&h=400&fit=crop",
-    social: { github: "#", linkedin: "#", email: "alex@dishcovery.com" }
+    name: "Tyrone Jonel Sangalang",
+    role: "Lead Backend Software Developer",
+    contribution: "Leads the backend development team, designs system architecture, and ensures robust API performance. Oversees database management and server-side logic to deliver scalable solutions.",
+    image: TyroneImg,
+    social: { github: "https://github.com/readyto-byte", linkedin: "https://www.linkedin.com/in/tyrone-sangalang/", email: "sangalang.tyronel@gmail.com" }
   },
   {
     id: 2,
-    name: "Jordan Lee",
-    role: "Backend Engineer",
-    contribution: "Built the recipe recommendation engine and database architecture. Loves optimizing API responses with Python/FastAPI.",
-    image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=400&fit=crop",
-    social: { github: "#", linkedin: "#", email: "jordan@dishcovery.com" }
+    name: "Rachelle Joy Quinto",
+    role: "Lead Frontend Developer & UI/UX Designer",
+    contribution: "Leads the frontend team, establishes UI/UX standards, and designs intuitive user interfaces. Ensures seamless user experiences across all devices through thoughtful design and development.",
+    image: RachelleImg,
+    social: { github: "https://github.com/r-quinto", linkedin: "https://www.linkedin.com/in/rachelle-quinto-0017433a9?fbclid=IwY2xjawRVZV5leHRuA2FlbQIxMQBzcnRjBmFwcF9pZAEwAAEe0slIEeZWpt1DfY89CLjHi2cb54CKadcG2sfzEaIPBBdNw1nzYAs2dfogTuQ_aem_ZmFrZWR1bW15MTZieXRlcw", email: "rshlquinto@gmail.com" }
   },
   {
     id: 3,
-    name: "Casey Morgan",
-    role: "AI/ML Specialist",
-    contribution: "Developed ingredient-to-recipe matching using NLP. Enjoys experimenting with new models to personalize recommendations.",
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop",
-    social: { github: "#", linkedin: "#", email: "casey@dishcovery.com" }
+    name: "Gino Ruiz",
+    role: "Backend Software Developer",
+    contribution: "Develops and maintains backend services, optimizes database queries, and implements API endpoints. Focuses on creating efficient and secure server-side functionality.",
+    image: GinoImg,
+    social: { github: "https://github.com/nogiruiz", linkedin: "https://www.linkedin.com/in/gino-ruiz-880908396?fbclid=IwY2xjawRVZIBleHRuA2FlbQIxMQBzcnRjBmFwcF9pZAEwAAEeT2-llBihUqFIBNeZ1prS8QQXT6hI6vY9iEHvQFXjx_CZGXej785JydeHiBc_aem_2aDQg4s2SgNtsXX5LolMpQ", email: "nogiruiz@gmail.com" }
   },
   {
     id: 4,
-    name: "Taylor Chen",
-    role: "Product Designer",
-    contribution: "Designed the visual identity, user flows, and interactive prototypes. Focuses on making cooking accessible and delightful.",
-    image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop",
-    social: { github: "#", linkedin: "#", email: "taylor@dishcovery.com" }
+    name: "Mariah Louise Alba",
+    role: "Frontend Developer & UI/UX Designer",
+    contribution: "Builds responsive user interfaces, implements design systems, and creates interactive components. Collaborates on UI/UX decisions to deliver engaging and accessible web experiences.",
+    image: MauiImg,
+    social: { github: "https://github.com/mauilouisealba", linkedin: "", email: "marissalba0628@gmail.com" }
   },
   {
     id: 5,
-    name: "Riley Smith",
-    role: "DevOps & QA",
-    contribution: "Set up deployment pipelines and ensures smooth releases. Tests recipes IRL to guarantee instructions are foolproof!",
-    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop",
-    social: { github: "#", linkedin: "#", email: "riley@dishcovery.com" }
+    name: "Josef Karol Buri",
+    role: "Frontend Developer & UI/UX Designer",
+    contribution: "Develops reusable UI components, optimizes frontend performance, and ensures design consistency. Contributes to user research and implements visually appealing interfaces.",
+    image: JosefImg,
+    social: { github: "https://github.com/josefkarollburi", linkedin: "https://www.linkedin.com/in/josef-karol-buri-76a6473ba?fbclid=IwY2xjawRVZXdleHRuA2FlbQIxMQBzcnRjBmFwcF9pZAEwAAEeb2aeNykETvPzu2l78_664oybzWFRhXs7gAN2WLsc3gLBUc18xBIIyHMx734_aem_XsNIZMZcvM7mTJgATIqiow", email: "josefkaroll.buri@gmail.com" }
   }
 ];
 
+
+const orderedTeam = [teamMembers[2], teamMembers[1], teamMembers[0], teamMembers[3], teamMembers[4]];
+
 const MeetTheTeam = () => {
-  const [activeIndex, setActiveIndex] = useState(2);
+  const defaultIndex = orderedTeam.findIndex(member => member.name === "Tyrone Jonel Sangalang");
+  const [activeIndex, setActiveIndex] = useState(defaultIndex !== -1 ? defaultIndex : 2); // Fallback to index 2 if not found
 
   const handlePrevious = () => {
-    setActiveIndex((prev) => (prev === 0 ? teamMembers.length - 1 : prev - 1));
+    setActiveIndex((prev) => (prev === 0 ? orderedTeam.length - 1 : prev - 1));
   };
 
   const handleNext = () => {
-    setActiveIndex((prev) => (prev === teamMembers.length - 1 ? 0 : prev + 1));
+    setActiveIndex((prev) => (prev === orderedTeam.length - 1 ? 0 : prev + 1));
   };
 
   const getVisibleMembers = () => {
     const members = [];
-    const total = teamMembers.length;
+    const total = orderedTeam.length;
     
     for (let offset = -2; offset <= 2; offset++) {
       let index = (activeIndex + offset + total) % total;
       let position = offset;
       
       members.push({
-        ...teamMembers[index],
+        ...orderedTeam[index],
         position,
         isCenter: offset === 0,
         originalIndex: index
@@ -107,17 +116,19 @@ const MeetTheTeam = () => {
     }
   };
 
-  const activeMember = teamMembers[activeIndex];
+  const activeMember = orderedTeam[activeIndex];
   const visibleMembers = getVisibleMembers();
+
+  console.log("Images:", { TyroneImg, RachelleImg, GinoImg, MauiImg, JosefImg });
+  console.log("Active Member:", activeMember);
+  console.log("Default Index:", defaultIndex);
 
   return (
     <section className="py-16 px-4 bg-gradient-to-b from-[#FDFBF7] to-white relative overflow-hidden">
-      {/* Animated Background - WOW FACTOR 1 */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-1/4 w-80 h-80 bg-[#839705]/5 rounded-full blur-3xl animate-pulse-slow"></div>
         <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-[#2D3A18]/5 rounded-full blur-3xl animate-pulse-slow animation-delay-2000"></div>
         
-        {/* Spotlight effect for center member */}
         <div 
           className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-gradient-radial from-[#839705]/10 via-transparent to-transparent pointer-events-none transition-all duration-500"
           style={{
@@ -128,7 +139,6 @@ const MeetTheTeam = () => {
       </div>
 
       <div className="max-w-6xl mx-auto relative z-10">
-        {/* Header with animated underline - WOW FACTOR 2 */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#839705]/10 border border-[#839705]/20 mb-3 animate-bounce-subtle">
             <Sparkles className="w-3.5 h-3.5 text-[#839705] animate-spin-slow" />
@@ -145,9 +155,7 @@ const MeetTheTeam = () => {
           </p>
         </div>
 
-        {/* Pyramid Carousel */}
         <div className="relative mb-6">
-          {/* Navigation Arrows with hover effects */}
           <button
             onClick={handlePrevious}
             className="absolute left-0 top-1/2 -translate-y-1/2 z-40 p-2.5 rounded-full bg-white shadow-lg border border-gray-200 text-[#2D3A18] hover:bg-[#839705] hover:text-white hover:border-[#839705] hover:scale-110 transition-all duration-300 group"
@@ -164,7 +172,6 @@ const MeetTheTeam = () => {
             <ChevronRight className="w-5 h-5 group-hover:animate-pulse" />
           </button>
 
-          {/* Members Row */}
           <div className="relative flex justify-center items-center min-h-[320px]">
             {visibleMembers.map((member) => {
               const style = getItemStyle(member.position);
@@ -182,7 +189,6 @@ const MeetTheTeam = () => {
                   onClick={() => setActiveIndex(member.originalIndex)}
                 >
                   <div className="flex flex-col items-center">
-                    {/* Glowing ring effect for center member - WOW FACTOR 3 */}
                     <div className="relative">
                       {member.isCenter && (
                         <div className="absolute inset-0 rounded-full animate-ping-slow opacity-75" style={{
@@ -205,6 +211,10 @@ const MeetTheTeam = () => {
                           src={member.image}
                           alt={member.name}
                           className="w-28 h-28 md:w-32 md:h-32 object-cover transition-transform duration-500 group-hover:scale-110"
+                          onError={(e) => {
+                            console.error(`Failed to load image for ${member.name}:`, member.image);
+                            e.target.src = 'https://via.placeholder.com/128?text=No+Image';
+                          }}
                         />
                         {member.isCenter && (
                           <div className="absolute inset-0 bg-gradient-to-t from-[#839705]/30 via-transparent to-transparent pointer-events-none"></div>
@@ -212,15 +222,11 @@ const MeetTheTeam = () => {
                       </div>
                     </div>
                     
-                    {member.isCenter ? (
+                    {/* Only show name and role for the center member - NO HOVER EFFECT ANYMORE */}
+                    {member.isCenter && (
                       <div className="text-center mt-2 animate-slideUp">
                         <p className="font-bold text-[#2D3A18] text-base animate-textShine">{member.name}</p>
                         <p className="text-[#839705] text-xs font-semibold">{member.role}</p>
-                      </div>
-                    ) : (
-                      <div className="text-center mt-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:translateY-2">
-                        <p className="font-medium text-gray-700 text-xs">{member.name}</p>
-                        <p className="text-gray-400 text-xs">{member.role.split(' ')[0]}</p>
                       </div>
                     )}
                   </div>
@@ -230,7 +236,6 @@ const MeetTheTeam = () => {
           </div>
         </div>
 
-        {/* Info Card with 3D tilt effect - WOW FACTOR 4 */}
         <div className="max-w-2xl mx-auto">
           <div 
             className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 transition-all duration-500 hover:shadow-2xl hover:scale-105 group transform-gpu"
@@ -239,37 +244,43 @@ const MeetTheTeam = () => {
             }}
           >
             <div className="flex items-start gap-4">
-              {/* Animated Avatar in card */}
               <div className="hidden md:block flex-shrink-0">
                 <div className="w-14 h-14 rounded-full overflow-hidden ring-2 ring-[#839705]/20 shadow-md transition-transform duration-300 group-hover:scale-110">
-                  <img src={activeMember.image} alt={activeMember.name} className="w-full h-full object-cover" />
+                  <img 
+                    src={activeMember?.image} 
+                    alt={activeMember?.name} 
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      console.error("Failed to load active member image:", activeMember?.image);
+                      e.target.src = 'https://via.placeholder.com/56?text=No+Image';
+                    }}
+                  />
                 </div>
               </div>
               
-              {/* Content */}
               <div className="flex-1">
                 <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
                   <div>
                     <h3 className="text-lg font-bold text-[#2D3A18] transition-colors duration-300 group-hover:text-[#839705]">
-                      {activeMember.name}
+                      {activeMember?.name}
                     </h3>
-                    <p className="text-[#839705] text-xs font-semibold">{activeMember.role}</p>
+                    <p className="text-[#839705] text-xs font-semibold">{activeMember?.role}</p>
                   </div>
                   <div className="flex gap-3">
-                    <a href={activeMember.social.github} className="text-gray-400 hover:text-[#2D3A18] transition-all duration-300 hover:scale-125 transform inline-block">
+                    <a href={activeMember?.social?.github} className="text-gray-400 hover:text-[#2D3A18] transition-all duration-300 hover:scale-125 transform inline-block">
                       <Github className="w-4 h-4" />
                     </a>
-                    <a href={activeMember.social.linkedin} className="text-gray-400 hover:text-[#2D3A18] transition-all duration-300 hover:scale-125 transform inline-block">
+                    <a href={activeMember?.social?.linkedin} className="text-gray-400 hover:text-[#2D3A18] transition-all duration-300 hover:scale-125 transform inline-block">
                       <Linkedin className="w-4 h-4" />
                     </a>
-                    <a href={`mailto:${activeMember.social.email}`} className="text-gray-400 hover:text-[#2D3A18] transition-all duration-300 hover:scale-125 transform inline-block">
+                    <a href={`mailto:${activeMember?.social?.email}`} className="text-gray-400 hover:text-[#2D3A18] transition-all duration-300 hover:scale-125 transform inline-block">
                       <Mail className="w-4 h-4" />
                     </a>
                   </div>
                 </div>
                 <div className="pt-2 border-t border-gray-100">
                   <p className="text-gray-600 text-sm leading-relaxed transition-all duration-300 group-hover:text-gray-700">
-                    {activeMember.contribution}
+                    {activeMember?.contribution}
                   </p>
                 </div>
               </div>
@@ -277,9 +288,8 @@ const MeetTheTeam = () => {
           </div>
         </div>
 
-        {/* Progress Dots with animation */}
         <div className="flex justify-center gap-1.5 mt-5">
-          {teamMembers.map((_, idx) => (
+          {orderedTeam.map((_, idx) => (
             <button
               key={idx}
               onClick={() => setActiveIndex(idx)}
