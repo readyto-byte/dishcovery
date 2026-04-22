@@ -1,4 +1,5 @@
 const { supabaseAdmin } = require('../config/supabase');
+const { searchRecipes } = require('./recipes');
 
 function round2(n) {
   if (n == null || !Number.isFinite(n)) return null;
@@ -91,6 +92,49 @@ function mapBodyToRow(accountId, body) {
   };
 }
 
+function mealPlanEquipmentText(equipment) {
+  if (!equipment || typeof equipment !== 'object') return 'none';
+  const labels = { stove: 'stove', microwave: 'microwave', airFryer: 'air fryer' };
+  const parts = Object.entries(equipment)
+    .filter(([, enabled]) => Boolean(enabled))
+    .map(([key]) => labels[key] || key);
+  return parts.length ? parts.join(', ') : 'none';
+}
+
+function mealPlanPromptFromBody(body = {}) {
+  return [
+    'Create a personalized one-day meal plan with exactly 3 meals: breakfast, lunch, and dinner.',
+    'User preferences:',
+    `- Age: ${body.age || 'not specified'}`,
+    `- Sex/Gender: ${body.sexGender || 'not specified'}`,
+    `- Height: ${body.height || 'not specified'}`,
+    `- Weight: ${body.weight || 'not specified'}`,
+    `- Goal: ${body.goal || 'not specified'}`,
+    `- Activity level: ${body.activityLevel || 'not specified'}`,
+    `- Preferred cuisine: ${body.preferredCuisine || 'not specified'}`,
+    `- Food budget: ${body.foodBudget || 'not specified'}`,
+    `- Max cooking time: ${body.maxCookingTime || 'not specified'}`,
+    `- Cooking skill level: ${body.cookingSkillLevel || 'not specified'}`,
+    `- Carb preference: ${body.carbPreference || 'not specified'}`,
+    `- Fat preference: ${body.fatPreference || 'not specified'}`,
+    `- Kitchen equipment: ${mealPlanEquipmentText(body.kitchenEquipment)}`,
+    `- Allergies: ${body.allergies || 'none'}`,
+    `- Medical conditions: ${body.medicalConditions || 'none'}`,
+    `- Foods to avoid: ${body.foodsDislike || 'none'}`,
+    `- Meal schedule: ${body.mealSchedule || 'not specified'}`,
+    'Return 3 recipes in this order: Breakfast first, Lunch second, Dinner third.',
+    'Keep each meal practical and realistic for this user.',
+  ].join('\n');
+}
+
+async function generateAiMealPlan(body = {}, profiles = []) {
+  const prompt = mealPlanPromptFromBody(body);
+  return searchRecipes({
+    profiles: Array.isArray(profiles) ? profiles : [],
+    conversation: [{ role: 'user', content: prompt }],
+  });
+}
+
 const SELECT_COLUMNS =
   'id, account_id, meal_plan_id, age, sex, height_cm, weight_kg, goal, activity_level, budget, cuisine_pref, cooking_time, cooking_skill, available_equipment, allergies, dislikes, medical_condition, carb_goal, fat_goal, hydration_goal, snack_pref, schedule, grocery_list, created_at, status';
 
@@ -155,4 +199,5 @@ module.exports = {
   listMealPlans,
   getActiveMealPlan,
   deactivateActiveMealPlans,
+  generateAiMealPlan,
 };
