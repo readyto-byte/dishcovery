@@ -17,6 +17,7 @@ const Sidebar = ({ currentPage, setCurrentPage, sidebarOpen, setSidebarOpen, onL
 
   const navItems = [
     { id: 'dashboard', icon: 'fa-tachometer-alt', label: 'Dashboard' },
+    { id: 'meal-plan', icon: 'fa-calendar-alt', label: 'Meal Plan' },
     { id: 'history', icon: 'fa-history', label: 'History' },
     { id: 'favorites', icon: 'fa-heart', label: 'Favorites' },
     { id: 'profile', icon: 'fa-user', label: 'Profile' },
@@ -26,25 +27,20 @@ const Sidebar = ({ currentPage, setCurrentPage, sidebarOpen, setSidebarOpen, onL
   return (
     <>
       <div
-<<<<<<< Updated upstream
         className={`fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm transition-opacity duration-300 ${
-=======
-        className={`fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm transition-all duration-300 ${
->>>>>>> Stashed changes
           sidebarOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'
         }`}
         onClick={() => setSidebarOpen(false)}
       />
 
       <aside
-        className={`fixed top-0 left-0 h-full z-50 transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 left-0 h-[100dvh] z-50 transition-transform duration-300 ease-in-out ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0`}
         style={{ width: '272px', background: 'linear-gradient(160deg, #f7f0e3 0%, #ede0c4 100%)' }}
       >
-        <div className="relative h-full flex flex-col">
-
-          <div className="flex items-center justify-center px-6 pt-10 pb-10">
+        <div className="relative h-full flex flex-col overflow-y-auto">
+          <div className="flex items-center justify-center px-6 pt-10 pb-7">
             <div className="flex items-center gap-2 cursor-pointer">
               <div className="w-8 h-8 rounded-lg bg-[#32491B] flex items-center justify-center shadow-md">
                 <i className="fas fa-utensils text-[#F0E6D1] text-sm"></i>
@@ -56,48 +52,34 @@ const Sidebar = ({ currentPage, setCurrentPage, sidebarOpen, setSidebarOpen, onL
             </div>
           </div>
 
-<<<<<<< Updated upstream
-          <div className="flex-1 py-2 space-y-1">
-=======
-          {/* Optional: Remove the line if it's still causing visual issues */}
           <div className="mx-6 h-px bg-gradient-to-r from-transparent via-[#B5D098] to-transparent mb-6" />
 
-          <div className="flex-1 py-2 space-y-1 overflow-y-auto">
->>>>>>> Stashed changes
+          <div className="flex-1 py-2 space-y-1 overflow-y-auto scrollbar-none" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             {navItems.map(item => (
               <button
                 key={item.id}
                 onClick={() => {
                   setCurrentPage(item.id);
-<<<<<<< Updated upstream
                   if (window.innerWidth < 1024) setSidebarOpen(false);
-=======
-                  if (window.innerWidth < 1024) setSidebarOpen(false); // Auto-close on mobile selection
->>>>>>> Stashed changes
                 }}
                 className={`relative flex items-center gap-4 pl-6 pr-0 py-3.5 w-full text-left transition-all duration-200 group cursor-pointer ${
-                  currentPage === item.id
-                    ? ''
-                    : 'hover:bg-[#B5D098]/40 rounded-r-full'
+                  currentPage === item.id ? '' : 'hover:bg-[#B5D098]/40 rounded-r-full'
                 }`}
               >
+                {/* Restored Pill Shape */}
                 {currentPage === item.id && (
-                  <span className="absolute inset-y-0 left-0 right-0 bg-[#B5D098] rounded-r-full z-0" />
+                  <span className="absolute inset-y-0 left-0 right-[-2px] bg-[#B5D098] rounded-r-full z-0" />
                 )}
 
                 <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-all duration-200 relative z-10 ${
-                  currentPage === item.id
-                    ? 'bg-[#32491B]'
-                    : 'bg-[#B5D098]/50 group-hover:bg-[#B5D098]'
+                  currentPage === item.id ? 'bg-[#32491B]' : 'bg-[#B5D098]/50 group-hover:bg-[#B5D098]'
                 }`}>
                   <i className={`fas ${item.icon} text-base ${
                     currentPage === item.id ? 'text-[#F0E6D1]' : 'text-[#32491B]'
                   }`}></i>
                 </div>
 
-                <span className={`font-semibold text-base tracking-wide transition-colors duration-200 relative z-10 ${
-                  currentPage === item.id ? 'text-[#2d3f1a]' : 'text-[#2d3f1a]'
-                }`}>
+                <span className="font-semibold text-base tracking-wide text-[#2d3f1a] relative z-10">
                   {item.label}
                 </span>
               </button>
@@ -117,11 +99,10 @@ const Sidebar = ({ currentPage, setCurrentPage, sidebarOpen, setSidebarOpen, onL
               </span>
             </button>
           </div>
-
         </div>
       </aside>
     </>
   );
 };
 
-export default Sidebar;
+export default Sidebar; 
