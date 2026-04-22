@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { RotateCcw, Apple, Droplet, ShoppingBag, Clock, ChefHat, Heart, Activity, Ruler, Weight, Calendar, Flame, Coffee, Sun, Moon, AlertCircle, CheckCircle2, Utensils, Target, PlusCircle } from "lucide-react";
+import { RotateCcw, Apple, Droplet, ShoppingBag, Clock, ChefHat, Heart, Activity, Ruler, Weight, Calendar, Flame, Coffee, Sun, Moon, AlertCircle, CheckCircle2, Utensils, Target, PlusCircle, Download } from "lucide-react";
 import heroBg from "../../assets/hero-bg.jpg";
 import { apiCall } from "../../api/config";
 import {
@@ -7,6 +7,7 @@ import {
   mapDbRowToFormData,
   formatMealPlanCreatedAt,
 } from "../../mealPlanGeneration";
+import jsPDF from 'jspdf';
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const MEAL_SLOTS = ["Breakfast", "Lunch", "Dinner"];
@@ -127,7 +128,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
   const [plan, setPlan] = useState(defaultPlan());
   const [activeSlot, setActiveSlot] = useState(null);
   const [inputValue, setInputValue] = useState("");
-  
+
   // State for the meal planner form
   const [formData, setFormData] = useState({
     age: "",
@@ -155,13 +156,14 @@ const MealPlanPage = ({ onViewRecipe }) => {
     includeSnacks: false,
     generateGroceryList: false,
   });
-  
+
   const [generatedPlan, setGeneratedPlan] = useState(null);
   const [showForm, setShowForm] = useState(true);
   const [mealPlanSaveError, setMealPlanSaveError] = useState(null);
   const [mealPlanSaveOk, setMealPlanSaveOk] = useState(false);
   const [mealPlanSaving, setMealPlanSaving] = useState(false);
   const [hydrating, setHydrating] = useState(true);
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -307,7 +309,6 @@ const MealPlanPage = ({ onViewRecipe }) => {
     try {
       await apiCall("/api/meal-plans/deactivate-active", { method: "POST", body: "{}" });
     } catch {
-      /* still open a fresh form */
     }
     resetForm();
     setGeneratedPlan(null);
@@ -315,6 +316,294 @@ const MealPlanPage = ({ onViewRecipe }) => {
     setMealPlanSaveError(null);
     setMealPlanSaveOk(false);
     setMealPlanSaving(false);
+  };
+
+
+  const downloadMealPlan = async () => {
+    if (!generatedPlan) {
+      alert("No meal plan to download");
+      return;
+    }
+
+    setDownloading(true);
+
+    try {
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const margin = 15;
+      const pageWidth = 210;
+      const contentWidth = pageWidth - margin * 2;
+      let y = 20;
+
+      const checkPageBreak = (needed = 10) => {
+        if (y + needed > 280) {
+          pdf.addPage();
+          y = 20;
+        }
+      };
+
+      // ── Header ──────────────────────────────────────────────────────────────
+      pdf.setFontSize(22);
+      pdf.setTextColor(30, 58, 15);
+      pdf.text("Your Personalized Meal Plan", margin, y);
+      y += 8;
+
+      pdf.setFontSize(10);
+      pdf.setTextColor(120, 120, 120);
+      pdf.text(`Generated on ${generatedPlan.createdAt || "—"}`, margin, y);
+      y += 14;
+
+      // ── Divider ─────────────────────────────────────────────────────────────
+      pdf.setDrawColor(181, 208, 152);
+      pdf.setLineWidth(0.5);
+      pdf.line(margin, y, pageWidth - margin, y);
+      y += 10;
+
+      // ── Profile Summary ──────────────────────────────────────────────────────
+      pdf.setFontSize(14);
+      pdf.setTextColor(30, 58, 15);
+      pdf.text("Profile Summary", margin, y);
+      y += 7;
+
+      pdf.setFontSize(10);
+      pdf.setTextColor(60, 60, 60);
+
+      const profileRows = [
+        [`Age: ${generatedPlan.age || "—"}`, `Height: ${generatedPlan.height || "—"}`, `Weight: ${generatedPlan.weight || "—"}`],
+        [`Goal: ${generatedPlan.goal || "Not specified"}`, `Activity: ${generatedPlan.activityLevel || "Not specified"}`],
+        [`Cuisine: ${generatedPlan.preferredCuisine || "Not specified"}`, `Cooking Time: ${generatedPlan.maxCookingTime || "Not specified"}`],
+        [`Skill Level: ${generatedPlan.cookingSkillLevel || "Not specified"}`, `Meal Schedule: ${generatedPlan.mealSchedule || "Not specified"}`],
+      ];
+
+      profileRows.forEach(cols => {
+        checkPageBreak();
+        const colWidth = contentWidth / cols.length;
+        cols.forEach((col, i) => {
+          pdf.text(col, margin + i * colWidth, y);
+        });
+        y += 6;
+      });
+
+      // ── Health Notes ─────────────────────────────────────────────────────────
+      if (generatedPlan.allergies || generatedPlan.medicalConditions || generatedPlan.foodsDislike) {
+        y += 3;
+        pdf.setFontSize(11);
+        pdf.setTextColor(180, 60, 60);
+        pdf.text("Health Notes", margin, y);
+        y += 6;
+        pdf.setFontSize(10);
+        if (generatedPlan.allergies) {
+          checkPageBreak();
+          pdf.text(`• Allergies: ${generatedPlan.allergies}`, margin + 3, y);
+          y += 6;
+        }
+        if (generatedPlan.medicalConditions) {
+          checkPageBreak();
+          pdf.text(`• Medical Conditions: ${generatedPlan.medicalConditions}`, margin + 3, y);
+          y += 6;
+        }
+        if (generatedPlan.foodsDislike) {
+          checkPageBreak();
+          pdf.text(`• Foods to Avoid: ${generatedPlan.foodsDislike}`, margin + 3, y);
+          y += 6;
+        }
+      }
+
+      y += 4;
+      pdf.setDrawColor(181, 208, 152);
+      pdf.line(margin, y, pageWidth - margin, y);
+      y += 10;
+
+      // ── Daily Meal Plan ──────────────────────────────────────────────────────
+      pdf.setFontSize(14);
+      pdf.setTextColor(30, 58, 15);
+      pdf.text("Daily Meal Plan", margin, y);
+      y += 10;
+
+      const meals = [
+        { label: "Breakfast", data: generatedPlan.meals.breakfast, color: [180, 120, 30] },
+        { label: "Lunch",     data: generatedPlan.meals.lunch,     color: [50, 140, 80] },
+        { label: "Dinner",    data: generatedPlan.meals.dinner,    color: [88, 122, 52] },
+      ];
+
+      meals.forEach(({ label, data, color }) => {
+        checkPageBreak(22);
+
+        // Meal label
+        pdf.setFontSize(12);
+        pdf.setTextColor(...color);
+        pdf.text(label, margin, y);
+        y += 6;
+
+        // Meal title (may wrap)
+        pdf.setFontSize(11);
+        pdf.setTextColor(30, 30, 30);
+        const titleLines = pdf.splitTextToSize(data.title, contentWidth);
+        titleLines.forEach(line => {
+          checkPageBreak();
+          pdf.text(line, margin + 3, y);
+          y += 5;
+        });
+
+        // Macros row
+        pdf.setFontSize(9);
+        pdf.setTextColor(110, 110, 110);
+        pdf.text(
+          `${data.calories} kcal  ·  Protein: ${data.protein}g  ·  Carbs: ${data.carbs}g  ·  Fats: ${data.fats}g`,
+          margin + 3, y
+        );
+        y += 10;
+      });
+
+      // ── Daily Total ──────────────────────────────────────────────────────────
+      checkPageBreak(14);
+      pdf.setDrawColor(181, 208, 152);
+      pdf.line(margin, y, pageWidth - margin, y);
+      y += 7;
+
+      pdf.setFontSize(12);
+      pdf.setTextColor(30, 58, 15);
+      pdf.text("Daily Total", margin, y);
+      y += 6;
+
+      pdf.setFontSize(10);
+      pdf.setTextColor(50, 50, 50);
+      pdf.text(
+        `${generatedPlan.totalNutrition.calories} kcal  ·  Protein: ${generatedPlan.totalNutrition.protein}g  ·  Carbs: ${generatedPlan.totalNutrition.carbs}g  ·  Fats: ${generatedPlan.totalNutrition.fats}g`,
+        margin, y
+      );
+      y += 12;
+
+      // ── Nutrition Preferences ────────────────────────────────────────────────
+      checkPageBreak(18);
+      pdf.setDrawColor(181, 208, 152);
+      pdf.line(margin, y, pageWidth - margin, y);
+      y += 8;
+
+      pdf.setFontSize(12);
+      pdf.setTextColor(30, 58, 15);
+      pdf.text("Nutrition Preferences", margin, y);
+      y += 7;
+
+      pdf.setFontSize(10);
+      pdf.setTextColor(60, 60, 60);
+
+      const equipmentUsed = Object.entries(generatedPlan.kitchenEquipment || {})
+        .filter(([, v]) => v)
+        .map(([k]) => k)
+        .join(", ") || "None specified";
+
+      const prefRows = [
+        [`Carb Preference: ${generatedPlan.carbPreference || "Moderate"}`, `Fat Preference: ${generatedPlan.fatPreference || "Moderate"}`],
+        [`Budget: ${generatedPlan.foodBudget || "Not specified"}`, `Equipment: ${equipmentUsed}`],
+      ];
+
+      prefRows.forEach(cols => {
+        checkPageBreak();
+        const colWidth = contentWidth / cols.length;
+        cols.forEach((col, i) => {
+          pdf.text(col, margin + i * colWidth, y);
+        });
+        y += 6;
+      });
+
+      // ── Snacks ───────────────────────────────────────────────────────────────
+      if (generatedPlan.includeSnacks && generatedPlan.snacks?.length > 0) {
+        y += 4;
+        checkPageBreak(10);
+        pdf.setDrawColor(181, 208, 152);
+        pdf.line(margin, y, pageWidth - margin, y);
+        y += 8;
+
+        pdf.setFontSize(12);
+        pdf.setTextColor(30, 58, 15);
+        pdf.text("Snack Recommendations", margin, y);
+        y += 7;
+
+        pdf.setFontSize(10);
+        pdf.setTextColor(60, 60, 60);
+        generatedPlan.snacks.forEach(snack => {
+          checkPageBreak();
+          pdf.text(`• ${snack.name}  (${snack.calories} cal, ${snack.protein}g protein)`, margin + 3, y);
+          y += 6;
+        });
+      }
+
+      // ── Water Goal ───────────────────────────────────────────────────────────
+      if (generatedPlan.includeWaterGoal && generatedPlan.waterGoal) {
+        y += 4;
+        checkPageBreak(12);
+        pdf.setDrawColor(181, 208, 152);
+        pdf.line(margin, y, pageWidth - margin, y);
+        y += 8;
+
+        pdf.setFontSize(12);
+        pdf.setTextColor(30, 58, 15);
+        pdf.text("Daily Water Goal", margin, y);
+        y += 7;
+
+        pdf.setFontSize(10);
+        pdf.setTextColor(60, 60, 60);
+        pdf.text(`Aim for ${generatedPlan.waterGoal} per day based on your activity level.`, margin, y);
+        y += 6;
+      }
+
+      // ── Grocery List ─────────────────────────────────────────────────────────
+      if (generatedPlan.generateGroceryList && generatedPlan.groceryList?.length > 0) {
+        y += 4;
+        checkPageBreak(10);
+        pdf.setDrawColor(181, 208, 152);
+        pdf.line(margin, y, pageWidth - margin, y);
+        y += 8;
+
+        pdf.setFontSize(12);
+        pdf.setTextColor(30, 58, 15);
+        pdf.text("Grocery List", margin, y);
+        y += 8;
+
+        generatedPlan.groceryList.forEach(category => {
+          checkPageBreak(12);
+          pdf.setFontSize(11);
+          pdf.setTextColor(88, 122, 52);
+          pdf.text(category.category, margin, y);
+          y += 6;
+
+          pdf.setFontSize(10);
+          pdf.setTextColor(60, 60, 60);
+          category.items.forEach(item => {
+            checkPageBreak();
+            pdf.text(`• ${item}`, margin + 4, y);
+            y += 5;
+          });
+          y += 3;
+        });
+      }
+
+      // ── Footer ───────────────────────────────────────────────────────────────
+      y += 6;
+      checkPageBreak(12);
+      pdf.setDrawColor(200, 200, 200);
+      pdf.line(margin, y, pageWidth - margin, y);
+      y += 6;
+
+      pdf.setFontSize(8);
+      pdf.setTextColor(160, 160, 160);
+      const footerLines = pdf.splitTextToSize(
+        "Adjust portions to meet your caloric needs. Please consult with your healthcare provider before starting any new meal plan.",
+        contentWidth
+      );
+      footerLines.forEach(line => {
+        pdf.text(line, margin, y);
+        y += 4;
+      });
+
+      pdf.save(`meal-plan-${generatedPlan.createdAt || 'my-plan'}.pdf`);
+
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      alert('Failed to download PDF. Please try again. Error: ' + error.message);
+    } finally {
+      setDownloading(false);
+    }
   };
 
   if (hydrating) {
@@ -331,9 +620,9 @@ const MealPlanPage = ({ onViewRecipe }) => {
     <div className="pb-12">
       {/* Hero Section */}
       <div className="relative mx-4 md:mx-8 mt-6 mb-8 overflow-hidden rounded-2xl shadow-xl">
-        <div 
+        <div
           className="absolute inset-0 bg-cover bg-center rounded-2xl"
-          style={{ 
+          style={{
             backgroundImage: `url(${heroBg})`,
             filter: "brightness(0.7)"
           }}
@@ -360,7 +649,6 @@ const MealPlanPage = ({ onViewRecipe }) => {
         </div>
       </div>
 
-      {/* Personalized Meal Planner Form - Only shows when showForm is true */}
       {showForm && (
         <div className="mx-4 md:mx-8 mb-8">
           <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
@@ -368,11 +656,10 @@ const MealPlanPage = ({ onViewRecipe }) => {
               <h2 className="text-white font-bold text-xl">Personalized Meal Planner</h2>
               <p className="text-[#B5D098] text-sm">Tell us about yourself and we'll create a custom meal plan</p>
             </div>
-            
+
             <div className="p-6">
-              {/* Two column grid for form fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Age */}
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Age</label>
                   <input
@@ -384,8 +671,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                     className="w-full border border-gray-200 rounded-lg px-4 py-2.5 focus:border-[#587A34] focus:ring-1 focus:ring-[#587A34] transition"
                   />
                 </div>
-                
-                {/* Height */}
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Height</label>
                   <input
@@ -397,8 +683,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                     className="w-full border border-gray-200 rounded-lg px-4 py-2.5 focus:border-[#587A34] focus:ring-1 focus:ring-[#587A34] transition"
                   />
                 </div>
-                
-                {/* Goal */}
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Goal</label>
                   <select
@@ -415,8 +700,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                     <option value="Better digestion">Better digestion</option>
                   </select>
                 </div>
-                
-                {/* Food Budget */}
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Food Budget</label>
                   <select
@@ -431,8 +715,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                     <option value="High ($$$ - $100+/week)">High ($$$ - $100+/week)</option>
                   </select>
                 </div>
-                
-                {/* Max Cooking Time */}
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Max Cooking Time</label>
                   <select
@@ -448,8 +731,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                     <option value="1 hour+">1 hour+</option>
                   </select>
                 </div>
-                
-                {/* Carb Preference */}
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Carb Preference</label>
                   <select
@@ -465,8 +747,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                     <option value="Keto friendly">Keto friendly</option>
                   </select>
                 </div>
-                
-                {/* Kitchen Equipment */}
+
                 <div className="md:col-span-2">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Kitchen Equipment Available</label>
                   <div className="flex gap-6">
@@ -499,8 +780,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                     </label>
                   </div>
                 </div>
-                
-                {/* Allergies */}
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Allergies (if any)</label>
                   <input
@@ -512,8 +792,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                     className="w-full border border-gray-200 rounded-lg px-4 py-2.5 focus:border-[#587A34] focus:ring-1 focus:ring-[#587A34] transition"
                   />
                 </div>
-                
-                {/* Medical Conditions */}
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Medical Conditions (if any)</label>
                   <input
@@ -525,8 +804,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                     className="w-full border border-gray-200 rounded-lg px-4 py-2.5 focus:border-[#587A34] focus:ring-1 focus:ring-[#587A34] transition"
                   />
                 </div>
-                
-                {/* Sex/Gender */}
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Sex/Gender</label>
                   <select
@@ -542,8 +820,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                     <option value="Prefer not to say">Prefer not to say</option>
                   </select>
                 </div>
-                
-                {/* Weight */}
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Weight</label>
                   <input
@@ -555,8 +832,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                     className="w-full border border-gray-200 rounded-lg px-4 py-2.5 focus:border-[#587A34] focus:ring-1 focus:ring-[#587A34] transition"
                   />
                 </div>
-                
-                {/* Activity Level */}
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Activity Level</label>
                   <select
@@ -573,8 +849,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                     <option value="Extra active">Extra active (physical job + training)</option>
                   </select>
                 </div>
-                
-                {/* Preferred Cuisine */}
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Preferred Cuisine</label>
                   <select
@@ -592,8 +867,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                     <option value="American">American</option>
                   </select>
                 </div>
-                
-                {/* Cooking Skill Level */}
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Cooking Skill Level</label>
                   <select
@@ -608,8 +882,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                     <option value="Advanced">Advanced (confident cook)</option>
                   </select>
                 </div>
-                
-                {/* Fat Preference */}
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Fat Preference</label>
                   <select
@@ -624,8 +897,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                     <option value="Higher Fat (Keto style)">Higher Fat (Keto style)</option>
                   </select>
                 </div>
-                
-                {/* Foods You Dislike */}
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Foods You Dislike</label>
                   <input
@@ -637,8 +909,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                     className="w-full border border-gray-200 rounded-lg px-4 py-2.5 focus:border-[#587A34] focus:ring-1 focus:ring-[#587A34] transition"
                   />
                 </div>
-                
-                {/* Meal Schedule */}
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Meal Schedule</label>
                   <input
@@ -651,8 +922,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                   />
                 </div>
               </div>
-              
-              {/* Additional Options */}
+
               <div className="mt-6 flex flex-wrap gap-6">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -685,8 +955,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                   <span className="text-gray-700 font-medium">Generate grocery list</span>
                 </label>
               </div>
-              
-              {/* Generate Button */}
+
               <div className="mt-8 flex justify-center">
                 <button
                   onClick={generateMealPlan}
@@ -700,14 +969,13 @@ const MealPlanPage = ({ onViewRecipe }) => {
           </div>
         </div>
       )}
-      
-      {/* Generated Meal Plan Card - Only shows when generatedPlan exists and form is hidden */}
+
       {!showForm && generatedPlan && (
         <div className="mx-4 md:mx-8 mb-8">
           <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
             {/* Card Header */}
             <div className="px-6 py-5 bg-gradient-to-r from-[#1e3a0f] to-[#2b4b1a]">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-3">
                 <div>
                   <h2 className="text-white font-bold text-2xl flex items-center gap-2">
                     <Apple className="w-6 h-6 text-[#B5D098]" />
@@ -715,9 +983,17 @@ const MealPlanPage = ({ onViewRecipe }) => {
                   </h2>
                   <p className="text-[#B5D098] text-sm mt-1">Generated on {generatedPlan.createdAt}</p>
                 </div>
+                <button
+                  onClick={downloadMealPlan}
+                  disabled={downloading}
+                  className="bg-white/20 hover:bg-white/30 transition-all px-4 py-2 rounded-lg text-white font-semibold text-sm shadow-md cursor-pointer flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Download className="w-4 h-4" />
+                  {downloading ? "Downloading..." : "Download PDF"}
+                </button>
               </div>
             </div>
-            
+
             <div className="p-6 space-y-6">
               {mealPlanSaving && (
                 <p className="text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
@@ -736,6 +1012,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                   {mealPlanSaveError}
                 </p>
               )}
+
               {/* Profile Summary Card */}
               <div className="bg-[#f5f9ef] rounded-xl p-5 border border-[#B5D098]/30">
                 <div className="flex items-center gap-2 mb-4">
@@ -778,8 +1055,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                     <span className="text-sm text-gray-600">Skill Level: <span className="font-semibold">{generatedPlan.cookingSkillLevel || "Not specified"}</span></span>
                   </div>
                 </div>
-                
-                {/* Health Notes */}
+
                 {(generatedPlan.allergies || generatedPlan.medicalConditions || generatedPlan.foodsDislike) && (
                   <div className="mt-4 pt-3 border-t border-[#B5D098]/30">
                     <div className="flex items-center gap-2 mb-2">
@@ -809,8 +1085,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                   </div>
                 )}
               </div>
-              
-              {/* Daily Meal Plan */}
+
               <div>
                 <div className="flex items-center gap-2 mb-4">
                   <div className="w-8 h-8 bg-[#587A34]/10 rounded-full flex items-center justify-center">
@@ -821,7 +1096,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                     <span className="text-sm text-gray-500 ml-2">({generatedPlan.mealSchedule})</span>
                   )}
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Breakfast */}
                   <div className="bg-amber-50 rounded-xl p-4 border border-amber-100">
@@ -837,8 +1112,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                       <span className="bg-white px-2 py-1 rounded-full text-orange-700">{generatedPlan.meals.breakfast.fats}g fats</span>
                     </div>
                   </div>
-                  
-                  {/* Lunch */}
+
                   <div className="bg-green-50 rounded-xl p-4 border border-green-100">
                     <div className="flex items-center gap-2 mb-3">
                       <Sun className="w-5 h-5 text-green-600" />
@@ -852,8 +1126,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                       <span className="bg-white px-2 py-1 rounded-full text-orange-700">{generatedPlan.meals.lunch.fats}g fats</span>
                     </div>
                   </div>
-                  
-                  {/* Dinner */}
+
                   <div className="bg-[#E6F0DA] rounded-xl p-4 border border-[#B5D098]">
                     <div className="flex items-center gap-2 mb-3">
                       <Moon className="w-5 h-5 text-[#587A34]" />
@@ -868,8 +1141,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                     </div>
                   </div>
                 </div>
-                
-                {/* Total Daily Nutrition */}
+
                 <div className="mt-4 bg-gray-50 rounded-xl p-4 border border-gray-200">
                   <div className="flex items-center justify-between flex-wrap gap-3">
                     <div className="flex items-center gap-2">
@@ -885,8 +1157,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                   </div>
                 </div>
               </div>
-              
-              {/* Nutrition Preferences */}
+
               <div className="bg-white border rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <ChefHat className="w-4 h-4 text-[#587A34]" />
@@ -913,9 +1184,8 @@ const MealPlanPage = ({ onViewRecipe }) => {
                   </div>
                 </div>
               </div>
-              
-              {/* Snacks */}
-              {generatedPlan.includeSnacks && generatedPlan.snacks.length > 0 && (
+
+              {generatedPlan.includeSnacks && generatedPlan.snacks?.length > 0 && (
                 <div className="border-l-4 border-[#B5D098] pl-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Apple className="w-4 h-4 text-[#587A34]" />
@@ -931,8 +1201,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                   </div>
                 </div>
               )}
-              
-              {/* Water Goal */}
+
               {generatedPlan.includeWaterGoal && generatedPlan.waterGoal && (
                 <div className="border-l-4 border-[#587A34] pl-4">
                   <div className="flex items-center gap-2">
@@ -942,9 +1211,8 @@ const MealPlanPage = ({ onViewRecipe }) => {
                   <p className="text-gray-600 text-sm mt-1">Aim for {generatedPlan.waterGoal} per day based on your activity level.</p>
                 </div>
               )}
-              
-              {/* Grocery List */}
-              {generatedPlan.generateGroceryList && generatedPlan.groceryList.length > 0 && (
+
+              {generatedPlan.generateGroceryList && generatedPlan.groceryList?.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-dashed border-gray-200">
                   <div className="flex items-center gap-2 mb-3">
                     <ShoppingBag className="w-5 h-5 text-[#587A34]" />
@@ -967,22 +1235,21 @@ const MealPlanPage = ({ onViewRecipe }) => {
                   </div>
                 </div>
               )}
-              
+
               <div className="text-xs text-gray-400 italic mt-2 pt-2 border-t border-gray-100">
                 Plan generated dynamically based on your inputs. Adjust portions to meet your caloric needs.
                 Please consult with your healthcare provider before starting any new meal plan.
               </div>
+            </div>
 
-              {/* Generate New Meal Plan Button */}
-              <div className="flex justify-center pt-4">
-                <button
-                  onClick={handleNewMealPlan}
-                  className="bg-[#587A34] hover:bg-[#3c5a23] text-white font-semibold py-3 px-8 rounded-xl shadow-md transition-all flex items-center gap-2"
-                >
-                  <PlusCircle className="w-5 h-5" />
-                  Generate New Meal Plan
-                </button>
-              </div>
+            <div className="flex justify-center pt-4 pb-6 px-6">
+              <button
+                onClick={handleNewMealPlan}
+                className="bg-[#587A34] hover:bg-[#3c5a23] text-white font-semibold py-3 px-8 rounded-xl shadow-md transition-all flex items-center gap-2"
+              >
+                <PlusCircle className="w-5 h-5" />
+                Generate New Meal Plan
+              </button>
             </div>
           </div>
         </div>
