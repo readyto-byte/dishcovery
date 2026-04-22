@@ -68,6 +68,7 @@ function mapBodyToRow(accountId, body) {
   const b = body || {};
   return {
     account_id: accountId,
+    profile_id: strOrNull(b.profileId ?? b.profile_id),
     age: parseAge(b.age),
     sex: strOrNull(b.sex ?? b.sexGender),
     height_cm: parseHeightCm(b.height_cm ?? b.height),
@@ -235,30 +236,76 @@ async function generateAiMealPlan(body = {}, profiles = []) {
   });
 }
 
-const SELECT_COLUMNS =
+const SELECT_COLUMNS_WITH_PROFILE =
+  'id, account_id, profile_id, age, sex, height_cm, weight_kg, goal, activity_level, budget, cuisine_pref, cooking_time, cooking_skill, available_equipment, allergies, dislikes, medical_condition, carb_goal, fat_goal, hydration_goal, snack_pref, schedule, grocery_list, created_at, status';
+const SELECT_COLUMNS_NO_PROFILE =
   'id, account_id, age, sex, height_cm, weight_kg, goal, activity_level, budget, cuisine_pref, cooking_time, cooking_skill, available_equipment, allergies, dislikes, medical_condition, carb_goal, fat_goal, hydration_goal, snack_pref, schedule, grocery_list, created_at, status';
 
-async function deactivateActiveMealPlans(accountId) {
-  const { error } = await supabaseAdmin
-    .from('meal_plan')
-    .update({ status: false })
-    .eq('account_id', accountId)
-    .eq('status', true);
+function isMissingProfileIdError(error) {
+  if (!error) return false;
+  const message = String(error.message || '').toLowerCase();
+  const details = String(error.details || '').toLowerCase();
+  const code = String(error.code || '').toLowerCase();
+  return code === '42703' || message.includes('profile_id') || details.includes('profile_id');
+}
 
+function applyMealPlanScope(query, profileId, includeProfileColumn = true) {
+  if (!includeProfileColumn) {
+    return query;
+  }
+  if (profileId === undefined || profileId === null || String(profileId).trim() === '') {
+    return query;
+  }
+  return query.eq('profile_id', profileId);
+}
+
+async function deactivateActiveMealPlans(accountId, profileId = null) {
+  const runDeactivate = async (includeProfileColumn) => {
+    let query = supabaseAdmin
+      .from('meal_plan')
+      .update({ status: false })
+      .eq('account_id', accountId)
+      .eq('status', true);
+
+    query = applyMealPlanScope(query, profileId, includeProfileColumn);
+    return query;
+  };
+
+  const { error } = await runDeactivate(true);
   if (error) {
+    if (isMissingProfileIdError(error)) {
+      const fallback = await runDeactivate(false);
+      if (fallback.error) throw fallback.error;
+      return;
+    }
     throw error;
   }
 }
 
-async function getActiveMealPlan(accountId) {
-  const { data, error } = await supabaseAdmin
-    .from('meal_plan')
-    .select(SELECT_COLUMNS)
-    .eq('account_id', accountId)
-    .eq('status', true)
-    .order('created_at', { ascending: false })
-    .limit(1);
+async function getActiveMealPlan(accountId, profileId = null) {
+  const runQuery = async (includeProfileColumn) => {
+    const selectColumns = includeProfileColumn ? SELECT_COLUMNS_WITH_PROFILE : SELECT_COLUMNS_NO_PROFILE;
+    let query = supabaseAdmin
+      .from('meal_plan')
+      .select(selectColumns)
+      .eq('account_id', accountId)
+      .eq('status', true)
+      .order('created_at', { ascending: false })
+      .limit(1);
 
+    query = applyMealPlanScope(query, profileId, includeProfileColumn);
+    return query;
+  };
+
+  let { data, error } = await runQuery(true);
+  if (error) {
+    if (isMissingProfileIdError(error)) {
+      const fallback = await runQuery(false);
+      if (fallback.error) throw fallback.error;
+      data = fallback.data;
+      error = null;
+    }
+  }
   if (error) {
     throw error;
   }
@@ -266,13 +313,30 @@ async function getActiveMealPlan(accountId) {
   return data && data.length > 0 ? data[0] : null;
 }
 
-async function createMealPlan(accountId, body) {
+async function createMealPlan(accountId, body, profileId = null) {
   validateMealPlanBody(body);
-  await deactivateActiveMealPlans(accountId);
-  const row = mapBodyToRow(accountId, { ...body, status: true });
+  const makeInsertRow = (includeProfileColumn) => {
+    const row = mapBodyToRow(accountId, { ...body, profileId, status: true });
+    if (!includeProfileColumn) {
+      delete row.profile_id;
+    }
+    return row;
+  };
 
-  const { data, error } = await supabaseAdmin.from('meal_plan').insert([row]).select(SELECT_COLUMNS).single();
+  const runInsert = async (includeProfileColumn) => {
+    await deactivateActiveMealPlans(accountId, includeProfileColumn ? profileId : null);
+    const selectColumns = includeProfileColumn ? SELECT_COLUMNS_WITH_PROFILE : SELECT_COLUMNS_NO_PROFILE;
+    const row = makeInsertRow(includeProfileColumn);
+    return supabaseAdmin.from('meal_plan').insert([row]).select(selectColumns).single();
+  };
 
+  let { data, error } = await runInsert(true);
+  if (error && isMissingProfileIdError(error)) {
+    const fallback = await runInsert(false);
+    if (fallback.error) throw fallback.error;
+    data = fallback.data;
+    error = null;
+  }
   if (error) {
     throw error;
   }
@@ -280,14 +344,27 @@ async function createMealPlan(accountId, body) {
   return data;
 }
 
-async function listMealPlans(accountId, limit = 20) {
-  const { data, error } = await supabaseAdmin
-    .from('meal_plan')
-    .select(SELECT_COLUMNS)
-    .eq('account_id', accountId)
-    .order('created_at', { ascending: false })
-    .limit(Math.min(Number(limit) || 20, 100));
+async function listMealPlans(accountId, limit = 20, profileId = null) {
+  const runQuery = async (includeProfileColumn) => {
+    const selectColumns = includeProfileColumn ? SELECT_COLUMNS_WITH_PROFILE : SELECT_COLUMNS_NO_PROFILE;
+    let query = supabaseAdmin
+      .from('meal_plan')
+      .select(selectColumns)
+      .eq('account_id', accountId)
+      .order('created_at', { ascending: false })
+      .limit(Math.min(Number(limit) || 20, 100));
 
+    query = applyMealPlanScope(query, profileId, includeProfileColumn);
+    return query;
+  };
+
+  let { data, error } = await runQuery(true);
+  if (error && isMissingProfileIdError(error)) {
+    const fallback = await runQuery(false);
+    if (fallback.error) throw fallback.error;
+    data = fallback.data;
+    error = null;
+  }
   if (error) {
     throw error;
   }
