@@ -29,37 +29,6 @@ const normalizeMealTitle = (title, fallback) => {
   return cleaned || fallback;
 };
 
-const buildMealPlanPrompt = (fd) => {
-  const equipment = Object.entries(fd.kitchenEquipment || {})
-    .filter(([, enabled]) => enabled)
-    .map(([key]) => key)
-    .join(", ") || "none";
-
-  return [
-    "Create a personalized one-day meal plan with exactly 3 meals: breakfast, lunch, and dinner.",
-    "User preferences:",
-    `- Age: ${fd.age || "not specified"}`,
-    `- Sex/Gender: ${fd.sexGender || "not specified"}`,
-    `- Height: ${fd.height || "not specified"}`,
-    `- Weight: ${fd.weight || "not specified"}`,
-    `- Goal: ${fd.goal || "not specified"}`,
-    `- Activity level: ${fd.activityLevel || "not specified"}`,
-    `- Preferred cuisine: ${fd.preferredCuisine || "not specified"}`,
-    `- Food budget: ${fd.foodBudget || "not specified"}`,
-    `- Max cooking time: ${fd.maxCookingTime || "not specified"}`,
-    `- Cooking skill level: ${fd.cookingSkillLevel || "not specified"}`,
-    `- Carb preference: ${fd.carbPreference || "not specified"}`,
-    `- Fat preference: ${fd.fatPreference || "not specified"}`,
-    `- Kitchen equipment: ${equipment}`,
-    `- Allergies: ${fd.allergies || "none"}`,
-    `- Medical conditions: ${fd.medicalConditions || "none"}`,
-    `- Foods to avoid: ${fd.foodsDislike || "none"}`,
-    `- Meal schedule: ${fd.mealSchedule || "not specified"}`,
-    "Return 3 recipes in this order: Breakfast first, Lunch second, Dinner third.",
-    "Keep each meal practical and realistic for this user.",
-  ].join("\n");
-};
-
 const buildAiGeneratedPlan = (fd, aiResponse, createdAtIso) => {
   const suggestions = Array.isArray(aiResponse?.suggestions) ? aiResponse.suggestions : [];
   if (suggestions.length < 3) {
@@ -112,14 +81,9 @@ const buildAiGeneratedPlan = (fd, aiResponse, createdAtIso) => {
 };
 
 const fetchAiMealPlan = async (fd, createdAtIso) => {
-  const prompt = buildMealPlanPrompt(fd);
-  const res = await apiCall("/api/recipes", {
+  const res = await apiCall("/api/meal-plans/generate", {
     method: "POST",
-    body: JSON.stringify({
-      profiles: [],
-      search_query: `meal-plan:${prompt}`,
-      conversation: [{ role: "user", content: prompt }],
-    }),
+    body: JSON.stringify(fd),
   });
   return buildAiGeneratedPlan(fd, res?.response, createdAtIso);
 };
