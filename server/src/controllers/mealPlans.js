@@ -101,6 +101,80 @@ function mealPlanEquipmentText(equipment) {
   return parts.length ? parts.join(', ') : 'none';
 }
 
+function hasValue(v) {
+  return !(v === undefined || v === null || String(v).trim() === '');
+}
+
+function isLikelyJumbledToken(token) {
+  const clean = String(token || '').toLowerCase().replace(/[^a-z]/g, '');
+  if (clean.length < 4) return false;
+
+  const vowelCount = (clean.match(/[aeiou]/g) || []).length;
+  const vowelRatio = vowelCount / clean.length;
+
+  // Examples caught: "akjndsja", "xqtrplmn", "zxcvbnm"
+  if (vowelCount === 0) return true;
+  if (clean.length >= 7 && vowelRatio < 0.2) return true;
+  return false;
+}
+
+function hasLikelyJumbledText(value) {
+  const text = String(value || '').trim();
+  if (!text) return false;
+  const tokens = text.split(/[\s,;/|]+/).filter(Boolean);
+  if (tokens.length === 0) return false;
+  return tokens.some((token) => isLikelyJumbledToken(token));
+}
+
+function validateMealPlanBody(body = {}) {
+  const errors = [];
+
+  if (hasValue(body.age)) {
+    const parsedAge = parseAge(body.age);
+    if (parsedAge == null) {
+      errors.push('Age must be a valid whole number.');
+    } else if (parsedAge < 10 || parsedAge > 120) {
+      errors.push('Age must be between 10 and 120.');
+    }
+  }
+
+  if (hasValue(body.height)) {
+    const parsedHeight = parseHeightCm(body.height);
+    if (parsedHeight == null) {
+      errors.push('Height must be valid (example: "170 cm" or "5\'7").');
+    } else if (parsedHeight < 90 || parsedHeight > 260) {
+      errors.push('Height must be between 90 cm and 260 cm.');
+    }
+  }
+
+  if (hasValue(body.weight)) {
+    const parsedWeight = parseWeightKg(body.weight);
+    if (parsedWeight == null) {
+      errors.push('Weight must be valid (example: "70 kg" or "154 lbs").');
+    } else if (parsedWeight < 25 || parsedWeight > 350) {
+      errors.push('Weight must be between 25 kg and 350 kg.');
+    }
+  }
+
+  if (hasValue(body.allergies) && hasLikelyJumbledText(body.allergies)) {
+    errors.push('Allergies looks invalid. Please enter clear words (example: "Nuts, Dairy").');
+  }
+
+  if (hasValue(body.medicalConditions) && hasLikelyJumbledText(body.medicalConditions)) {
+    errors.push('Medical conditions looks invalid. Please enter clear words (example: "Diabetes").');
+  }
+
+  if (hasValue(body.foodsDislike) && hasLikelyJumbledText(body.foodsDislike)) {
+    errors.push('Foods to avoid looks invalid. Please enter clear words (example: "Onion, Ampalaya").');
+  }
+
+  if (errors.length > 0) {
+    const error = new Error(`Invalid meal plan input: ${errors.join(' ')}`);
+    error.statusCode = 400;
+    throw error;
+  }
+}
+
 function mealPlanPromptFromBody(body = {}) {
   return [
     'Create a personalized one-day meal plan with exactly 3 meals: breakfast, lunch, and dinner.',
@@ -128,6 +202,7 @@ function mealPlanPromptFromBody(body = {}) {
 }
 
 async function generateAiMealPlan(body = {}, profiles = []) {
+  validateMealPlanBody(body);
   const prompt = mealPlanPromptFromBody(body);
   return searchRecipes({
     profiles: Array.isArray(profiles) ? profiles : [],
@@ -136,7 +211,7 @@ async function generateAiMealPlan(body = {}, profiles = []) {
 }
 
 const SELECT_COLUMNS =
-  'id, account_id, meal_plan_id, age, sex, height_cm, weight_kg, goal, activity_level, budget, cuisine_pref, cooking_time, cooking_skill, available_equipment, allergies, dislikes, medical_condition, carb_goal, fat_goal, hydration_goal, snack_pref, schedule, grocery_list, created_at, status';
+  'id, account_id, age, sex, height_cm, weight_kg, goal, activity_level, budget, cuisine_pref, cooking_time, cooking_skill, available_equipment, allergies, dislikes, medical_condition, carb_goal, fat_goal, hydration_goal, snack_pref, schedule, grocery_list, created_at, status';
 
 async function deactivateActiveMealPlans(accountId) {
   const { error } = await supabaseAdmin
@@ -167,6 +242,7 @@ async function getActiveMealPlan(accountId) {
 }
 
 async function createMealPlan(accountId, body) {
+  validateMealPlanBody(body);
   await deactivateActiveMealPlans(accountId);
   const row = mapBodyToRow(accountId, { ...body, status: true });
 
