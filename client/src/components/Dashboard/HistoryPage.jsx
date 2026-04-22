@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import heroBg from "../../assets/hero-bg.jpg";
 import { apiCall } from "../../api/config";
 
+const RECIPES_PER_PAGE = 9;
+
 const HistoryPage = ({ onViewRecipe }) => {
   const [historyRecipes, setHistoryRecipes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -9,6 +11,13 @@ const HistoryPage = ({ onViewRecipe }) => {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [error, setError] = useState("");
   const [favorites, setFavorites] = useState(new Set());
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const totalPages = Math.ceil(historyRecipes.length / RECIPES_PER_PAGE);
+  const paginatedRecipes = historyRecipes.slice(
+    (currentPage - 1) * RECIPES_PER_PAGE,
+    currentPage * RECIPES_PER_PAGE
+  );
 
   const syncFavoriteStateFromApi = async () => {
     try {
@@ -132,12 +141,18 @@ const HistoryPage = ({ onViewRecipe }) => {
       setError("");
       await apiCall("/api/history", { method: "DELETE" });
       setHistoryRecipes([]);
+      setCurrentPage(1);
       setShowClearConfirm(false);
     } catch (err) {
       setError(err.message || "Failed to clear history.");
     } finally {
       setIsClearing(false);
     }
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
@@ -182,29 +197,28 @@ const HistoryPage = ({ onViewRecipe }) => {
         )}
 
         {!isLoading && historyRecipes.length === 0 && (
-                <div className="rounded-2xl flex flex-col items-center justify-center py-20 px-6 text-center"
-        style={{ background: 'linear-gradient(160deg, #d6e8b8 0%, #c8dba8 100%)' }}
-      >
-        <div className="w-28 h-28 rounded-full bg-[#b5cc94]/60 flex items-center justify-center mb-6">
-          <i className="fas fa-history text-5xl text-[#587A34]/60"></i>
-        </div>
-        <h3 className="text-xl font-bold text-[#2d3f1a] mb-2">No Recipe History Yet</h3>
-        <p className="text-[#4a5e30] text-sm mb-2">Start generating recipes to see them here!</p>
-        <p className="text-[#4a5e30]/70 text-sm italic">Your viewed recipes will appear in this collection.</p>
-      </div>
-    )}
+          <div className="rounded-2xl flex flex-col items-center justify-center py-20 px-6 text-center"
+            style={{ background: 'linear-gradient(160deg, #d6e8b8 0%, #c8dba8 100%)' }}
+          >
+            <div className="w-28 h-28 rounded-full bg-[#b5cc94]/60 flex items-center justify-center mb-6">
+              <i className="fas fa-history text-5xl text-[#587A34]/60"></i>
+            </div>
+            <h3 className="text-xl font-bold text-[#2d3f1a] mb-2">No Recipe History Yet</h3>
+            <p className="text-[#4a5e30] text-sm mb-2">Start generating recipes to see them here!</p>
+            <p className="text-[#4a5e30]/70 text-sm italic">Your viewed recipes will appear in this collection.</p>
+          </div>
+        )}
 
+        <div className="flex flex-col" style={{ minHeight: "600px" }}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {historyRecipes.map((recipe) => {
+          {paginatedRecipes.map((recipe) => {
             const isFavorited = recipe.recipeId ? favorites.has(Number(recipe.recipeId)) : false;
             return (
               <div
                 key={recipe.id}
                 className="bg-[#F0E6D1] rounded-2xl shadow-lg overflow-hidden hover:scale-105 transition-all duration-300"
               >
-
                 <div className="relative h-12 bg-[#587A34] flex items-center justify-between px-4">
-
                   <button
                     onClick={() => toggleFavorite(recipe)}
                     title={isFavorited ? "Remove from favorites" : "Add to favorites"}
@@ -223,12 +237,10 @@ const HistoryPage = ({ onViewRecipe }) => {
                     }}
                   >
                     {isFavorited ? (
-
                       <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="#F0E6D1">
                         <path d="M8 13.5S2 9.5 2 5.5A3.5 3.5 0 018 3a3.5 3.5 0 016 2c0 4-6 8.5-6 8.5z" />
                       </svg>
                     ) : (
-
                       <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="none" stroke="#F0E6D1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M8 13.5S2 9.5 2 5.5A3.5 3.5 0 018 3a3.5 3.5 0 016 2c0 4-6 8.5-6 8.5z" />
                       </svg>
@@ -270,6 +282,42 @@ const HistoryPage = ({ onViewRecipe }) => {
               </div>
             );
           })}
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-1 mt-auto pt-10">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 rounded-lg text-sm font-semibold text-[#587A34] hover:bg-[#587A34]/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+            >
+              <i className="fas fa-chevron-left mr-1"></i> Prev
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => handlePageChange(page)}
+                className={`w-8 h-8 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
+                  page === currentPage
+                    ? "bg-[#587A34] text-white shadow-md"
+                    : "text-[#587A34] hover:bg-[#587A34]/10"
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1.5 rounded-lg text-sm font-semibold text-[#587A34] hover:bg-[#587A34]/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+            >
+              Next <i className="fas fa-chevron-right ml-1"></i>
+            </button>
+          </div>
+        )}
         </div>
       </div>
 
