@@ -4,6 +4,55 @@ import { apiCall } from "../../api/config";
 
 const RECIPES_PER_PAGE = 9;
 
+// Consistent Loading Skeleton for History
+const HistoryLoadingSkeleton = () => {
+  return (
+    <div className="pb-12">
+      <style>{`
+        @keyframes shimmer { 0% { background-position: -600px 0; } 100% { background-position: 600px 0; } }
+        .skeleton { background: linear-gradient(90deg, #e8f2dc 25%, #d4e9c0 50%, #e8f2dc 75%); background-size: 600px 100%; animation: shimmer 1.6s infinite linear; border-radius: 8px; }
+      `}</style>
+      
+      {/* Hero skeleton */}
+      <div className="relative mx-4 md:mx-8 mt-6 mb-8 overflow-hidden rounded-2xl shadow-xl bg-[#1e3a0f]/80 px-8 py-7">
+        <div className="space-y-2">
+          <div className="skeleton h-8 w-40 opacity-30" />
+          <div className="skeleton h-4 w-56 opacity-20" />
+        </div>
+      </div>
+
+      {/* Cards skeleton */}
+      <div className="mx-4 md:mx-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="bg-[#F0E6D1] rounded-2xl shadow-lg overflow-hidden border border-gray-100">
+              <div className="h-12 bg-[#587A34] flex items-center justify-between px-4">
+                <div className="skeleton h-6 w-20 opacity-30" />
+                <div className="skeleton h-6 w-24 opacity-30" />
+              </div>
+              <div className="p-5 space-y-3">
+                <div className="skeleton h-6 w-3/4 opacity-30" />
+                <div className="skeleton h-4 w-1/2 opacity-20" />
+                <div className="flex gap-2">
+                  <div className="skeleton h-6 w-16 opacity-20" />
+                  <div className="skeleton h-6 w-20 opacity-20" />
+                </div>
+                <div className="flex justify-between items-center pt-3 border-t border-[#B5D098]/30">
+                  <div className="flex gap-3">
+                    <div className="skeleton h-4 w-16 opacity-20" />
+                    <div className="skeleton h-4 w-16 opacity-20" />
+                  </div>
+                  <div className="skeleton h-4 w-24 opacity-20" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const HistoryPage = ({ onViewRecipe }) => {
   const [historyRecipes, setHistoryRecipes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -155,9 +204,12 @@ const HistoryPage = ({ onViewRecipe }) => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  if (isLoading) {
+    return <HistoryLoadingSkeleton />;
+  }
+
   return (
     <div className="pb-12">
-
       <div
         className="relative mx-4 md:mx-8 mt-6 mb-8 overflow-hidden rounded-2xl shadow-xl"
         style={{ backgroundImage: `url(${heroBg})`, backgroundSize: "cover", backgroundPosition: "center" }}
@@ -190,13 +242,7 @@ const HistoryPage = ({ onViewRecipe }) => {
           </div>
         )}
 
-        {isLoading && (
-          <div className="rounded-xl bg-white/70 px-4 py-5 text-sm text-[#2d3f1a]">
-            Loading history...
-          </div>
-        )}
-
-        {!isLoading && historyRecipes.length === 0 && (
+        {historyRecipes.length === 0 && (
           <div className="rounded-2xl flex flex-col items-center justify-center py-20 px-6 text-center"
             style={{ background: 'linear-gradient(160deg, #d6e8b8 0%, #c8dba8 100%)' }}
           >
@@ -252,7 +298,6 @@ const HistoryPage = ({ onViewRecipe }) => {
                   </div>
                 </div>
 
-                {/* Card body */}
                 <div className="p-5">
                   <h3 className="text-xl font-bold text-[#32491B]">{recipe.title}</h3>
                   <p className="text-black/60 text-sm mt-1">{recipe.type} • {recipe.difficulty}</p>
@@ -284,7 +329,6 @@ const HistoryPage = ({ onViewRecipe }) => {
           })}
         </div>
 
-        {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-center gap-1 mt-auto pt-10">
             <button
