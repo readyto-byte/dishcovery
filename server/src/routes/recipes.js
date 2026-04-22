@@ -26,20 +26,21 @@ function normalizeProfileForCache(profile = {}) {
 router.post('/', async (req, res) => {
   try {
     const accountId = req.user?.id;
-    const { profiles, conversation, search_query, searchQuery } = req.body;
+    const { profiles, conversation, search_query, searchQuery, bypass_cache, bypassCache, avoid_titles, avoidTitles } = req.body;
 
     if (!accountId) {
       return res.status(401).json({ success: false, error: 'Authentication required' });
     }
 
-    if (!profiles || !conversation || conversation.length === 0) {
-      return res.status(400).json({ success: false, error: 'Please provide profiles and at least one conversation message.' });
+    if (!conversation || conversation.length === 0) {
+      return res.status(400).json({ success: false, error: 'Please provide at least one conversation message.' });
     }
 
     const query = search_query ?? searchQuery ?? conversation.map((msg) => msg.content).join(' ');
     const cacheContext = JSON.stringify((profiles || []).map(normalizeProfileForCache));
     const cacheQuery = `${query}||profiles:${cacheContext}`;
-    const cachedResponse = await getCachedRecipeResponse(cacheQuery);
+    const shouldBypassCache = Boolean(bypass_cache ?? bypassCache);
+    const cachedResponse = shouldBypassCache ? null : await getCachedRecipeResponse(cacheQuery);
 
     if (cachedResponse) {
       await addHistoryRecord(accountId, {
@@ -52,17 +53,30 @@ router.post('/', async (req, res) => {
       return res.json({ success: true, response: cachedResponse });
     }
 
-    const response = await searchRecipes({ profiles, conversation });
+    const response = await searchRecipes({
+      profiles,
+      conversation,
+      avoidTitles: Array.isArray(avoid_titles) ? avoid_titles : (Array.isArray(avoidTitles) ? avoidTitles : []),
+    });
     const cachedRows = await cacheRecipeResponse(cacheQuery, response);
+    const responseWithIds = {
+      ...response,
+      suggestions: Array.isArray(response?.suggestions)
+        ? response.suggestions.map((suggestion, index) => ({
+            ...suggestion,
+            id: cachedRows?.[index]?.id ?? suggestion?.id ?? null,
+          }))
+        : [],
+    };
 
     await addHistoryRecord(accountId, {
       search_query: query,
       recipe_id: cachedRows?.[0]?.id ?? null,
       source_api: 'gemini-2.5-flash',
-      output_response: response,
+      output_response: responseWithIds,
     });
 
-    res.json({ success: true, response });
+    res.json({ success: true, response: responseWithIds });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

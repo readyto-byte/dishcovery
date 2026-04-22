@@ -6,155 +6,69 @@ import DashboardNavbar from "./components/Dashboard/DashboardNavbar";
 import WelcomeBanner from "./components/Dashboard/WelcomeBanner";
 import CreateRecipeSection from "./components/Dashboard/CreateRecipeSection";
 import RecipeCard from "./components/Dashboard/RecipeCard";
+import RecipeOptionsGrid from "./components/Dashboard/RecipeOptionsGrid";
+import MealPlanPage from "./components/Dashboard/MealPlanPage";
 import HistoryPage from "./components/Dashboard/HistoryPage";
 import ProfilePage from "./components/Dashboard/ProfilePage";
 import SettingsPage from "./components/Dashboard/SettingsPage";
 import FavoritesPage from "./components/Dashboard/FavoritesPage";
 
-const getRecipeErrorMessage = (error) => {
-  const fallback = "Failed to generate recipe. Please try again.";
-  const rawMessage = typeof error?.message === "string" ? error.message : "";
 
-  const parseErrorPayload = (value) => {
-    if (!value) return null;
-    if (typeof value === "object") return value;
-    if (typeof value !== "string") return null;
-    try {
-      return JSON.parse(value);
-    } catch {
-      return null;
-    }
-  };
-
-  const parsed = parseErrorPayload(rawMessage);
-  const errorPayload = parsed?.error || parsed;
-  const serviceMessage =
-    errorPayload?.message ||
-    parsed?.message ||
-    (typeof rawMessage === "string" ? rawMessage : "");
-  const status = errorPayload?.status || parsed?.status || "";
-
-  // Gemini can return transient UNAVAILABLE/high-demand errors.
-  if (
-    status === "UNAVAILABLE" ||
-    /high demand|try again later|UNAVAILABLE/i.test(serviceMessage)
-  ) {
-    return "Dishcovery AI is busy right now. Please try again in a moment.";
-  }
-
-  if (serviceMessage && serviceMessage.trim().length > 0) {
-    return serviceMessage;
-  }
-
-  return fallback;
-};
-
-// ── Recipe Detail Modal ───────────────────────────────────────────────────────
-const RecipeDetailModal = ({ recipe, onClose }) => {
+const RecipeDetailsModal = ({ recipe, onClose }) => {
   if (!recipe) return null;
+
   return (
     <>
-      <div className="fixed inset-0 z-[999] bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 pointer-events-none">
+      <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div
-          className="pointer-events-auto w-full max-w-2xl max-h-[85vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col"
-          style={{ background: 'linear-gradient(160deg, #f7f0e3 0%, #ede0c4 100%)' }}
-          onClick={e => e.stopPropagation()}
+          className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl bg-[#F0E6D1]"
+          onClick={(e) => e.stopPropagation()}
         >
-          {/* Accent bar */}
-          <div className="h-1 w-full shrink-0" style={{ background: 'linear-gradient(90deg, #32491B, #839705, #B5D098)' }} />
-
-          {/* Header */}
-          <div className="px-7 pt-6 pb-4 shrink-0" style={{ background: 'linear-gradient(135deg, #32491B 0%, #587A34 100%)' }}>
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="bg-[#B5D098]/30 text-[#B5D098] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                    {recipe.type}
-                  </span>
-                  <span className={`text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider ${
-                    recipe.difficulty === 'Easy' ? 'bg-green-500/20 text-green-300'
-                    : recipe.difficulty === 'Medium' ? 'bg-yellow-500/20 text-yellow-300'
-                    : 'bg-red-500/20 text-red-300'
-                  }`}>
-                    {recipe.difficulty}
-                  </span>
-                </div>
-                <h2 className="text-[#F0E6D1] font-extrabold text-xl md:text-2xl leading-tight">{recipe.title}</h2>
-                <div className="flex gap-4 mt-3 text-[#B5D098] text-sm">
-                  <span><i className="far fa-clock mr-1"></i>{recipe.time}</span>
-                  <span><i className="fas fa-users mr-1"></i>{recipe.servings} servings</span>
-                  <span><i className="far fa-eye mr-1"></i>Viewed {recipe.viewed}</span>
-                </div>
-              </div>
-              <button
-                onClick={onClose}
-                className="shrink-0 w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-[#F0E6D1] transition-all cursor-pointer"
-              >
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-2 mt-4">
-              {recipe.tags.map((tag, idx) => (
-                <span key={idx} className="bg-[#B5D098]/20 text-[#B5D098] px-2 py-0.5 rounded-full text-xs font-semibold">
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Scrollable body */}
-          <div className="overflow-y-auto flex-1 px-7 py-6 space-y-6">
-            {recipe.description && (
-              <p className="text-[#4a5e30] text-sm leading-relaxed italic border-l-4 border-[#B5D098] pl-4">
-                {recipe.description}
-              </p>
-            )}
-            <div>
-              <h3 className="text-[#32491B] font-bold text-base mb-3 flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-[#32491B] flex items-center justify-center">
-                  <i className="fas fa-list text-[#F0E6D1] text-xs"></i>
-                </div>
-                Ingredients
-              </h3>
-              <ul className="space-y-2">
-                {recipe.ingredients.map((ing, idx) => (
-                  <li key={idx} className="flex items-start gap-3 text-sm text-[#2d3f1a]">
-                    <span className="mt-1.5 w-2 h-2 rounded-full bg-[#839705] shrink-0"></span>
-                    {ing}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="h-px bg-gradient-to-r from-transparent via-[#B5D098] to-transparent" />
-            <div>
-              <h3 className="text-[#32491B] font-bold text-base mb-3 flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-[#32491B] flex items-center justify-center">
-                  <i className="fas fa-tasks text-[#F0E6D1] text-xs"></i>
-                </div>
-                Instructions
-              </h3>
-              <ol className="space-y-3">
-                {recipe.instructions.map((step, idx) => (
-                  <li key={idx} className="flex items-start gap-3 text-sm text-[#2d3f1a]">
-                    <span className="shrink-0 w-6 h-6 rounded-full bg-[#32491B] text-[#F0E6D1] flex items-center justify-center text-xs font-bold">
-                      {idx + 1}
-                    </span>
-                    <span className="pt-0.5">{step}</span>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="px-7 py-4 shrink-0 border-t border-[#B5D098]/30 flex justify-end">
+          <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-[#32491B] text-[#F0E6D1]">
+            <h2 className="text-xl font-bold">{recipe.title || "Recipe Details"}</h2>
             <button
               onClick={onClose}
-              className="px-6 py-2.5 rounded-xl bg-[#32491B] hover:bg-[#253813] text-[#F0E6D1] font-semibold text-sm transition-all shadow-md cursor-pointer"
+              className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 transition-all cursor-pointer"
+              aria-label="Close recipe details"
             >
-              Close
+              <i className="fas fa-times"></i>
             </button>
+          </div>
+
+          <div className="p-6 space-y-5 text-[#1B211A]">
+            <p className="text-sm text-black/70">{recipe.description || "No description available."}</p>
+
+            <div className="flex gap-4 text-sm text-black/70">
+              <span><i className="far fa-clock mr-1"></i>{recipe.time || recipe.prepTime || "N/A"}</span>
+              <span><i className="fas fa-users mr-1"></i>{recipe.servings || "-"}</span>
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-[#32491B] mb-2">Ingredients</h3>
+              {Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0 ? (
+                <ul className="list-disc pl-5 space-y-1 text-sm">
+                  {recipe.ingredients.map((item, index) => (
+                    <li key={`${item}-${index}`}>{item}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-black/60">No ingredients listed.</p>
+              )}
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-[#32491B] mb-2">Instructions</h3>
+              {Array.isArray(recipe.instructions) && recipe.instructions.length > 0 ? (
+                <ol className="list-decimal pl-5 space-y-2 text-sm">
+                  {recipe.instructions.map((step, index) => (
+                    <li key={`${step}-${index}`}>{step}</li>
+                  ))}
+                </ol>
+              ) : (
+                <p className="text-sm text-black/60">No instructions listed.</p>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -162,7 +76,6 @@ const RecipeDetailModal = ({ recipe, onClose }) => {
   );
 };
 
-// ── Logout Confirm Modal ──────────────────────────────────────────────────────
 const LogoutConfirmModal = ({ onConfirm, onCancel, isLoggingOut }) => (
   <>
     <div
@@ -189,25 +102,29 @@ const LogoutConfirmModal = ({ onConfirm, onCancel, isLoggingOut }) => (
               )}
             </div>
           </div>
-
           <h2 className="text-center font-bold text-[#1B211A] text-xl mb-2 tracking-tight">
             {isLoggingOut ? 'Logging out...' : 'Leaving so soon?'}
           </h2>
           <p className="text-center text-[#4a5e30] text-sm leading-relaxed mb-7">
             {isLoggingOut
               ? 'Please wait while we sign you out.'
-              : <>Are you sure you want to log out of <span className="font-semibold text-[#32491B]">Dishcovery</span>?</>}
+              : <>Are you sure you want to log out of <span className="font-semibold text-[#32491B]">Dishcovery</span>?</>
+            }
           </p>
-
           <div className="h-px bg-gradient-to-r from-transparent via-[#B5D098] to-transparent mb-6" />
-
           <div className="flex gap-3">
-            <button onClick={onCancel} disabled={isLoggingOut}
-              className="flex-1 py-3 rounded-xl border border-[#32491B]/20 bg-white/50 hover:bg-white/80 text-[#32491B] font-semibold text-sm tracking-wide transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+            <button
+              onClick={onCancel}
+              disabled={isLoggingOut}
+              className="flex-1 py-3 rounded-xl border border-[#32491B]/20 bg-white/50 hover:bg-white/80 text-[#32491B] font-semibold text-sm tracking-wide transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            >
               Stay
             </button>
-            <button onClick={onConfirm} disabled={isLoggingOut}
-              className="flex-1 py-3 rounded-xl bg-[#32491B] hover:bg-[#253813] text-[#F0E6D1] font-semibold text-sm tracking-wide transition-all duration-200 shadow-md cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+            <button
+              onClick={onConfirm}
+              disabled={isLoggingOut}
+              className="flex-1 py-3 rounded-xl bg-[#32491B] hover:bg-[#253813] text-[#F0E6D1] font-semibold text-sm tracking-wide transition-all duration-200 shadow-md cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            >
               Yes, Log Out
             </button>
           </div>
@@ -217,98 +134,179 @@ const LogoutConfirmModal = ({ onConfirm, onCancel, isLoggingOut }) => (
   </>
 );
 
-// ── Dashboard Page ────────────────────────────────────────────────────────────
 const DashboardPage = () => {
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 1024);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [currentPage, setCurrentPage] = useState('dashboard');
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasGenerated, setHasGenerated] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [recipeError, setRecipeError] = useState("");
-  const [selectedHistoryRecipe, setSelectedHistoryRecipe] = useState(null); // ← NEW
-  const [recipeData, setRecipeData] = useState({
-    title: "Strawberries with Yogurt and Honey",
-    description: "This refreshing dish combines sweet strawberries with creamy yogurt and honey for a delightful treat.",
-    prepTime: "10 min",
-    cookTime: "0 min",
-    servings: "2",
-    difficulty: "easy",
-    tags: ["dessert", "healthy", "quick", "fresh"],
-    ingredients: [
-      "2 cups fresh strawberries, hulled and sliced",
-      "1 cup plain yogurt (Greek or regular)",
-      "2 tablespoons honey",
-      "1 teaspoon vanilla extract",
-      "1 tablespoon chopped mint (optional)"
-    ],
-    instructions: [
-      "Wash and slice the strawberries.",
-      "In a bowl, mix yogurt, honey, and vanilla extract.",
-      "Add sliced strawberries and gently fold.",
-      "Garnish with mint if desired.",
-      "Serve immediately or chill for 15 minutes."
-    ]
+  const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [generatedRecipe, setGeneratedRecipe] = useState(null);
+  const [recipeOptions, setRecipeOptions] = useState([]);
+  const [showOptions, setShowOptions] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState("");
+  const [aiResponse, setAiResponse] = useState(null);
+  const [lastRequestTime, setLastRequestTime] = useState(0);
+
+  const [activeProfile, setActiveProfile] = useState(null);
+
+  const handleActiveProfileChange = (profile) => {
+    setActiveProfile(profile);
+  };
+
+  const mapSuggestionToCard = (suggestion, fallbackEstimatedTime, recipeId) => ({
+    id: recipeId,
+    title: suggestion?.title || "Generated Recipe",
+    description: suggestion?.description || "",
+    prepTime: fallbackEstimatedTime || "N/A",
+    cookTime: suggestion?.cookTimeMin ? `${suggestion.cookTimeMin} min` : "N/A",
+    servings: suggestion?.servings || "-",
+    difficulty: "Medium",
+    tags: Array.isArray(suggestion?.keyIngredients) && suggestion.keyIngredients.length > 0
+      ? ["ai", "generated", "recipe"]
+      : ["ai", "generated"],
+    ingredients: Array.isArray(suggestion?.keyIngredients) ? suggestion.keyIngredients : [],
+    instructions: Array.isArray(suggestion?.instructions) ? suggestion.instructions : [],
   });
 
-  const generateRecipe = async (userInput) => {
-    setIsLoading(true);
-    setRecipeError("");
+  const handleGenerateWithOptions = async (promptText, history, numOptions = 3) => {
+    const now = Date.now();
+    const timeSinceLastRequest = now - lastRequestTime;
+    if (timeSinceLastRequest < 2000 && lastRequestTime !== 0) {
+      setGenerateError(`Please wait ${Math.ceil((2000 - timeSinceLastRequest) / 1000)} seconds between requests.`);
+      return;
+    }
+    
     try {
-      const profilesResponse = await apiCall("/api/profiles");
-      const profiles = Array.isArray(profilesResponse?.data) ? profilesResponse.data : [];
-      const selectedProfile =
-        profiles.find((profile) => profile?.is_active) ||
-        profiles[0] ||
-        null;
+      setIsGenerating(true);
+      setGenerateError("");
+      setLastRequestTime(now);
+      setShowOptions(false);
+      setRecipeOptions([]);
+      
+      let finalPrompt = `Generate ${numOptions} different recipe variations for: "${promptText}".
+      
+Return the response as a JSON object with this exact structure:
+{
+  "options": [
+    {
+      "title": "Option 1 title",
+      "description": "Brief description",
+      "keyIngredients": ["ingredient1", "ingredient2"],
+      "cookTimeMin": 30,
+      "servings": 4,
+      "instructions": ["step1", "step2"]
+    }
+  ]
+}`;
+      
+      if (history && history.length > 0 && aiResponse) {
+        finalPrompt = `Previous recipe context: "${aiResponse.headline}"
+        
+User request: Generate ${numOptions} variations for "${promptText}"
 
-      if (!selectedProfile) {
-        throw new Error("No profile found. Please create and select a profile first.");
+Please provide ${numOptions} different ways to modify/adapt the previous recipe.
+Return as JSON with the structure above.`;
       }
-
+      
       const response = await apiCall("/api/recipes", {
         method: "POST",
         body: JSON.stringify({
-          profiles: [
-            {
-              id: selectedProfile.id,
-              name: selectedProfile.name,
-              dietary_restrictions: Array.isArray(selectedProfile.dietary_restrictions)
-                ? selectedProfile.dietary_restrictions
-                : [],
-              dietary_preferences: Array.isArray(selectedProfile.dietary_preferences)
-                ? selectedProfile.dietary_preferences
-                : [],
-            },
-          ],
-          conversation: [{ role: "user", content: userInput }],
-          searchQuery: userInput,
+          profiles: activeProfile ? [activeProfile] : [],
+          conversation: [{ role: "user", content: finalPrompt }],
         }),
       });
-      const suggestions = response?.response?.suggestions;
-      const suggestion = Array.isArray(suggestions) && suggestions.length > 0 ? suggestions[0] : null;
-      if (!suggestion) throw new Error("Gemini returned no recipe suggestions.");
-      const totalTimeFromApi = response?.response?.estimatedTime;
-      const prepFromApi = suggestion.prepTimeMin ?? suggestion.prep_time_min;
-      const cookFromApi = suggestion.cookTimeMin ?? suggestion.cook_time_min;
-      setRecipeData({
-        title: suggestion.title || "Generated Recipe",
-        description: suggestion.description || response?.response?.message || "Generated by Gemini.",
-        prepTime: prepFromApi ? `${prepFromApi} min` : totalTimeFromApi || "15 min",
-        cookTime: cookFromApi ? `${cookFromApi} min` : "20 min",
-        servings: suggestion.servings ? String(suggestion.servings) : "2",
-        difficulty: "medium",
-        tags: ["gemini ai", "personalized", "recommended"],
-        ingredients: Array.isArray(suggestion.keyIngredients) ? suggestion.keyIngredients : [],
-        instructions: Array.isArray(suggestion.instructions) ? suggestion.instructions : [],
-      });
+
+      const recipeResponse = response?.response;
+      
+      if (recipeResponse?.options && Array.isArray(recipeResponse.options)) {
+        const options = recipeResponse.options.map((opt, index) => ({
+          id: `option-${index}`,
+          title: opt.title || `Option ${index + 1}`,
+          description: opt.description || "",
+          prepTime: opt.cookTimeMin ? `${opt.cookTimeMin} min` : "N/A",
+          cookTime: opt.cookTimeMin ? `${opt.cookTimeMin} min` : "N/A",
+          servings: opt.servings || "-",
+          difficulty: ["Easy", "Medium", "Hard"][index % 3],
+          tags: ["ai", "generated"],
+          ingredients: Array.isArray(opt.keyIngredients) ? opt.keyIngredients : [],
+          instructions: Array.isArray(opt.instructions) ? opt.instructions : [],
+        }));
+        
+        if (options.length > 1) {
+          setRecipeOptions(options);
+          setShowOptions(true);
+        } else if (options.length === 1) {
+          setGeneratedRecipe(options[0]);
+          setAiResponse({
+            headline: options[0].title,
+            summary: options[0].description,
+          });
+        }
+      } else if (Array.isArray(recipeResponse?.suggestions) && recipeResponse.suggestions.length > 0) {
+        const cards = recipeResponse.suggestions.map((suggestion, index) =>
+          mapSuggestionToCard(
+            suggestion,
+            recipeResponse?.estimatedTime,
+            suggestion?.id ?? `suggestion-${index}`
+          )
+        );
+
+        if (cards.length > 1) {
+          setRecipeOptions(cards);
+          setShowOptions(true);
+          setGeneratedRecipe(null);
+          setAiResponse(null);
+        } else {
+          setGeneratedRecipe(cards[0]);
+          setAiResponse({
+            headline: cards[0].title,
+            summary: cards[0].description,
+          });
+        }
+      } else {
+        throw new Error("No recipe options were returned.");
+      }
+      
     } catch (error) {
-      setRecipeError(getRecipeErrorMessage(error));
+      console.error("Recipe generation error:", error);
+      
+      if (error.message?.includes("503") || error.message?.includes("high demand") || error.message?.includes("UNAVAILABLE")) {
+        setGenerateError("Gemini is currently busy. Please wait a few seconds and try again.");
+      } else {
+        setGenerateError(error.message || "Failed to generate recipe.");
+      }
+      setGeneratedRecipe(null);
+      setAiResponse(null);
+      setShowOptions(false);
     } finally {
-      setHasGenerated(true);
-      setIsLoading(false);
+      setIsGenerating(false);
     }
+  };
+
+  const handleSelectOption = (selectedRecipe) => {
+    console.log("✅ User selected option:", selectedRecipe.title);
+    setGeneratedRecipe(selectedRecipe);
+    setAiResponse({
+      headline: selectedRecipe.title,
+      summary: selectedRecipe.description || "You selected this recipe! Ask a follow-up to refine it further.",
+    });
+    setShowOptions(false);
+    setRecipeOptions([]);
+  };
+
+  const handleGenerateRecipe = async (promptText, history) => {
+    await handleGenerateWithOptions(promptText, history, 3);
+  };
+
+  const handleResetRecipe = () => {
+    console.log("🔄 Resetting recipe conversation");
+    setAiResponse(null);
+    setGeneratedRecipe(null);
+    setGenerateError("");
+    setShowOptions(false);
+    setRecipeOptions([]);
   };
 
   const renderPage = () => {
@@ -316,27 +314,49 @@ const DashboardPage = () => {
       case 'dashboard':
         return (
           <>
-            <WelcomeBanner />
-            {recipeError && (
-              <div className="mx-4 md:mx-8 mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {recipeError}
+            <WelcomeBanner activeProfile={activeProfile} />
+            
+            <CreateRecipeSection 
+              onGenerate={handleGenerateRecipe} 
+              isLoading={isGenerating}
+              aiResponse={aiResponse}
+              onReset={handleResetRecipe}
+            />
+            
+            {generateError && (
+              <div className="mx-4 md:mx-8 mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {generateError}
               </div>
             )}
-            <CreateRecipeSection onGenerate={generateRecipe} isLoading={isLoading} />
-            {(hasGenerated || isLoading) && (
-              <RecipeCard recipeData={recipeData} isLoading={isLoading} />
+            
+            {showOptions && recipeOptions.length > 0 && (
+              <RecipeOptionsGrid 
+                options={recipeOptions}
+                onSelectOption={handleSelectOption}
+                isLoading={isGenerating}
+              />
+            )}
+            
+            {!showOptions && (isGenerating || generatedRecipe) && (
+              <RecipeCard recipeData={generatedRecipe || {}} isLoading={isGenerating} />
             )}
           </>
         );
       case 'history':
-        // ← Pass the callback down so HistoryPage can trigger the modal
-        return <HistoryPage onViewRecipe={setSelectedHistoryRecipe} />;
+        return <HistoryPage onViewRecipe={setSelectedRecipe} />;
+      case 'meal-plan':
+        return <MealPlanPage onViewRecipe={setSelectedRecipe} />;
       case 'profile':
-        return <ProfilePage />;
+        return (
+          <ProfilePage
+            activeProfile={activeProfile}
+            onActiveProfileChange={handleActiveProfileChange}
+          />
+        );
       case 'settings':
         return <SettingsPage />;
       case 'favorites':
-        return <FavoritesPage />;
+        return <FavoritesPage onViewRecipe={setSelectedRecipe} />;
       default:
         return null;
     }
@@ -347,6 +367,11 @@ const DashboardPage = () => {
     try {
       await fetch(`${API_BASE_URL}/api/auth/logout`, { method: "POST" });
     } finally {
+      try {
+        localStorage.removeItem(MEAL_PLAN_STORAGE_KEY);
+      } catch {
+        /* ignore */
+      }
       navigate("/", { replace: true });
     }
   };
@@ -360,32 +385,34 @@ const DashboardPage = () => {
         setSidebarOpen={setSidebarOpen}
         onLogout={() => setShowLogoutConfirm(true)}
       />
-
-      <main
-        style={{ marginLeft: sidebarOpen ? '18rem' : '0' }}
-        className="transition-all duration-300"
-      >
+      <main style={{ marginLeft: sidebarOpen ? '18rem' : '0' }} className="transition-all duration-300">
         <DashboardNavbar
           setCurrentPage={setCurrentPage}
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
+          activeProfile={activeProfile}
+          onActiveProfileChange={handleActiveProfileChange}
         />
-        <div className="pb-12">{renderPage()}</div>
+        <div className="pb-12">
+          {renderPage()}
+        </div>
       </main>
-
-      {/* ── Modals live OUTSIDE <main> so z-index is never clipped ── */}
-      {selectedHistoryRecipe && (
-        <RecipeDetailModal
-          recipe={selectedHistoryRecipe}
-          onClose={() => setSelectedHistoryRecipe(null)}
-        />
-      )}
 
       {(showLogoutConfirm || isLoggingOut) && (
         <LogoutConfirmModal
-          onConfirm={() => { setShowLogoutConfirm(false); handleLogout(); }}
+          onConfirm={() => {
+            setShowLogoutConfirm(false);
+            handleLogout();
+          }}
           onCancel={() => setShowLogoutConfirm(false)}
           isLoggingOut={isLoggingOut}
+        />
+      )}
+
+      {selectedRecipe && (
+        <RecipeDetailsModal
+          recipe={selectedRecipe}
+          onClose={() => setSelectedRecipe(null)}
         />
       )}
     </div>

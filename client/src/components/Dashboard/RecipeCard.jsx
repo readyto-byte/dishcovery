@@ -1,38 +1,22 @@
 import { useState } from 'react';
+import { apiCall } from '../../api/config';
 
 const RecipeCard = ({ recipeData, isLoading }) => {
 
   const [favAdded, setFavAdded] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const addToFavorites = () => {
+  const addToFavorites = async () => {
+    if (!recipeData?.id) {
+      console.error('Cannot favorite recipe without recipe id');
+      return;
+    }
+
     try {
-      const savedFavorites = localStorage.getItem('favoriteRecipes');
-      let favorites = [];
-      if (savedFavorites) {
-        try {
-          const parsed = JSON.parse(savedFavorites);
-          if (Array.isArray(parsed)) favorites = parsed;
-        } catch (e) {
-          favorites = [];
-        }
-      }
-      const exists = favorites.some(fav => fav.title === recipeData.title);
-      if (!exists) {
-        favorites.push({
-          id: Date.now(),
-          title: recipeData.title,
-          description: recipeData.description,
-          prepTime: recipeData.prepTime,
-          cookTime: recipeData.cookTime,
-          servings: recipeData.servings,
-          difficulty: recipeData.difficulty,
-          tags: recipeData.tags,
-          type: recipeData.tags?.[0] || 'Saved Recipe',
-          time: recipeData.prepTime,
-        });
-        localStorage.setItem('favoriteRecipes', JSON.stringify(favorites));
-      }
+      await apiCall('/api/favorites', {
+        method: 'POST',
+        body: JSON.stringify({ recipe_id: recipeData.id }),
+      });
       setFavAdded(true);
       setTimeout(() => setFavAdded(false), 2000);
     } catch (error) {

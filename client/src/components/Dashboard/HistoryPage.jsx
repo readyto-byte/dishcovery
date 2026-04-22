@@ -2,11 +2,50 @@ import { useEffect, useState } from "react";
 import heroBg from "../../assets/hero-bg.jpg";
 import { apiCall } from "../../api/config";
 
-const HistoryPage = () => {
+const HistoryPage = ({ onViewRecipe }) => {
   const [historyRecipes, setHistoryRecipes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isClearing, setIsClearing] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [error, setError] = useState("");
+  const [favorites, setFavorites] = useState(new Set());
+
+  const syncFavoriteStateFromApi = async () => {
+    try {
+      const response = await apiCall("/api/favorites");
+      const rows = Array.isArray(response?.data) ? response.data : [];
+      setFavorites(new Set(rows.map((fav) => Number(fav.recipe_id)).filter((id) => Number.isFinite(id))));
+    } catch (err) {
+      console.error("Failed to sync favorites:", err);
+    }
+  };
+
+  const toggleFavorite = async (recipe) => {
+    if (!recipe.recipeId) {
+      setError("This recipe cannot be favorited because it has no recipe_id.");
+      return;
+    }
+
+    try {
+      setError("");
+      if (favorites.has(recipe.recipeId)) {
+        const response = await apiCall("/api/favorites");
+        const rows = Array.isArray(response?.data) ? response.data : [];
+        const match = rows.find((fav) => Number(fav.recipe_id) === Number(recipe.recipeId));
+        if (match?.id) {
+          await apiCall(`/api/favorites/${match.id}`, { method: "DELETE" });
+        }
+      } else {
+        await apiCall("/api/favorites", {
+          method: "POST",
+          body: JSON.stringify({ recipe_id: recipe.recipeId }),
+        });
+      }
+      await syncFavoriteStateFromApi();
+    } catch (err) {
+      setError(err.message || "Failed to update favorites.");
+    }
+  };
 
   const getRelativeViewedTime = (isoDate) => {
     if (!isoDate) return "recently";
@@ -54,6 +93,7 @@ const HistoryPage = () => {
 
     return {
       id: item.id,
+      recipeId: item.recipe_id ?? null,
       title: firstSuggestion.title || item.search_query || "Generated Recipe",
       type: item.source_api === "cache" ? "Cached Recipe" : "AI Generated",
       difficulty: "Medium",
@@ -61,8 +101,9 @@ const HistoryPage = () => {
       servings: firstSuggestion.servings || "-",
       viewed: getRelativeViewedTime(item.searched_date),
       tags: ["history", "dishcovery", item.source_api || "recipe"],
-      searchQuery: item.search_query,
-      output: parsed,
+      description: firstSuggestion.description || parsed?.message || "",
+      ingredients: Array.isArray(firstSuggestion.keyIngredients) ? firstSuggestion.keyIngredients : [],
+      instructions: Array.isArray(firstSuggestion.instructions) ? firstSuggestion.instructions : [],
     };
   };
 
@@ -82,28 +123,16 @@ const HistoryPage = () => {
     };
 
     loadHistory();
+    syncFavoriteStateFromApi();
   }, []);
 
-  const handleViewRecipe = (id) => {
-    const recipe = historyRecipes.find((row) => row.id === id);
-    if (!recipe) return;
-    alert(
-      `Search: ${recipe.searchQuery || "N/A"}\n\n` +
-      `Recipe: ${recipe.title}\n` +
-      `Estimated time: ${recipe.time}`
-    );
-  };
-
   const handleClearHistory = async () => {
-    if (!confirm("Are you sure you want to clear your entire recipe history?")) {
-      return;
-    }
-
     try {
       setIsClearing(true);
       setError("");
       await apiCall("/api/history", { method: "DELETE" });
       setHistoryRecipes([]);
+      setShowClearConfirm(false);
     } catch (err) {
       setError(err.message || "Failed to clear history.");
     } finally {
@@ -114,7 +143,6 @@ const HistoryPage = () => {
   return (
     <div className="pb-12">
 
-      {/* History Header */}
       <div
         className="relative mx-4 md:mx-8 mt-6 mb-8 overflow-hidden rounded-2xl shadow-xl"
         style={{ backgroundImage: `url(${heroBg})`, backgroundSize: "cover", backgroundPosition: "center" }}
@@ -130,73 +158,152 @@ const HistoryPage = () => {
             </p>
           </div>
           <button
-            onClick={handleClearHistory}
+            onClick={() => setShowClearConfirm(true)}
             disabled={isClearing || isLoading || historyRecipes.length === 0}
-            className="shrink-0 bg-[#587A34] hover:bg-[#32491B] transition-all px-5 py-2 rounded-lg text-white font-semibold text-sm shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+            className="shrink-0 bg-[#587A34] hover:bg-[#32491B] transition-all px-5 py-2 rounded-lg text-white font-semibold text-sm shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <i className="fas fa-trash-alt mr-2"></i> {isClearing ? "Clearing..." : "Clear History"}
+            <i className="fas fa-trash-alt mr-2"></i>
+            {isClearing ? "Clearing..." : "Clear History"}
           </button>
         </div>
       </div>
 
       <div className="mx-4 md:mx-8">
-        {error ? (
+        {error && (
           <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
           </div>
-        ) : null}
+        )}
 
-        {isLoading ? (
-          <div className="rounded-xl bg-white/70 px-4 py-5 text-sm text-[#2d3f1a]">Loading history...</div>
-        ) : null}
+        {isLoading && (
+          <div className="rounded-xl bg-white/70 px-4 py-5 text-sm text-[#2d3f1a]">
+            Loading history...
+          </div>
+        )}
 
-        {!isLoading && historyRecipes.length === 0 ? (
+        {!isLoading && historyRecipes.length === 0 && (
           <div className="rounded-xl bg-white/70 px-4 py-5 text-sm text-[#2d3f1a]">
             No generated recipes in history yet. Create a recipe to see it here.
           </div>
-        ) : null}
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {historyRecipes.map((recipe) => (
-            <div
-              key={recipe.id}
-              className="bg-[#F0E6D1] rounded-2xl shadow-lg overflow-hidden hover:scale-105 transition-all duration-300"
-            >
-              <div className="relative h-12 bg-[#587A34] flex items-center justify-end px-4">
-                <div className="bg-[#95A131] rounded-full px-3 py-1 text-xs font-bold text-white">
-                  Viewed {recipe.viewed}
+          {historyRecipes.map((recipe) => {
+            const isFavorited = recipe.recipeId ? favorites.has(Number(recipe.recipeId)) : false;
+            return (
+              <div
+                key={recipe.id}
+                className="bg-[#F0E6D1] rounded-2xl shadow-lg overflow-hidden hover:scale-105 transition-all duration-300"
+              >
+
+                <div className="relative h-12 bg-[#587A34] flex items-center justify-between px-4">
+
+                  <button
+                    onClick={() => toggleFavorite(recipe)}
+                    title={isFavorited ? "Remove from favorites" : "Add to favorites"}
+                    className="flex items-center justify-center w-7 h-7 rounded-full transition-all duration-200 active:scale-90"
+                    style={{
+                      background: isFavorited ? 'rgba(240,230,209,0.2)' : 'rgba(255,255,255,0.1)',
+                      border: `1.5px solid ${isFavorited ? '#F0E6D1' : 'rgba(240,230,209,0.35)'}`,
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(240,230,209,0.25)';
+                      e.currentTarget.style.borderColor = '#F0E6D1';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = isFavorited ? 'rgba(240,230,209,0.2)' : 'rgba(255,255,255,0.1)';
+                      e.currentTarget.style.borderColor = isFavorited ? '#F0E6D1' : 'rgba(240,230,209,0.35)';
+                    }}
+                  >
+                    {isFavorited ? (
+
+                      <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="#F0E6D1">
+                        <path d="M8 13.5S2 9.5 2 5.5A3.5 3.5 0 018 3a3.5 3.5 0 016 2c0 4-6 8.5-6 8.5z" />
+                      </svg>
+                    ) : (
+
+                      <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="none" stroke="#F0E6D1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M8 13.5S2 9.5 2 5.5A3.5 3.5 0 018 3a3.5 3.5 0 016 2c0 4-6 8.5-6 8.5z" />
+                      </svg>
+                    )}
+                  </button>
+
+                  <div className="bg-[#95A131] rounded-full px-3 py-1 text-xs font-bold text-white">
+                    Viewed {recipe.viewed}
+                  </div>
+                </div>
+
+                {/* Card body */}
+                <div className="p-5">
+                  <h3 className="text-xl font-bold text-[#32491B]">{recipe.title}</h3>
+                  <p className="text-black/60 text-sm mt-1">{recipe.type} • {recipe.difficulty}</p>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {recipe.tags.map((tag, idx) => (
+                      <span
+                        key={idx}
+                        className="bg-[#839705]/20 text-[#32491B] px-2 py-0.5 rounded-full text-xs font-semibold"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex justify-between items-center mt-4 pt-3 border-t border-[#B5D098]/30">
+                    <div className="flex gap-3 text-sm text-black/60">
+                      <span><i className="far fa-clock"></i> {recipe.time}</span>
+                      <span><i className="fas fa-users"></i> {recipe.servings}</span>
+                    </div>
+                    <button
+                      onClick={() => onViewRecipe(recipe)}
+                      className="text-[#587A34] hover:text-[#32491B] font-semibold text-sm transition-all cursor-pointer"
+                    >
+                      View Recipe <i className="fas fa-arrow-right ml-1"></i>
+                    </button>
+                  </div>
                 </div>
               </div>
-              <div className="p-5">
-                <h3 className="text-xl font-bold text-[#32491B]">{recipe.title}</h3>
-                <p className="text-black/60 text-sm mt-1">{recipe.type} • {recipe.difficulty}</p>
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {recipe.tags.map((tag, idx) => (
-                    <span
-                      key={idx}
-                      className="bg-[#839705]/20 text-[#32491B] px-2 py-0.5 rounded-full text-xs font-semibold"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-                <div className="flex justify-between items-center mt-4 pt-3 border-t border-[#B5D098]/30">
-                  <div className="flex gap-3 text-sm text-black/60">
-                    <span><i className="far fa-clock"></i> {recipe.time}</span>
-                    <span><i className="fas fa-users"></i> {recipe.servings}</span>
-                  </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {showClearConfirm && (
+        <>
+          <div
+            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
+            onClick={!isClearing ? () => setShowClearConfirm(false) : undefined}
+          />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div
+              className="w-full max-w-md rounded-2xl shadow-2xl overflow-hidden"
+              style={{ background: 'linear-gradient(160deg, #f7f0e3 0%, #ede0c4 100%)' }}
+            >
+              <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg, #32491B, #839705, #B5D098)' }} />
+              <div className="px-6 pt-6 pb-5">
+                <h3 className="text-xl font-bold text-[#1B211A] mb-2">Clear history?</h3>
+                <p className="text-sm text-[#4a5e30] mb-6">
+                  This will permanently remove all recipe history entries.
+                </p>
+                <div className="flex gap-3">
                   <button
-                    onClick={() => onViewRecipe(recipe)}
-                    className="text-[#587A34] hover:text-[#32491B] font-semibold text-sm transition-all cursor-pointer"
+                    onClick={() => setShowClearConfirm(false)}
+                    disabled={isClearing}
+                    className="flex-1 py-2.5 rounded-xl border border-[#32491B]/20 bg-white/50 hover:bg-white/80 text-[#32491B] font-semibold text-sm transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    View Recipe <i className="fas fa-arrow-right ml-1"></i>
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleClearHistory}
+                    disabled={isClearing}
+                    className="flex-1 py-2.5 rounded-xl bg-[#32491B] hover:bg-[#253813] text-[#F0E6D1] font-semibold text-sm transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {isClearing ? 'Clearing...' : 'Yes, Clear'}
                   </button>
                 </div>
               </div>
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
