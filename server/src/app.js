@@ -9,6 +9,7 @@ const recipesRoutes = require('./routes/recipes');
 const historyRoutes = require('./routes/history');
 const favoritesRoutes = require('./routes/favorites');
 const generateRoutes = require('./routes/generate');
+const mealPlansRoutes = require('./routes/mealPlans');
 const authMiddleware = require('./middleware/auth');
 
 const app = express();
@@ -37,6 +38,7 @@ app.use('/api/profiles', authMiddleware, profilesRoutes);
 app.use('/api/history', authMiddleware, historyRoutes);
 app.use('/api/recipes', authMiddleware, recipesRoutes);
 app.use('/api/favorites', authMiddleware, favoritesRoutes);
+app.use('/api/meal-plans', authMiddleware, mealPlansRoutes);
 app.use('/api/generate', generateRoutes);
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
