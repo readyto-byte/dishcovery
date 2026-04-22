@@ -1,12 +1,127 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { RotateCcw, Apple, Droplet, ShoppingBag, Clock, ChefHat, Heart, Activity, Ruler, Weight, Calendar, Flame, Coffee, Sun, Moon, AlertCircle, CheckCircle2, Utensils, Target, PlusCircle } from "lucide-react";
 import heroBg from "../../assets/hero-bg.jpg";
+import { apiCall } from "../../api/config";
+import {
+  buildGeneratedPlanFromPreferences,
+  mapDbRowToFormData,
+  formatMealPlanCreatedAt,
+} from "../../mealPlanGeneration";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const MEAL_SLOTS = ["Breakfast", "Lunch", "Dinner"];
 
 const defaultPlan = () =>
   Object.fromEntries(DAYS.map((day) => [day, Object.fromEntries(MEAL_SLOTS.map((slot) => [slot, null]))]));
+
+const parseMacroNumber = (value) => {
+  if (value == null) return 0;
+  const match = String(value).match(/[\d.]+/);
+  const num = match ? Number(match[0]) : 0;
+  return Number.isFinite(num) ? Math.round(num) : 0;
+};
+
+const normalizeMealTitle = (title, fallback) => {
+  const raw = String(title || "").trim();
+  if (!raw) return fallback;
+  const cleaned = raw.replace(/^(breakfast|lunch|dinner)\s*[:\-]\s*/i, "").trim();
+  return cleaned || fallback;
+};
+
+const buildMealPlanPrompt = (fd) => {
+  const equipment = Object.entries(fd.kitchenEquipment || {})
+    .filter(([, enabled]) => enabled)
+    .map(([key]) => key)
+    .join(", ") || "none";
+
+  return [
+    "Create a personalized one-day meal plan with exactly 3 meals: breakfast, lunch, and dinner.",
+    "User preferences:",
+    `- Age: ${fd.age || "not specified"}`,
+    `- Sex/Gender: ${fd.sexGender || "not specified"}`,
+    `- Height: ${fd.height || "not specified"}`,
+    `- Weight: ${fd.weight || "not specified"}`,
+    `- Goal: ${fd.goal || "not specified"}`,
+    `- Activity level: ${fd.activityLevel || "not specified"}`,
+    `- Preferred cuisine: ${fd.preferredCuisine || "not specified"}`,
+    `- Food budget: ${fd.foodBudget || "not specified"}`,
+    `- Max cooking time: ${fd.maxCookingTime || "not specified"}`,
+    `- Cooking skill level: ${fd.cookingSkillLevel || "not specified"}`,
+    `- Carb preference: ${fd.carbPreference || "not specified"}`,
+    `- Fat preference: ${fd.fatPreference || "not specified"}`,
+    `- Kitchen equipment: ${equipment}`,
+    `- Allergies: ${fd.allergies || "none"}`,
+    `- Medical conditions: ${fd.medicalConditions || "none"}`,
+    `- Foods to avoid: ${fd.foodsDislike || "none"}`,
+    `- Meal schedule: ${fd.mealSchedule || "not specified"}`,
+    "Return 3 recipes in this order: Breakfast first, Lunch second, Dinner third.",
+    "Keep each meal practical and realistic for this user.",
+  ].join("\n");
+};
+
+const buildAiGeneratedPlan = (fd, aiResponse, createdAtIso) => {
+  const suggestions = Array.isArray(aiResponse?.suggestions) ? aiResponse.suggestions : [];
+  if (suggestions.length < 3) {
+    throw new Error("AI returned fewer than 3 meal suggestions.");
+  }
+
+  const breakfastSource = suggestions[0] || {};
+  const lunchSource = suggestions[1] || {};
+  const dinnerSource = suggestions[2] || {};
+
+  const breakfast = {
+    title: normalizeMealTitle(breakfastSource.title, "AI Breakfast"),
+    calories: Number(breakfastSource?.nutritionalInfo?.calories) || 0,
+    protein: parseMacroNumber(breakfastSource?.nutritionalInfo?.protein),
+    carbs: parseMacroNumber(breakfastSource?.nutritionalInfo?.carbs),
+    fats: parseMacroNumber(breakfastSource?.nutritionalInfo?.fat),
+  };
+  const lunch = {
+    title: normalizeMealTitle(lunchSource.title, "AI Lunch"),
+    calories: Number(lunchSource?.nutritionalInfo?.calories) || 0,
+    protein: parseMacroNumber(lunchSource?.nutritionalInfo?.protein),
+    carbs: parseMacroNumber(lunchSource?.nutritionalInfo?.carbs),
+    fats: parseMacroNumber(lunchSource?.nutritionalInfo?.fat),
+  };
+  const dinner = {
+    title: normalizeMealTitle(dinnerSource.title, "AI Dinner"),
+    calories: Number(dinnerSource?.nutritionalInfo?.calories) || 0,
+    protein: parseMacroNumber(dinnerSource?.nutritionalInfo?.protein),
+    carbs: parseMacroNumber(dinnerSource?.nutritionalInfo?.carbs),
+    fats: parseMacroNumber(dinnerSource?.nutritionalInfo?.fat),
+  };
+
+  const base = buildGeneratedPlanFromPreferences(fd, createdAtIso);
+  const totalCalories = breakfast.calories + lunch.calories + dinner.calories;
+  const totalProtein = breakfast.protein + lunch.protein + dinner.protein;
+  const totalCarbs = breakfast.carbs + lunch.carbs + dinner.carbs;
+  const totalFats = breakfast.fats + lunch.fats + dinner.fats;
+
+  return {
+    ...base,
+    meals: { breakfast, lunch, dinner },
+    totalNutrition: {
+      calories: totalCalories,
+      protein: totalProtein,
+      carbs: totalCarbs,
+      fats: totalFats,
+    },
+    createdAt: formatMealPlanCreatedAt(createdAtIso),
+  };
+};
+
+const fetchAiMealPlan = async (fd, createdAtIso) => {
+  const prompt = buildMealPlanPrompt(fd);
+  const res = await apiCall("/api/recipes", {
+    method: "POST",
+    body: JSON.stringify({
+      profiles: [],
+      search_query: `meal-plan:${prompt}`,
+      conversation: [{ role: "user", content: prompt }],
+    }),
+  });
+  return buildAiGeneratedPlan(fd, res?.response, createdAtIso);
+};
 
 const MealPlanPage = ({ onViewRecipe }) => {
   const [plan, setPlan] = useState(defaultPlan());
@@ -43,6 +158,43 @@ const MealPlanPage = ({ onViewRecipe }) => {
   
   const [generatedPlan, setGeneratedPlan] = useState(null);
   const [showForm, setShowForm] = useState(true);
+  const [mealPlanSaveError, setMealPlanSaveError] = useState(null);
+  const [mealPlanSaveOk, setMealPlanSaveOk] = useState(false);
+  const [mealPlanSaving, setMealPlanSaving] = useState(false);
+  const [hydrating, setHydrating] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setHydrating(true);
+      try {
+        const res = await apiCall("/api/meal-plans/active");
+        if (cancelled) return;
+        const row = res?.data;
+        if (row) {
+          const form = mapDbRowToFormData(row);
+          if (form) {
+            let gen = null;
+            try {
+              gen = await fetchAiMealPlan(form, row.created_at);
+            } catch {
+              gen = buildGeneratedPlanFromPreferences(form, row.created_at);
+            }
+            setFormData(form);
+            setGeneratedPlan(gen);
+            setShowForm(false);
+          }
+        }
+      } catch {
+        /* not signed in or network */
+      } finally {
+        if (!cancelled) setHydrating(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleSlotClick = (day, meal) => {
     setActiveSlot({ day, meal });
@@ -119,161 +271,61 @@ const MealPlanPage = ({ onViewRecipe }) => {
     });
   };
 
-  const generateMealPlan = () => {
-    // Create sample meal suggestions based on preferences
-    const getMealSuggestions = () => {
-      let breakfast = { title: "", calories: 0, protein: 0, carbs: 0, fats: 0 };
-      let lunch = { title: "", calories: 0, protein: 0, carbs: 0, fats: 0 };
-      let dinner = { title: "", calories: 0, protein: 0, carbs: 0, fats: 0 };
-      
-      // Calculate base calories based on goal and activity level
-      let baseCalories = 2000;
-      if (formData.goal === "Weight loss") baseCalories = 1700;
-      if (formData.goal === "Muscle gain") baseCalories = 2500;
-      if (formData.goal === "Maintain weight") baseCalories = 2100;
-      
-      if (formData.activityLevel === "Sedentary") baseCalories -= 200;
-      if (formData.activityLevel === "Very active") baseCalories += 300;
-      
-      const breakfastCal = Math.round(baseCalories * 0.25);
-      const lunchCal = Math.round(baseCalories * 0.35);
-      const dinnerCal = Math.round(baseCalories * 0.4);
-      
-      if (formData.goal === "Weight loss") {
-        breakfast = { title: "Greek Yogurt Bowl with Berries & Chia Seeds", calories: breakfastCal, protein: 28, carbs: 35, fats: 12 };
-        lunch = { title: "Grilled Chicken Salad with Lemon Vinaigrette", calories: lunchCal, protein: 42, carbs: 18, fats: 22 };
-        dinner = { title: "Zucchini Noodles with Turkey Meatballs", calories: dinnerCal, protein: 38, carbs: 22, fats: 18 };
-      } else if (formData.goal === "Muscle gain") {
-        breakfast = { title: "Protein Oats with Peanut Butter & Banana", calories: breakfastCal, protein: 35, carbs: 55, fats: 18 };
-        lunch = { title: "Quinoa Bowl with Chickpeas, Avocado & Salmon", calories: lunchCal, protein: 48, carbs: 52, fats: 28 };
-        dinner = { title: "Lean Beef Stir-fry with Brown Rice", calories: dinnerCal, protein: 52, carbs: 58, fats: 22 };
-      } else if (formData.goal === "Maintain weight") {
-        breakfast = { title: "Avocado Toast with Poached Egg", calories: breakfastCal, protein: 22, carbs: 38, fats: 24 };
-        lunch = { title: "Mediterranean Grain Bowl with Hummus", calories: lunchCal, protein: 35, carbs: 48, fats: 26 };
-        dinner = { title: "Baked Salmon with Roasted Vegetables", calories: dinnerCal, protein: 42, carbs: 32, fats: 30 };
-      } else {
-        breakfast = { title: "Smoothie Bowl with Granola", calories: breakfastCal, protein: 18, carbs: 52, fats: 14 };
-        lunch = { title: "Turkey and Avocado Wrap", calories: lunchCal, protein: 38, carbs: 42, fats: 22 };
-        dinner = { title: "Chicken and Vegetable Stir-fry", calories: dinnerCal, protein: 44, carbs: 38, fats: 20 };
-      }
-      
-      // Adjust based on cuisine preference
-      if (formData.preferredCuisine === "Italian") {
-        lunch = { title: "Whole Wheat Pasta with Pesto & Chicken", calories: lunchCal, protein: 42, carbs: 58, fats: 28 };
-        dinner = { title: "Minestrone Soup with Caprese Salad", calories: dinnerCal, protein: 28, carbs: 42, fats: 24 };
-      } else if (formData.preferredCuisine === "Mexican") {
-        lunch = { title: "Black Bean Tacos with Fresh Salsa", calories: lunchCal, protein: 32, carbs: 48, fats: 20 };
-        dinner = { title: "Chicken Fajita Bowl with Cilantro Lime Rice", calories: dinnerCal, protein: 46, carbs: 52, fats: 26 };
-      } else if (formData.preferredCuisine === "Asian") {
-        breakfast = { title: "Congee with Soft Egg & Green Onions", calories: breakfastCal, protein: 20, carbs: 42, fats: 16 };
-        lunch = { title: "Buddha Bowl with Edamame & Sesame Dressing", calories: lunchCal, protein: 36, carbs: 44, fats: 22 };
-        dinner = { title: "Stir-fried Tofu with Broccoli & Ginger", calories: dinnerCal, protein: 34, carbs: 38, fats: 24 };
-      } else if (formData.preferredCuisine === "Mediterranean") {
-        lunch = { title: "Greek Salad with Grilled Chicken & Feta", calories: lunchCal, protein: 44, carbs: 28, fats: 32 };
-        dinner = { title: "Lemon Herb Fish with Quinoa & Asparagus", calories: dinnerCal, protein: 48, carbs: 42, fats: 26 };
-      } else if (formData.preferredCuisine === "Indian") {
-        breakfast = { title: "Masala Omelette with Whole Grain Toast", calories: breakfastCal, protein: 26, carbs: 32, fats: 22 };
-        lunch = { title: "Chana Masala with Brown Rice", calories: lunchCal, protein: 32, carbs: 52, fats: 18 };
-        dinner = { title: "Tandoori Chicken with Roasted Cauliflower", calories: dinnerCal, protein: 50, carbs: 28, fats: 28 };
-      }
-      
-      // Adjust for carb preference
-      if (formData.carbPreference === "Low Carb") {
-        breakfast.carbs = Math.floor(breakfast.carbs * 0.4);
-        lunch.carbs = Math.floor(lunch.carbs * 0.4);
-        dinner.carbs = Math.floor(dinner.carbs * 0.4);
-        breakfast.calories = Math.floor(breakfast.calories * 0.85);
-        lunch.calories = Math.floor(lunch.calories * 0.85);
-        dinner.calories = Math.floor(dinner.calories * 0.85);
-      } else if (formData.carbPreference === "High Carb") {
-        breakfast.carbs = Math.floor(breakfast.carbs * 1.4);
-        lunch.carbs = Math.floor(lunch.carbs * 1.4);
-        dinner.carbs = Math.floor(dinner.carbs * 1.4);
-      }
-      
-      // Adjust for fat preference
-      if (formData.fatPreference === "Low Fat") {
-        breakfast.fats = Math.floor(breakfast.fats * 0.5);
-        lunch.fats = Math.floor(lunch.fats * 0.5);
-        dinner.fats = Math.floor(dinner.fats * 0.5);
-      } else if (formData.fatPreference === "Higher Fat (Keto style)") {
-        breakfast.fats = Math.floor(breakfast.fats * 1.6);
-        lunch.fats = Math.floor(lunch.fats * 1.6);
-        dinner.fats = Math.floor(dinner.fats * 1.6);
-      }
-      
-      return { breakfast, lunch, dinner };
-    };
-    
-    const meals = getMealSuggestions();
-    
-    // Generate grocery list if selected
-    let groceryList = [];
-    if (formData.generateGroceryList) {
-      groceryList = [
-        { category: "Proteins", items: ["Chicken breast (2 lbs)", "Salmon fillets (1 lb)", "Eggs (dozen)", "Greek yogurt (32 oz)"] },
-        { category: "Vegetables", items: ["Spinach (5 oz)", "Broccoli (1 head)", "Bell peppers (3 count)", "Avocados (2 count)"] },
-        { category: "Fruits", items: ["Berries (fresh or frozen)", "Bananas (4 count)", "Lemons (2 count)"] },
-        { category: "Grains", items: ["Quinoa (1 cup)", "Oats (rolled)", "Brown rice (1 cup)"] },
-        { category: "Pantry", items: ["Olive oil", "Nuts (almonds/walnuts)", "Spices (salt, pepper, garlic powder)"] },
-      ];
-      if (formData.allergies) {
-        groceryList.push({ category: "Allergy Alert", items: [`Avoid: ${formData.allergies}`] });
-      }
-      if (formData.foodsDislike) {
-        groceryList.push({ category: "Foods to Skip", items: [`Do not buy: ${formData.foodsDislike}`] });
-      }
-    }
-    
-    // Generate water goal if selected
-    let waterGoal = null;
-    if (formData.includeWaterGoal) {
-      const activityLevels = {
-        "Sedentary": "2.5 liters (10 cups)",
-        "Lightly active": "3.0 liters (12 cups)",
-        "Moderately active": "3.5 liters (14 cups)",
-        "Very active": "4.0 liters (16 cups)",
-        "Extra active": "4.5 liters (18 cups)",
-      };
-      waterGoal = activityLevels[formData.activityLevel] || "3.0 liters (12 cups)";
-    }
-    
-    // Generate snacks if selected
-    let snacks = [];
-    if (formData.includeSnacks) {
-      snacks = [
-        { name: "Apple with peanut butter", calories: 180, protein: 5 },
-        { name: "Greek yogurt cup", calories: 120, protein: 12 },
-        { name: "Handful of almonds (1/4 cup)", calories: 160, protein: 6 },
-        { name: "Hummus with veggie sticks", calories: 140, protein: 4 },
-      ];
-    }
-    
-    // Calculate total daily nutrition
-    const totalCalories = meals.breakfast.calories + meals.lunch.calories + meals.dinner.calories;
-    const totalProtein = meals.breakfast.protein + meals.lunch.protein + meals.dinner.protein;
-    const totalCarbs = meals.breakfast.carbs + meals.lunch.carbs + meals.dinner.carbs;
-    const totalFats = meals.breakfast.fats + meals.lunch.fats + meals.dinner.fats;
-    
-    setGeneratedPlan({
-      ...formData,
-      meals,
-      groceryList,
-      waterGoal,
-      snacks,
-      totalNutrition: { calories: totalCalories, protein: totalProtein, carbs: totalCarbs, fats: totalFats },
-      createdAt: new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-    });
-    
-    // Hide the form, show the generated plan
+  const generateMealPlan = async () => {
+    const snapshot = { ...formData };
     setShowForm(false);
+    setMealPlanSaveError(null);
+    setMealPlanSaveOk(false);
+    setMealPlanSaving(true);
+    try {
+      let built = null;
+      try {
+        built = await fetchAiMealPlan(snapshot);
+      } catch {
+        built = buildGeneratedPlanFromPreferences(snapshot);
+      }
+      setGeneratedPlan(built);
+
+      const res = await apiCall("/api/meal-plans", {
+        method: "POST",
+        body: JSON.stringify(snapshot),
+      });
+      setMealPlanSaveOk(true);
+      if (res?.data?.created_at) {
+        setGeneratedPlan((prev) =>
+          prev ? { ...prev, createdAt: formatMealPlanCreatedAt(res.data.created_at) } : prev
+        );
+      }
+    } catch (err) {
+      setMealPlanSaveError(err?.message || "Could not save your meal plan preferences.");
+    } finally {
+      setMealPlanSaving(false);
+    }
   };
 
-  const handleNewMealPlan = () => {
+  const handleNewMealPlan = async () => {
+    try {
+      await apiCall("/api/meal-plans/deactivate-active", { method: "POST", body: "{}" });
+    } catch {
+      /* still open a fresh form */
+    }
     resetForm();
     setGeneratedPlan(null);
     setShowForm(true);
+    setMealPlanSaveError(null);
+    setMealPlanSaveOk(false);
+    setMealPlanSaving(false);
   };
+
+  if (hydrating) {
+    return (
+      <div className="pb-12 flex justify-center items-center min-h-[280px] mx-4 md:mx-8">
+        <p className="text-[#32491B] text-sm font-semibold bg-white/80 px-5 py-3 rounded-xl shadow border border-[#B5D098]/40">
+          Loading your meal plan…
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="pb-12">
@@ -667,6 +719,23 @@ const MealPlanPage = ({ onViewRecipe }) => {
             </div>
             
             <div className="p-6 space-y-6">
+              {mealPlanSaving && (
+                <p className="text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+                  Saving your preferences…
+                </p>
+              )}
+              {mealPlanSaveOk && !mealPlanSaving && (
+                <p className="text-sm text-[#32491B] bg-[#e8f2dc] border border-[#B5D098]/50 rounded-lg px-4 py-3 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  Your meal plan preferences were saved to your account.
+                </p>
+              )}
+              {mealPlanSaveError && (
+                <p className="text-sm text-red-800 bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  {mealPlanSaveError}
+                </p>
+              )}
               {/* Profile Summary Card */}
               <div className="bg-[#f5f9ef] rounded-xl p-5 border border-[#B5D098]/30">
                 <div className="flex items-center gap-2 mb-4">

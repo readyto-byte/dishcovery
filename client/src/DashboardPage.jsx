@@ -367,6 +367,11 @@ Return as JSON with the structure above.`;
     try {
       await fetch(`${API_BASE_URL}/api/auth/logout`, { method: "POST" });
     } finally {
+      try {
+        localStorage.removeItem(MEAL_PLAN_STORAGE_KEY);
+      } catch {
+        /* ignore */
+      }
       navigate("/", { replace: true });
     }
   };
