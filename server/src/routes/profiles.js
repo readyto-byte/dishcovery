@@ -1,7 +1,14 @@
 const express = require('express');
 const router = express.Router();
 
-const { getProfiles, createProfile, updateProfile, deleteProfile } = require('../controllers/profiles');
+const {
+  getProfiles,
+  createProfile,
+  updateProfile,
+  deleteProfile,
+  setDefaultProfile,
+  hasDefaultProfile,
+} = require('../controllers/profiles');
 
 // Get all profiles for the authenticated account
 router.get('/', async (req, res) => {
@@ -34,7 +41,8 @@ router.post('/', async (req, res) => {
       dietaryRestrictions,
       dietaryPreferences,
       dietary_restrictions,
-      dietary_preferences
+      dietary_preferences,
+      is_default
     } = req.body;
 
     if (!name) {
@@ -47,15 +55,26 @@ router.post('/', async (req, res) => {
     }
     const resolvedDietaryRestrictions = dietary_restrictions ?? dietaryRestrictions ?? [];
     const resolvedDietaryPreferences = dietary_preferences ?? dietaryPreferences ?? allergies ?? [];
+    const requestedDefault = is_default ?? isDefault ?? false;
+    const defaultExists = await hasDefaultProfile(accountId);
+    const shouldBeDefault = Boolean(requestedDefault) || !defaultExists;
+
     const profile = await createProfile(accountId, {
       name,
       dateOfBirth: resolvedDateOfBirth,
       gender: gender ?? null,
       avatarUrl: avatar_url ?? avatarUrl ?? null,
-      isActive: is_active ?? isActive ?? isDefault ?? true,
+      isActive: is_active ?? isActive ?? true,
+      isDefault: shouldBeDefault,
       dietaryRestrictions: resolvedDietaryRestrictions,
       dietaryPreferences: resolvedDietaryPreferences
     });
+
+    if (shouldBeDefault) {
+      const defaultProfile = await setDefaultProfile(accountId, profile.id);
+      return res.json({ success: true, data: defaultProfile });
+    }
+
     res.json({ success: true, data: profile });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
@@ -71,6 +90,7 @@ router.put('/:profileId', async (req, res) => {
       allergies,
       dietaryPreferences,
       dietaryRestrictions,
+      is_default,
       isDefault,
       isActive,
       ...restUpdates
@@ -90,9 +110,18 @@ router.put('/:profileId', async (req, res) => {
     }
 
     if (isDefault !== undefined) {
-      updates.is_active = isDefault;
+      updates.is_default = isDefault;
+    }
+    if (is_default !== undefined) {
+      updates.is_default = is_default;
     } else if (isActive !== undefined) {
       updates.is_active = isActive;
+    }
+
+    const wantsDefault = updates.is_default === true;
+    if (wantsDefault) {
+      const profile = await setDefaultProfile(accountId, profileId);
+      return res.json({ success: true, data: profile });
     }
 
     const profile = await updateProfile(accountId, profileId, updates);

@@ -414,7 +414,7 @@ const ProfilePage = ({ activeProfile, onActiveProfileChange }) => {
     avatar: profile.avatar_url ?? null,
     dietaryRestrictions: Array.isArray(profile.dietary_restrictions) ? profile.dietary_restrictions : [],
     allergies: Array.isArray(profile.dietary_preferences) ? profile.dietary_preferences : [],
-    isDefault: !!profile.is_active,
+    isDefault: Boolean(profile.is_default ?? profile.is_active),
   });
 
   useEffect(() => {
@@ -527,7 +527,7 @@ const ProfilePage = ({ activeProfile, onActiveProfileChange }) => {
     try {
       await apiCall(`/api/profiles/${id}`, {
         method: "PUT",
-        body: JSON.stringify({ isDefault: true }),
+        body: JSON.stringify({ isDefault: true, is_default: true }),
       });
     } catch (err) {
       setProfiles(previous);

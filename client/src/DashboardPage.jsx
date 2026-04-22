@@ -180,18 +180,15 @@ const DashboardPage = () => {
         console.log("Profiles API response:", response);
         
         const profiles = Array.isArray(response?.data) ? response.data : [];
-        console.log("Number of profiles found:", profiles.length);
-        if (profiles.length > 0) {
-          console.log("Profiles data:", profiles.map(p => ({ id: p.id, name: p.name, is_active: p.is_active })));
-        }
-        
+
         if (profiles.length > 0) {
           console.log("RESULT: User has profiles - NOT showing modal");
           setShowFirstTimeModal(false);
           localStorage.setItem('dishcovery_first_time_modal_seen', 'true');
           console.log("Saved to localStorage: dishcovery_first_time_modal_seen = true");
           
-          const active = profiles.find(p => p.is_active === true);
+          // Set the active profile
+          const active = profiles.find(p => p.is_default === true) || profiles.find(p => p.is_active === true);
           if (active) {
             console.log("Setting active profile:", active.name);
             setActiveProfile({ id: active.id, name: active.name, avatar: active.avatar_url });
@@ -236,7 +233,7 @@ const DashboardPage = () => {
       try {
         const response = await apiCall("/api/profiles");
         const profiles = Array.isArray(response?.data) ? response.data : [];
-        const active = profiles.find(p => p.is_active === true);
+        const active = profiles.find(p => p.is_default === true) || profiles.find(p => p.is_active === true);
         if (active) {
           setActiveProfile({ id: active.id, name: active.name, avatar: active.avatar_url });
         }
@@ -437,7 +434,7 @@ Return as JSON with the structure above.`;
       case 'history':
         return <HistoryPage onViewRecipe={setSelectedRecipe} />;
       case 'meal-plan':
-        return <MealPlanPage onViewRecipe={setSelectedRecipe} />;
+        return <MealPlanPage onViewRecipe={setSelectedRecipe} activeProfile={activeProfile} />;
       case 'profile':
         return (
           <ProfilePage
