@@ -182,7 +182,7 @@ const HistoryPage = ({ onViewRecipe }) => {
         )}
 
         {!isLoading && historyRecipes.length === 0 && (
-      <div className="rounded-2xl flex flex-col items-center justify-center py-20 px-6 text-center"
+                <div className="rounded-2xl flex flex-col items-center justify-center py-20 px-6 text-center"
         style={{ background: 'linear-gradient(160deg, #d6e8b8 0%, #c8dba8 100%)' }}
       >
         <div className="w-28 h-28 rounded-full bg-[#b5cc94]/60 flex items-center justify-center mb-6">
