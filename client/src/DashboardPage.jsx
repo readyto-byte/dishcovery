@@ -158,36 +158,60 @@ const DashboardPage = () => {
   useEffect(() => {
     const checkFirstTime = async () => {
       try {
-
-        const hasSeenModal = localStorage.getItem('dishcovery_first_time_modal_seen');
+        console.log("=== FIRST TIME MODAL CHECK STARTED ===");
+        console.log("Step 1: Checking for access token...");
         
+        const accessToken = localStorage.getItem('access_token');
+        const refreshToken = localStorage.getItem('refresh_token');
+        
+        console.log("Access token exists?", accessToken ? "YES" : "NO");
+        console.log("Refresh token exists?", refreshToken ? "YES" : "NO");
+        
+        if (!accessToken && !refreshToken) {
+          console.log("RESULT: No auth tokens found - user not logged in");
+          console.log("NOT showing first time modal");
+          setShowFirstTimeModal(false);
+          setIsChecking(false);
+          return;
+        }
+        
+        console.log("Step 2: Auth tokens found, checking profiles from backend...");
         const response = await apiCall("/api/profiles");
+        console.log("Profiles API response:", response);
+        
         const profiles = Array.isArray(response?.data) ? response.data : [];
 
         if (profiles.length > 0) {
-
+          console.log("RESULT: User has profiles - NOT showing modal");
           setShowFirstTimeModal(false);
-
           localStorage.setItem('dishcovery_first_time_modal_seen', 'true');
+          console.log("Saved to localStorage: dishcovery_first_time_modal_seen = true");
           
           // Set the active profile
           const active = profiles.find(p => p.is_default === true) || profiles.find(p => p.is_active === true);
           if (active) {
+            console.log("Setting active profile:", active.name);
             setActiveProfile({ id: active.id, name: active.name, avatar: active.avatar_url });
           }
         } else {
-
+          console.log("Step 3: No profiles found, checking localStorage flag...");
+          const hasSeenModal = localStorage.getItem('dishcovery_first_time_modal_seen');
+          console.log("dishcovery_first_time_modal_seen value:", hasSeenModal);
+          
           if (!hasSeenModal) {
+            console.log("RESULT: No profiles AND modal not seen before - SHOWING modal");
             setShowFirstTimeModal(true);
           } else {
+            console.log("RESULT: No profiles but modal seen before - NOT showing modal");
             setShowFirstTimeModal(false);
           }
         }
       } catch (error) {
-        console.error("Error checking profiles:", error);
-
+        console.error("ERROR in first time check:", error);
+        console.log("RESULT: Error occurred - NOT showing modal to be safe");
         setShowFirstTimeModal(false);
       } finally {
+        console.log("=== FIRST TIME MODAL CHECK COMPLETED ===");
         setIsChecking(false);
       }
     };
@@ -435,6 +459,9 @@ Return as JSON with the structure above.`;
     } finally {
       try {
         localStorage.removeItem(MEAL_PLAN_STORAGE_KEY);
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('dishcovery_first_time_modal_seen');
       } catch {
       }
       navigate("/", { replace: true });
