@@ -314,7 +314,7 @@ Return as JSON with the structure above.`;
       case 'dashboard':
         return (
           <>
-            <WelcomeBanner />
+            <WelcomeBanner activeProfile={activeProfile} />
             
             <CreateRecipeSection 
               onGenerate={handleGenerateRecipe} 
