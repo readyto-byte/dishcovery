@@ -2,6 +2,54 @@ import { useState, useEffect } from 'react';
 import heroBg from "../../assets/hero-bg.jpg";
 import { apiCall } from "../../api/config";
 
+const FavoritesLoadingSkeleton = () => {
+  return (
+    <div className="pb-12">
+      <style>{`
+        @keyframes shimmer { 0% { background-position: -600px 0; } 100% { background-position: 600px 0; } }
+        .skeleton { background: linear-gradient(90deg, #e8f2dc 25%, #d4e9c0 50%, #e8f2dc 75%); background-size: 600px 100%; animation: shimmer 1.6s infinite linear; border-radius: 8px; }
+      `}</style>
+      
+      {/* Hero skeleton */}
+      <div className="relative mx-4 md:mx-8 mt-6 mb-8 overflow-hidden rounded-2xl shadow-xl bg-[#1e3a0f]/80 px-8 py-7">
+        <div className="space-y-2">
+          <div className="skeleton h-8 w-40 opacity-30" />
+          <div className="skeleton h-4 w-56 opacity-20" />
+        </div>
+      </div>
+
+      {/* Cards skeleton */}
+      <div className="mx-4 md:mx-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="bg-[#F0E6D1] rounded-2xl shadow-lg overflow-hidden border border-gray-100">
+              <div className="h-12 bg-[#587A34] flex items-center justify-between px-4">
+                <div className="skeleton h-6 w-20 opacity-30" />
+                <div className="skeleton h-6 w-24 opacity-30" />
+              </div>
+              <div className="p-5 space-y-3">
+                <div className="skeleton h-6 w-3/4 opacity-30" />
+                <div className="skeleton h-4 w-1/2 opacity-20" />
+                <div className="flex gap-2">
+                  <div className="skeleton h-6 w-16 opacity-20" />
+                  <div className="skeleton h-6 w-20 opacity-20" />
+                </div>
+                <div className="flex justify-between items-center pt-3 border-t border-[#B5D098]/30">
+                  <div className="flex gap-3">
+                    <div className="skeleton h-4 w-16 opacity-20" />
+                    <div className="skeleton h-4 w-16 opacity-20" />
+                  </div>
+                  <div className="skeleton h-4 w-24 opacity-20" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const FavoritesPage = ({ onViewRecipe }) => {
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -49,11 +97,7 @@ const FavoritesPage = ({ onViewRecipe }) => {
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#32491B]"></div>
-      </div>
-    );
+    return <FavoritesLoadingSkeleton />;
   }
 
   return (

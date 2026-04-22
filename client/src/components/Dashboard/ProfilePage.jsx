@@ -5,6 +5,48 @@ import { apiCall } from "../../api/config";
 const DIETARY_OPTIONS = ["Keto", "Gluten-Free", "Vegan", "Vegetarian", "Paleo", "Dairy-Free"];
 const ALLERGY_OPTIONS = ["Nuts", "Shellfish", "Eggs", "Soy", "Wheat", "Fish"];
 
+const ProfileLoadingSkeleton = () => {
+  return (
+    <div className="mx-4 md:mx-8 mt-6">
+      <style>{`
+        @keyframes shimmer { 0% { background-position: -600px 0; } 100% { background-position: 600px 0; } }
+        .skeleton { background: linear-gradient(90deg, #e8f2dc 25%, #d4e9c0 50%, #e8f2dc 75%); background-size: 600px 100%; animation: shimmer 1.6s infinite linear; border-radius: 8px; }
+      `}</style>
+      
+      {/* Hero skeleton */}
+      <div className="relative rounded-2xl shadow-xl overflow-hidden px-8 py-7 mb-6 bg-[#1e3a0f]/80">
+        <div className="space-y-2">
+          <div className="skeleton h-8 w-48 opacity-30" />
+          <div className="skeleton h-4 w-64 opacity-20" />
+        </div>
+      </div>
+
+      {/* Profile cards skeleton */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="bg-[#c8dba8] rounded-2xl p-5 flex flex-col items-center gap-3 shadow-md">
+            <div className="skeleton w-16 h-16 rounded-full opacity-30" />
+            <div className="skeleton h-5 w-24 opacity-30" />
+            <div className="skeleton h-8 w-28 rounded-full opacity-20" />
+            <div className="w-full h-px bg-[#587A34]/20" />
+            <div className="w-full space-y-2">
+              <div className="skeleton h-3 w-32 opacity-20" />
+              <div className="flex gap-1">
+                <div className="skeleton h-6 w-16 rounded-full opacity-20" />
+                <div className="skeleton h-6 w-20 rounded-full opacity-20" />
+              </div>
+            </div>
+          </div>
+        ))}
+        <div className="bg-[#c8dba8]/50 border-2 border-dashed border-[#587A34]/40 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 min-h-[180px]">
+          <div className="skeleton w-12 h-12 rounded-full opacity-30" />
+          <div className="skeleton h-4 w-24 opacity-30" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Avatar = ({ name, avatar, size = "lg" }) => {
   const initials = name
     .split(" ")
@@ -535,6 +577,10 @@ const ProfilePage = ({ activeProfile, onActiveProfileChange }) => {
     }
   };
 
+  if (isLoading) {
+    return <ProfileLoadingSkeleton />;
+  }
+
   return (
     <div className="mx-4 md:mx-8 mt-6">
       <div
@@ -552,10 +598,6 @@ const ProfilePage = ({ activeProfile, onActiveProfileChange }) => {
 
       {error && (
         <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
-      )}
-
-      {isLoading && (
-        <div className="rounded-xl bg-white/70 px-4 py-5 text-sm text-[#2d3f1a]">Loading profiles...</div>
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
