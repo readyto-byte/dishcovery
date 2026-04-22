@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { RotateCcw, Apple, Droplet, ShoppingBag, Clock, ChefHat, Heart, Activity, Ruler, Weight, Calendar, Flame, Coffee, Sun, Moon, AlertCircle, CheckCircle2, Utensils, Target, PlusCircle, Download, X, ChevronRight } from "lucide-react";
 import heroBg from "../../assets/hero-bg.jpg";
-import { apiCall } from "../../api/config";
+import { apiCall } from "../../api/config.js";
 import {
   buildGeneratedPlanFromPreferences,
   mapDbRowToFormData,
@@ -191,6 +191,77 @@ const getEmptyMealPlanFormData = () => ({
 const inputClass = "w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:border-[#587A34] focus:ring-1 focus:ring-[#587A34] focus:outline-none transition";
 const selectClass = "w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:border-[#587A34] focus:ring-1 focus:ring-[#587A34] focus:outline-none transition bg-white";
 const labelClass = "block text-sm font-semibold text-gray-700 mb-1";
+// Loading Animation Component inside Meal Plan Section
+const MealPlanLoadingCard = ({ message }) => {
+  const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
+  const loadingMessages = [
+    "Analyzing your preferences...",
+    "Creating personalized meals...",
+    "Calculating nutritional values...",
+    "Balancing your macros...",
+    "Preparing your grocery list...",
+    "Almost there...",
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLoadingMessageIndex((prev) => (prev + 1) % loadingMessages.length);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="mx-4 md:mx-8 mb-8">
+      <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
+        {/* Loading header */}
+        <div className="px-6 py-5 bg-gradient-to-r from-[#1e3a0f] to-[#2b4b1a]">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <h2 className="text-white font-bold text-2xl flex items-center gap-2">
+                <Apple className="w-6 h-6 text-[#B5D098]" /> Creating Your Meal Plan
+              </h2>
+              <p className="text-[#B5D098] text-sm mt-1">Please wait while we personalize your plan</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Loading content */}
+        <div className="p-12 flex flex-col items-center justify-center">
+          {/* Animated spinner */}
+          <div className="relative w-20 h-20 mb-6">
+            <div className="absolute inset-0 rounded-full border-4 border-[#B5D098]/30" />
+            <div className="absolute inset-0 rounded-full border-4 border-t-[#587A34] border-r-transparent border-b-transparent border-l-transparent animate-spin" />
+            <div className="absolute inset-2 rounded-full border-4 border-t-transparent border-r-[#839705] border-b-transparent border-l-transparent animate-spin" style={{ animationDuration: '0.8s' }} />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Utensils className="w-8 h-8 text-[#587A34] animate-pulse" />
+            </div>
+          </div>
+
+          {/* Loading text */}
+          <h3 className="text-[#32491B] text-lg font-bold mb-2">{loadingMessages[loadingMessageIndex]}</h3>
+          
+          {/* Progress dots */}
+          <div className="flex justify-center gap-2 mt-4">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="w-2 h-2 rounded-full bg-[#587A34]/40 animate-bounce"
+                style={{ animationDelay: `${i * 0.2}s`, animationDuration: '0.8s' }}
+              />
+            ))}
+          </div>
+
+          {/* Tip message */}
+          <div className="mt-8 max-w-md mx-auto px-4 py-3 bg-[#f5f9ef] rounded-xl border border-[#B5D098]/30">
+            <p className="text-[#587A34] text-xs text-center">
+              💡 Tip: The more details you provide, the more personalized your meal plan will be!
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
   const [plan, setPlan] = useState(defaultPlan());
@@ -206,6 +277,7 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
   const [mealPlanSaving, setMealPlanSaving] = useState(false);
   const [hydrating, setHydrating] = useState(true);
   const [downloading, setDownloading] = useState(false);
+  const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
   const formValidation = validateMealPlanForm(formData);
   const activeProfileId = activeProfile?.id ?? null;
 
@@ -351,10 +423,13 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
       setShowForm(true);
       return;
     }
+    
+    setIsGeneratingPlan(true);
     setShowForm(false);
     setMealPlanSaveError(null);
     setMealPlanSaveOk(false);
     setMealPlanSaving(true);
+    
     try {
       let built = null;
       try { built = await fetchAiMealPlan(snapshot); }
@@ -372,6 +447,7 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
       setMealPlanSaveError(err?.message || "Could not save your meal plan preferences.");
     } finally {
       setMealPlanSaving(false);
+      setIsGeneratingPlan(false);
     }
   };
 
@@ -603,6 +679,9 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
       </div>
 
       {showForm && (
+      {isGeneratingPlan && <MealPlanLoadingCard />}
+
+      {showForm && !isGeneratingPlan && (
         <div className="mx-4 md:mx-8 mb-8">
           <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
             <div className="px-6 py-4 bg-gradient-to-r from-[#1e3a0f] to-[#2b4b1a]">
@@ -788,6 +867,8 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
       )}
 
       {!showForm && generatedPlan && (
+      {/* Generated Meal Plan Card */}
+      {!showForm && generatedPlan && !isGeneratingPlan && (
         <div className="mx-4 md:mx-8 mb-8">
           <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
             <div className="px-4 sm:px-6 py-5 bg-gradient-to-r from-[#1e3a0f] to-[#2b4b1a]">

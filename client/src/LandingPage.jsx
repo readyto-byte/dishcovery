@@ -9,7 +9,7 @@ import Navbar from "./components/LandingPage_comp/Navbar"
 import SampleRecipe from "./components/LandingPage_comp/SampleRecipe"
 import Signup from "./components/LandingPage_comp/Signup"
 import Login from "./components/LandingPage_comp/Login"
-import MeetTheTeam from "./components/LandingPage_comp/MeetTheTeam"  // ← ADD THIS
+import MeetTheTeam from "./components/LandingPage_comp/MeetTheTeam"
 
 const LandingPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -27,6 +27,15 @@ const LandingPage = () => {
     setSignupSuccessMessage(message);
   };
 
+  const handleCloseSuccessAndOpenLogin = () => {
+    setSignupSuccessMessage(null);
+    openLogin();
+  };
+
+  const handleCloseSuccess = () => {
+    setSignupSuccessMessage(null);
+  };
+
   return (
     <div className="relative">
       <Navbar onSignupClick={openSignup} onLoginClick={openLogin}/>
@@ -35,7 +44,7 @@ const LandingPage = () => {
       <HowItWorks />
       <SampleRecipe />
       <AboutSection />
-      <MeetTheTeam />      {/* ← ADD THIS - between AboutSection and FooterSection */}
+      <MeetTheTeam />
       <FooterSection />
 
       <Signup
@@ -64,13 +73,23 @@ const LandingPage = () => {
                 Sign up successful
               </h2>
               <p className="mt-3 text-sm text-gray-600 leading-relaxed">{signupSuccessMessage}</p>
-              <button
-                type="button"
-                onClick={() => setSignupSuccessMessage(null)}
-                className="mt-8 w-full py-2.5 rounded-lg bg-[#2D3A18] text-white text-sm font-medium hover:bg-[#2D3A18]/90 transition-colors"
-              >
-                OK
-              </button>
+              
+              <div className="flex flex-col gap-2 w-full mt-6">
+                <button
+                  type="button"
+                  onClick={handleCloseSuccessAndOpenLogin}
+                  className="w-full py-2 rounded-lg bg-[#2D3A18] text-white text-sm font-medium hover:bg-[#2D3A18]/90 transition-all active:scale-[0.98]"
+                >
+                  Continue to Log in
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCloseSuccess}
+                  className="w-full py-2 rounded-lg bg-gray-100 text-[#2D3A18] text-sm font-medium hover:bg-gray-200 transition-all active:scale-[0.98]"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>
