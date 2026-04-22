@@ -60,6 +60,111 @@ const SaveBar = ({ onCancel, label = "Save Changes", icon: Icon = Save, isLoadin
   </div>
 );
 
+// Success Modal Component
+const SuccessModal = ({ onClose }) => (
+  <>
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div
+        className="w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-slide-in"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="h-1.5 w-full bg-gradient-to-r from-red-500 to-red-700" />
+        <div className="bg-[#f7f0e3] px-7 pt-7 pb-6 text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+            <Trash2 className="w-8 h-8 text-red-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-[#1B211A] mb-2">Account Deleted</h2>
+          <p className="text-[#4a5e30] text-sm leading-relaxed mb-6">
+            Your account has been successfully deleted. All your data has been permanently removed.
+          </p>
+          <button
+            onClick={onClose}
+            className="w-full py-3 rounded-xl bg-[#32491B] hover:bg-[#253813] text-[#F0E6D1] font-semibold text-sm transition-all duration-200 shadow-md cursor-pointer"
+          >
+            OK
+          </button>
+        </div>
+      </div>
+    </div>
+  </>
+);
+
+// Confirmation Modal Component
+const ConfirmDeleteModal = ({ onConfirm, onCancel, isLoading, deletePassword, setDeletePassword, showDeletePassword, setShowDeletePassword, error }) => (
+  <>
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div
+        className="w-full max-w-md rounded-2xl shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="h-1.5 w-full bg-gradient-to-r from-red-500 to-red-700" />
+        <div className="bg-[#f7f0e3] px-7 pt-7 pb-6">
+          <div className="flex justify-center mb-4">
+            <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center">
+              <AlertTriangle className="w-7 h-7 text-red-600" />
+            </div>
+          </div>
+          <h2 className="text-center font-bold text-[#1B211A] text-xl mb-2">Delete Account?</h2>
+          <p className="text-center text-[#4a5e30] text-sm leading-relaxed mb-4">
+            This action is <span className="font-bold text-red-600">permanent</span> and cannot be undone. All your recipes, favorites, and personal data will be deleted forever.
+          </p>
+          
+          <div className="relative mt-4 mb-3">
+            <input
+              type={showDeletePassword ? "text" : "password"}
+              placeholder="Enter your password to confirm"
+              value={deletePassword}
+              onChange={(e) => {
+                setDeletePassword(e.target.value);
+              }}
+              className={`${inputClass(error)} pr-10 w-full`}
+            />
+            <button
+              type="button"
+              onClick={() => setShowDeletePassword(!showDeletePassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6b5a3a] hover:text-[#2d2a1e]"
+            >
+              {showDeletePassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+          
+          {error && (
+            <p className="text-xs text-red-600 flex items-center gap-1 mb-3">
+              <XCircle className="w-3 h-3" /> {error}
+            </p>
+          )}
+          
+          <div className="flex gap-3 mt-4">
+            <button
+              onClick={onCancel}
+              disabled={isLoading}
+              className="flex-1 py-3 rounded-xl border border-[#32491B]/20 bg-white/50 hover:bg-white/80 text-[#32491B] font-semibold text-sm transition-all duration-200 cursor-pointer disabled:opacity-40"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onConfirm}
+              disabled={isLoading || !deletePassword.trim()}
+              className="flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm transition-all duration-200 shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Deleting...
+                </div>
+              ) : (
+                "Yes, Delete Forever"
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </>
+);
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 const SettingsPage = () => {
@@ -72,6 +177,7 @@ const SettingsPage = () => {
     confirmNewPassword: "",
   });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showDeleteSuccessModal, setShowDeleteSuccessModal] = useState(false);
   const [showPassword, setShowPassword] = useState({
     current: false,
     new: false,
@@ -211,21 +317,43 @@ const SettingsPage = () => {
     }
   };
 
-const handleDeleteAccount = () => {
-  if (showDeleteConfirm) {
-    if (!deletePassword.trim()) return setErrors({ delete: "Please enter your password to confirm." });
+  const handleDeleteAccount = async () => {
+    if (!deletePassword.trim()) {
+      setErrors({ delete: "Please enter your password to confirm." });
+      return;
+    }
+    
     setIsLoading(true);
+
     setTimeout(() => {
-      alert("Account deleted successfully");
+
       setShowDeleteConfirm(false);
-      setActiveSection(null);
+      setShowDeleteSuccessModal(true);
       setDeletePassword("");
+      
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('dishcovery_first_time_modal_seen');
+      
       setIsLoading(false);
-    }, 500);
-  } else {
+    }, 1500);
+  };
+
+  const handleSuccessModalClose = () => {
+    setShowDeleteSuccessModal(false);
+    window.location.href = "/";
+  };
+
+  const handleDeleteClick = () => {
     setShowDeleteConfirm(true);
-  }
-};
+    setActiveSection(null);
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteConfirm(false);
+    setDeletePassword("");
+    setErrors({});
+  };
 
   const togglePasswordVisibility = (field) =>
     setShowPassword((prev) => ({ ...prev, [field]: !prev[field] }));
@@ -417,92 +545,32 @@ const handleDeleteAccount = () => {
               </div>
             </div>
             <button
-              onClick={() => handleToggle("delete")}
+              onClick={handleDeleteClick}
               className="px-4 py-1.5 text-xs font-black uppercase tracking-wide rounded-lg bg-red-400 text-white hover:bg-red-500 transition-colors"
             >
               Delete
             </button>
           </div>
-
-          {activeSection === "delete" && (
-            <div className="px-5 pb-5 pt-1 border-t border-red-200 bg-red-50">
-              {!showDeleteConfirm ? (
-                <>
-                  <div className="flex items-start gap-3 p-3 bg-red-100 border border-red-200 rounded-lg mt-3 mb-3">
-                    <AlertTriangle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs text-red-700 font-semibold leading-relaxed">
-                      Warning: This action is permanent and cannot be undone. All your recipes, favorites, and personal data will be permanently deleted.
-                    </p>
-                  </div>
-                  <button
-                    onClick={handleDeleteAccount}
-                    className="flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-wide bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    Yes, Delete My Account
-                  </button>
-                </>
- 
-              ) : (
-                <div className="space-y-3 mt-3">
-                  <div className="p-3 bg-red-100 border border-red-200 rounded-lg">
-                    <p className="text-xs font-bold text-red-800 flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4" />
-                      Are you absolutely sure? This action cannot be undone.
-                    </p>
-                  </div>
-                  <div className="relative">
-                    <input
-                      type={showDeletePassword ? "text" : "password"}
-                      placeholder="Enter your password to confirm"
-                      value={deletePassword}
-                      onChange={(e) => {
-                        setDeletePassword(e.target.value);
-                        if (errors.delete) setErrors((prev) => ({ ...prev, delete: "" }));
-                      }}
-                      className={`${inputClass(errors.delete)} pr-10`}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowDeletePassword((prev) => !prev)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6b5a3a] hover:text-[#2d2a1e]"
-                    >
-                      {showDeletePassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                  {errors.delete && (
-                    <p className="text-xs text-red-600 flex items-center gap-1">
-                      <XCircle className="w-3 h-3" /> {errors.delete}
-                    </p>
-                  )}
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleDeleteAccount}
-                      disabled={isLoading}
-                      className="flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-wide bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
-                    >
-                      {isLoading ? (
-                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <Trash2 className="w-3.5 h-3.5" />
-                      )}
-                      {isLoading ? "Deleting..." : "Yes, Permanently Delete"}
-                    </button>
-                    <button
-                      onClick={() => { setShowDeleteConfirm(false); setDeletePassword(""); setErrors({}); }}
-                      className="flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-wide bg-[#c8b99a] text-[#4a3a1e] rounded-lg hover:bg-[#b8a98a] transition-colors"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
       </div>
+
+      {showDeleteConfirm && (
+        <ConfirmDeleteModal
+          onConfirm={handleDeleteAccount}
+          onCancel={cancelDelete}
+          isLoading={isLoading}
+          deletePassword={deletePassword}
+          setDeletePassword={setDeletePassword}
+          showDeletePassword={showDeletePassword}
+          setShowDeletePassword={setShowDeletePassword}
+          error={errors.delete}
+        />
+      )}
+
+      {showDeleteSuccessModal && (
+        <SuccessModal onClose={handleSuccessModalClose} />
+      )}
 
       <style>{`
         @keyframes slide-in {
