@@ -180,30 +180,19 @@ const DashboardPage = () => {
         console.log("Profiles API response:", response);
         
         const profiles = Array.isArray(response?.data) ? response.data : [];
-
-        if (profiles.length > 0) {
+        console.log("Number of profiles found:", profiles.length);
+        
+        if (profiles.length === 0) {
+          console.log("RESULT: No profiles found - SHOWING modal");
+          setShowFirstTimeModal(true);
+        } else {
           console.log("RESULT: User has profiles - NOT showing modal");
           setShowFirstTimeModal(false);
-          localStorage.setItem('dishcovery_first_time_modal_seen', 'true');
-          console.log("Saved to localStorage: dishcovery_first_time_modal_seen = true");
-          
-          // Set the active profile
+
           const active = profiles.find(p => p.is_default === true) || profiles.find(p => p.is_active === true);
           if (active) {
             console.log("Setting active profile:", active.name);
             setActiveProfile({ id: active.id, name: active.name, avatar: active.avatar_url });
-          }
-        } else {
-          console.log("Step 3: No profiles found, checking localStorage flag...");
-          const hasSeenModal = localStorage.getItem('dishcovery_first_time_modal_seen');
-          console.log("dishcovery_first_time_modal_seen value:", hasSeenModal);
-          
-          if (!hasSeenModal) {
-            console.log("RESULT: No profiles AND modal not seen before - SHOWING modal");
-            setShowFirstTimeModal(true);
-          } else {
-            console.log("RESULT: No profiles but modal seen before - NOT showing modal");
-            setShowFirstTimeModal(false);
           }
         }
       } catch (error) {
@@ -225,14 +214,14 @@ const DashboardPage = () => {
 
   const handleFirstTimeModalClose = () => {
     setShowFirstTimeModal(false);
-    localStorage.setItem('dishcovery_first_time_modal_seen', 'true');
-    // Trigger refresh of profile page
+
     setProfileRefreshKey(prev => prev + 1);
-    // Also refresh the active profile by fetching it
+
     const fetchActiveProfile = async () => {
       try {
         const response = await apiCall("/api/profiles");
         const profiles = Array.isArray(response?.data) ? response.data : [];
+
         const active = profiles.find(p => p.is_default === true) || profiles.find(p => p.is_active === true);
         if (active) {
           setActiveProfile({ id: active.id, name: active.name, avatar: active.avatar_url });
@@ -434,7 +423,10 @@ Return as JSON with the structure above.`;
       case 'history':
         return <HistoryPage onViewRecipe={setSelectedRecipe} />;
       case 'meal-plan':
-        return <MealPlanPage onViewRecipe={setSelectedRecipe} activeProfile={activeProfile} />;
+        return <MealPlanPage 
+          onViewRecipe={setSelectedRecipe} 
+          activeProfile={activeProfile}
+        />;
       case 'profile':
         return (
           <ProfilePage
@@ -461,7 +453,6 @@ Return as JSON with the structure above.`;
         localStorage.removeItem(MEAL_PLAN_STORAGE_KEY);
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
-        localStorage.removeItem('dishcovery_first_time_modal_seen');
       } catch {
       }
       navigate("/", { replace: true });
