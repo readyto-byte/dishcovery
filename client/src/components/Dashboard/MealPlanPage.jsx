@@ -14,6 +14,115 @@ const MEAL_SLOTS = ["Breakfast", "Lunch", "Dinner"];
 const defaultPlan = () =>
   Object.fromEntries(DAYS.map((day) => [day, Object.fromEntries(MEAL_SLOTS.map((slot) => [slot, null]))]));
 
+const parseMacroNumber = (value) => {
+  if (value == null) return 0;
+  const match = String(value).match(/[\d.]+/);
+  const num = match ? Number(match[0]) : 0;
+  return Number.isFinite(num) ? Math.round(num) : 0;
+};
+
+const normalizeMealTitle = (title, fallback) => {
+  const raw = String(title || "").trim();
+  if (!raw) return fallback;
+  const cleaned = raw.replace(/^(breakfast|lunch|dinner)\s*[:\-]\s*/i, "").trim();
+  return cleaned || fallback;
+};
+
+const buildMealPlanPrompt = (fd) => {
+  const equipment = Object.entries(fd.kitchenEquipment || {})
+    .filter(([, enabled]) => enabled)
+    .map(([key]) => key)
+    .join(", ") || "none";
+
+  return [
+    "Create a personalized one-day meal plan with exactly 3 meals: breakfast, lunch, and dinner.",
+    "User preferences:",
+    `- Age: ${fd.age || "not specified"}`,
+    `- Sex/Gender: ${fd.sexGender || "not specified"}`,
+    `- Height: ${fd.height || "not specified"}`,
+    `- Weight: ${fd.weight || "not specified"}`,
+    `- Goal: ${fd.goal || "not specified"}`,
+    `- Activity level: ${fd.activityLevel || "not specified"}`,
+    `- Preferred cuisine: ${fd.preferredCuisine || "not specified"}`,
+    `- Food budget: ${fd.foodBudget || "not specified"}`,
+    `- Max cooking time: ${fd.maxCookingTime || "not specified"}`,
+    `- Cooking skill level: ${fd.cookingSkillLevel || "not specified"}`,
+    `- Carb preference: ${fd.carbPreference || "not specified"}`,
+    `- Fat preference: ${fd.fatPreference || "not specified"}`,
+    `- Kitchen equipment: ${equipment}`,
+    `- Allergies: ${fd.allergies || "none"}`,
+    `- Medical conditions: ${fd.medicalConditions || "none"}`,
+    `- Foods to avoid: ${fd.foodsDislike || "none"}`,
+    `- Meal schedule: ${fd.mealSchedule || "not specified"}`,
+    "Return 3 recipes in this order: Breakfast first, Lunch second, Dinner third.",
+    "Keep each meal practical and realistic for this user.",
+  ].join("\n");
+};
+
+const buildAiGeneratedPlan = (fd, aiResponse, createdAtIso) => {
+  const suggestions = Array.isArray(aiResponse?.suggestions) ? aiResponse.suggestions : [];
+  if (suggestions.length < 3) {
+    throw new Error("AI returned fewer than 3 meal suggestions.");
+  }
+
+  const breakfastSource = suggestions[0] || {};
+  const lunchSource = suggestions[1] || {};
+  const dinnerSource = suggestions[2] || {};
+
+  const breakfast = {
+    title: normalizeMealTitle(breakfastSource.title, "AI Breakfast"),
+    calories: Number(breakfastSource?.nutritionalInfo?.calories) || 0,
+    protein: parseMacroNumber(breakfastSource?.nutritionalInfo?.protein),
+    carbs: parseMacroNumber(breakfastSource?.nutritionalInfo?.carbs),
+    fats: parseMacroNumber(breakfastSource?.nutritionalInfo?.fat),
+  };
+  const lunch = {
+    title: normalizeMealTitle(lunchSource.title, "AI Lunch"),
+    calories: Number(lunchSource?.nutritionalInfo?.calories) || 0,
+    protein: parseMacroNumber(lunchSource?.nutritionalInfo?.protein),
+    carbs: parseMacroNumber(lunchSource?.nutritionalInfo?.carbs),
+    fats: parseMacroNumber(lunchSource?.nutritionalInfo?.fat),
+  };
+  const dinner = {
+    title: normalizeMealTitle(dinnerSource.title, "AI Dinner"),
+    calories: Number(dinnerSource?.nutritionalInfo?.calories) || 0,
+    protein: parseMacroNumber(dinnerSource?.nutritionalInfo?.protein),
+    carbs: parseMacroNumber(dinnerSource?.nutritionalInfo?.carbs),
+    fats: parseMacroNumber(dinnerSource?.nutritionalInfo?.fat),
+  };
+
+  const base = buildGeneratedPlanFromPreferences(fd, createdAtIso);
+  const totalCalories = breakfast.calories + lunch.calories + dinner.calories;
+  const totalProtein = breakfast.protein + lunch.protein + dinner.protein;
+  const totalCarbs = breakfast.carbs + lunch.carbs + dinner.carbs;
+  const totalFats = breakfast.fats + lunch.fats + dinner.fats;
+
+  return {
+    ...base,
+    meals: { breakfast, lunch, dinner },
+    totalNutrition: {
+      calories: totalCalories,
+      protein: totalProtein,
+      carbs: totalCarbs,
+      fats: totalFats,
+    },
+    createdAt: formatMealPlanCreatedAt(createdAtIso),
+  };
+};
+
+const fetchAiMealPlan = async (fd, createdAtIso) => {
+  const prompt = buildMealPlanPrompt(fd);
+  const res = await apiCall("/api/recipes", {
+    method: "POST",
+    body: JSON.stringify({
+      profiles: [],
+      search_query: `meal-plan:${prompt}`,
+      conversation: [{ role: "user", content: prompt }],
+    }),
+  });
+  return buildAiGeneratedPlan(fd, res?.response, createdAtIso);
+};
+
 const MealPlanPage = ({ onViewRecipe }) => {
   const [plan, setPlan] = useState(defaultPlan());
   const [activeSlot, setActiveSlot] = useState(null);
@@ -65,7 +174,12 @@ const MealPlanPage = ({ onViewRecipe }) => {
         if (row) {
           const form = mapDbRowToFormData(row);
           if (form) {
-            const gen = buildGeneratedPlanFromPreferences(form, row.created_at);
+            let gen = null;
+            try {
+              gen = await fetchAiMealPlan(form, row.created_at);
+            } catch {
+              gen = buildGeneratedPlanFromPreferences(form, row.created_at);
+            }
             setFormData(form);
             setGeneratedPlan(gen);
             setShowForm(false);
@@ -159,14 +273,19 @@ const MealPlanPage = ({ onViewRecipe }) => {
 
   const generateMealPlan = async () => {
     const snapshot = { ...formData };
-    const built = buildGeneratedPlanFromPreferences(snapshot);
-    setGeneratedPlan(built);
-
     setShowForm(false);
     setMealPlanSaveError(null);
     setMealPlanSaveOk(false);
     setMealPlanSaving(true);
     try {
+      let built = null;
+      try {
+        built = await fetchAiMealPlan(snapshot);
+      } catch {
+        built = buildGeneratedPlanFromPreferences(snapshot);
+      }
+      setGeneratedPlan(built);
+
       const res = await apiCall("/api/meal-plans", {
         method: "POST",
         body: JSON.stringify(snapshot),
