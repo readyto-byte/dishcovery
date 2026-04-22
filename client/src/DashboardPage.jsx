@@ -6,13 +6,13 @@ import DashboardNavbar from "./components/Dashboard/DashboardNavbar";
 import WelcomeBanner from "./components/Dashboard/WelcomeBanner";
 import CreateRecipeSection from "./components/Dashboard/CreateRecipeSection";
 import RecipeCard from "./components/Dashboard/RecipeCard";
+import RecipeOptionsGrid from "./components/Dashboard/RecipeOptionsGrid";
 import MealPlanPage from "./components/Dashboard/MealPlanPage";
 import HistoryPage from "./components/Dashboard/HistoryPage";
 import ProfilePage from "./components/Dashboard/ProfilePage";
 import SettingsPage from "./components/Dashboard/SettingsPage";
 import FavoritesPage from "./components/Dashboard/FavoritesPage";
 
-const MEAL_PLAN_STORAGE_KEY = "dishcovery_meal_plan_local";
 
 const RecipeDetailsModal = ({ recipe, onClose }) => {
   if (!recipe) return null;
@@ -142,8 +142,12 @@ const DashboardPage = () => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [generatedRecipe, setGeneratedRecipe] = useState(null);
+  const [recipeOptions, setRecipeOptions] = useState([]);
+  const [showOptions, setShowOptions] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateError, setGenerateError] = useState("");
+  const [aiResponse, setAiResponse] = useState(null);
+  const [lastRequestTime, setLastRequestTime] = useState(0);
 
   const [activeProfile, setActiveProfile] = useState(null);
 
@@ -166,33 +170,143 @@ const DashboardPage = () => {
     instructions: Array.isArray(suggestion?.instructions) ? suggestion.instructions : [],
   });
 
-  const handleGenerateRecipe = async (promptText) => {
+  const handleGenerateWithOptions = async (promptText, history, numOptions = 3) => {
+    const now = Date.now();
+    const timeSinceLastRequest = now - lastRequestTime;
+    if (timeSinceLastRequest < 2000 && lastRequestTime !== 0) {
+      setGenerateError(`Please wait ${Math.ceil((2000 - timeSinceLastRequest) / 1000)} seconds between requests.`);
+      return;
+    }
+    
     try {
       setIsGenerating(true);
       setGenerateError("");
+      setLastRequestTime(now);
+      setShowOptions(false);
+      setRecipeOptions([]);
+      
+      let finalPrompt = `Generate ${numOptions} different recipe variations for: "${promptText}".
+      
+Return the response as a JSON object with this exact structure:
+{
+  "options": [
+    {
+      "title": "Option 1 title",
+      "description": "Brief description",
+      "keyIngredients": ["ingredient1", "ingredient2"],
+      "cookTimeMin": 30,
+      "servings": 4,
+      "instructions": ["step1", "step2"]
+    }
+  ]
+}`;
+      
+      if (history && history.length > 0 && aiResponse) {
+        finalPrompt = `Previous recipe context: "${aiResponse.headline}"
+        
+User request: Generate ${numOptions} variations for "${promptText}"
+
+Please provide ${numOptions} different ways to modify/adapt the previous recipe.
+Return as JSON with the structure above.`;
+      }
+      
       const response = await apiCall("/api/recipes", {
         method: "POST",
         body: JSON.stringify({
           profiles: activeProfile ? [activeProfile] : [],
-          conversation: [{ role: "user", content: promptText }],
+          conversation: [{ role: "user", content: finalPrompt }],
         }),
       });
 
       const recipeResponse = response?.response;
-      const firstSuggestion = recipeResponse?.suggestions?.[0];
-      if (!firstSuggestion) {
-        throw new Error("No recipe suggestions were returned.");
-      }
+      
+      if (recipeResponse?.options && Array.isArray(recipeResponse.options)) {
+        const options = recipeResponse.options.map((opt, index) => ({
+          id: `option-${index}`,
+          title: opt.title || `Option ${index + 1}`,
+          description: opt.description || "",
+          prepTime: opt.cookTimeMin ? `${opt.cookTimeMin} min` : "N/A",
+          cookTime: opt.cookTimeMin ? `${opt.cookTimeMin} min` : "N/A",
+          servings: opt.servings || "-",
+          difficulty: ["Easy", "Medium", "Hard"][index % 3],
+          tags: ["ai", "generated"],
+          ingredients: Array.isArray(opt.keyIngredients) ? opt.keyIngredients : [],
+          instructions: Array.isArray(opt.instructions) ? opt.instructions : [],
+        }));
+        
+        if (options.length > 1) {
+          setRecipeOptions(options);
+          setShowOptions(true);
+        } else if (options.length === 1) {
+          setGeneratedRecipe(options[0]);
+          setAiResponse({
+            headline: options[0].title,
+            summary: options[0].description,
+          });
+        }
+      } else if (Array.isArray(recipeResponse?.suggestions) && recipeResponse.suggestions.length > 0) {
+        const cards = recipeResponse.suggestions.map((suggestion, index) =>
+          mapSuggestionToCard(
+            suggestion,
+            recipeResponse?.estimatedTime,
+            suggestion?.id ?? `suggestion-${index}`
+          )
+        );
 
-      setGeneratedRecipe(
-        mapSuggestionToCard(firstSuggestion, recipeResponse?.estimatedTime, firstSuggestion?.id ?? null)
-      );
+        if (cards.length > 1) {
+          setRecipeOptions(cards);
+          setShowOptions(true);
+          setGeneratedRecipe(null);
+          setAiResponse(null);
+        } else {
+          setGeneratedRecipe(cards[0]);
+          setAiResponse({
+            headline: cards[0].title,
+            summary: cards[0].description,
+          });
+        }
+      } else {
+        throw new Error("No recipe options were returned.");
+      }
+      
     } catch (error) {
-      setGenerateError(error.message || "Failed to generate recipe.");
+      console.error("Recipe generation error:", error);
+      
+      if (error.message?.includes("503") || error.message?.includes("high demand") || error.message?.includes("UNAVAILABLE")) {
+        setGenerateError("Gemini is currently busy. Please wait a few seconds and try again.");
+      } else {
+        setGenerateError(error.message || "Failed to generate recipe.");
+      }
       setGeneratedRecipe(null);
+      setAiResponse(null);
+      setShowOptions(false);
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const handleSelectOption = (selectedRecipe) => {
+    console.log("✅ User selected option:", selectedRecipe.title);
+    setGeneratedRecipe(selectedRecipe);
+    setAiResponse({
+      headline: selectedRecipe.title,
+      summary: selectedRecipe.description || "You selected this recipe! Ask a follow-up to refine it further.",
+    });
+    setShowOptions(false);
+    setRecipeOptions([]);
+  };
+
+  const handleGenerateRecipe = async (promptText, history) => {
+    await handleGenerateWithOptions(promptText, history, 3);
+  };
+
+  const handleResetRecipe = () => {
+    console.log("🔄 Resetting recipe conversation");
+    setAiResponse(null);
+    setGeneratedRecipe(null);
+    setGenerateError("");
+    setShowOptions(false);
+    setRecipeOptions([]);
   };
 
   const renderPage = () => {
@@ -201,13 +315,29 @@ const DashboardPage = () => {
         return (
           <>
             <WelcomeBanner />
-            <CreateRecipeSection onGenerate={handleGenerateRecipe} isLoading={isGenerating} />
+            
+            <CreateRecipeSection 
+              onGenerate={handleGenerateRecipe} 
+              isLoading={isGenerating}
+              aiResponse={aiResponse}
+              onReset={handleResetRecipe}
+            />
+            
             {generateError && (
               <div className="mx-4 md:mx-8 mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 {generateError}
               </div>
             )}
-            {(isGenerating || generatedRecipe) && (
+            
+            {showOptions && recipeOptions.length > 0 && (
+              <RecipeOptionsGrid 
+                options={recipeOptions}
+                onSelectOption={handleSelectOption}
+                isLoading={isGenerating}
+              />
+            )}
+            
+            {!showOptions && (isGenerating || generatedRecipe) && (
               <RecipeCard recipeData={generatedRecipe || {}} isLoading={isGenerating} />
             )}
           </>
