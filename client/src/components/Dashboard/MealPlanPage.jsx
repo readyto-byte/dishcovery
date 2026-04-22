@@ -318,7 +318,6 @@ const MealPlanPage = ({ onViewRecipe }) => {
     setMealPlanSaving(false);
   };
 
-
   const downloadMealPlan = async () => {
     if (!generatedPlan) {
       alert("No meal plan to download");
@@ -608,10 +607,145 @@ const MealPlanPage = ({ onViewRecipe }) => {
 
   if (hydrating) {
     return (
-      <div className="pb-12 flex justify-center items-center min-h-[280px] mx-4 md:mx-8">
-        <p className="text-[#32491B] text-sm font-semibold bg-white/80 px-5 py-3 rounded-xl shadow border border-[#B5D098]/40">
-          Loading your meal plan…
-        </p>
+      <div className="pb-12">
+        <style>{`
+          @keyframes shimmer {
+            0% { background-position: -600px 0; }
+            100% { background-position: 600px 0; }
+          }
+          @keyframes pulse-glow {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+          }
+          @keyframes leaf-sway {
+            0%, 100% { transform: rotate(-3deg) scale(1); }
+            50% { transform: rotate(3deg) scale(1.05); }
+          }
+          .skeleton {
+            background: linear-gradient(90deg, #e8f2dc 25%, #d4e9c0 50%, #e8f2dc 75%);
+            background-size: 600px 100%;
+            animation: shimmer 1.6s infinite linear;
+            border-radius: 8px;
+          }
+          .loading-card {
+            animation: pulse-glow 2s ease-in-out infinite;
+          }
+        `}</style>
+
+        <div className="relative mx-4 md:mx-8 mt-6 mb-8 overflow-hidden rounded-2xl shadow-xl bg-[#1e3a0f]/80 px-8 py-7">
+          <div className="flex items-center justify-between gap-5">
+            <div className="space-y-2">
+              <div className="skeleton h-8 w-40 opacity-30" />
+              <div className="skeleton h-4 w-56 opacity-20" />
+            </div>
+          </div>
+        </div>
+
+        {/* Loading indicator */}
+        <div className="mx-4 md:mx-8 mb-6 flex items-center gap-3">
+          <div className="flex gap-1">
+            {[0, 1, 2].map(i => (
+              <div
+                key={i}
+                className="w-2 h-2 rounded-full bg-[#587A34]"
+                style={{ animation: `pulse-glow 1.2s ease-in-out infinite`, animationDelay: `${i * 0.2}s` }}
+              />
+            ))}
+          </div>
+          <span className="text-[#587A34] text-sm font-semibold tracking-wide">Loading your meal plan…</span>
+        </div>
+
+        <div className="mx-4 md:mx-8 mb-8">
+          <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
+            {/* Card header skeleton */}
+            <div className="px-6 py-5 bg-gradient-to-r from-[#1e3a0f] to-[#2b4b1a]">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="space-y-2">
+                  <div className="skeleton h-7 w-64 opacity-30" />
+                  <div className="skeleton h-4 w-40 opacity-20" />
+                </div>
+                <div className="skeleton h-9 w-32 opacity-20 rounded-lg" />
+              </div>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Profile summary skeleton */}
+              <div className="bg-[#f5f9ef] rounded-xl p-5 border border-[#B5D098]/30">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-8 h-8 rounded-full skeleton" />
+                  <div className="skeleton h-5 w-40" />
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {[...Array(8)].map((_, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <div className="skeleton w-4 h-4 rounded" />
+                      <div className="skeleton h-4 w-24" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-8 h-8 rounded-full skeleton" />
+                  <div className="skeleton h-5 w-36" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {[
+                    "bg-amber-50 border-amber-100",
+                    "bg-green-50 border-green-100",
+                    "bg-[#E6F0DA] border-[#B5D098]",
+                  ].map((cls, i) => (
+                    <div key={i} className={`${cls} rounded-xl p-4 border`}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="skeleton w-5 h-5 rounded" />
+                        <div className="skeleton h-4 w-20" />
+                      </div>
+                      <div className="skeleton h-5 w-full mb-1" />
+                      <div className="skeleton h-5 w-3/4 mb-3" />
+                      <div className="flex flex-wrap gap-2">
+                        {[...Array(4)].map((_, j) => (
+                          <div key={j} className="skeleton h-6 w-16 rounded-full" />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-4 bg-gray-50 rounded-xl p-4 border border-gray-200 flex items-center justify-between flex-wrap gap-3">
+                  <div className="flex items-center gap-2">
+                    <div className="skeleton w-5 h-5 rounded" />
+                    <div className="skeleton h-4 w-24" />
+                  </div>
+                  <div className="flex flex-wrap gap-4">
+                    {[...Array(4)].map((_, i) => (
+                      <div key={i} className="skeleton h-4 w-20" />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white border rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="skeleton w-4 h-4 rounded" />
+                  <div className="skeleton h-4 w-52" />
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="flex items-center gap-1">
+                      <div className="skeleton w-3.5 h-3.5 rounded-full" />
+                      <div className="skeleton h-4 w-28" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-center pt-4 pb-6 px-6">
+              <div className="skeleton h-12 w-56 rounded-xl" />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -649,6 +783,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
         </div>
       </div>
 
+      {/* Personalized Meal Planner Form */}
       {showForm && (
         <div className="mx-4 md:mx-8 mb-8">
           <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
@@ -659,7 +794,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
 
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
+                {/* Age */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Age</label>
                   <input
@@ -672,6 +807,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                   />
                 </div>
 
+                {/* Height */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Height</label>
                   <input
@@ -684,6 +820,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                   />
                 </div>
 
+                {/* Goal */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Goal</label>
                   <select
@@ -701,6 +838,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                   </select>
                 </div>
 
+                {/* Food Budget */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Food Budget</label>
                   <select
@@ -716,6 +854,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                   </select>
                 </div>
 
+                {/* Max Cooking Time */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Max Cooking Time</label>
                   <select
@@ -732,6 +871,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                   </select>
                 </div>
 
+                {/* Carb Preference */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Carb Preference</label>
                   <select
@@ -748,6 +888,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                   </select>
                 </div>
 
+                {/* Kitchen Equipment */}
                 <div className="md:col-span-2">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Kitchen Equipment Available</label>
                   <div className="flex gap-6">
@@ -781,6 +922,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                   </div>
                 </div>
 
+                {/* Allergies */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Allergies (if any)</label>
                   <input
@@ -793,6 +935,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                   />
                 </div>
 
+                {/* Medical Conditions */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Medical Conditions (if any)</label>
                   <input
@@ -805,6 +948,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                   />
                 </div>
 
+                {/* Sex/Gender */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Sex/Gender</label>
                   <select
@@ -821,6 +965,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                   </select>
                 </div>
 
+                {/* Weight */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Weight</label>
                   <input
@@ -833,6 +978,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                   />
                 </div>
 
+                {/* Activity Level */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Activity Level</label>
                   <select
@@ -850,6 +996,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                   </select>
                 </div>
 
+                {/* Preferred Cuisine */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Preferred Cuisine</label>
                   <select
@@ -868,6 +1015,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                   </select>
                 </div>
 
+                {/* Cooking Skill Level */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Cooking Skill Level</label>
                   <select
@@ -883,6 +1031,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                   </select>
                 </div>
 
+                {/* Fat Preference */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Fat Preference</label>
                   <select
@@ -898,6 +1047,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                   </select>
                 </div>
 
+                {/* Foods You Dislike */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Foods You Dislike</label>
                   <input
@@ -910,6 +1060,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                   />
                 </div>
 
+                {/* Meal Schedule */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Meal Schedule</label>
                   <input
@@ -923,6 +1074,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                 </div>
               </div>
 
+              {/* Additional Options */}
               <div className="mt-6 flex flex-wrap gap-6">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -956,6 +1108,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                 </label>
               </div>
 
+              {/* Generate Button */}
               <div className="mt-8 flex justify-center">
                 <button
                   onClick={generateMealPlan}
@@ -970,6 +1123,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
         </div>
       )}
 
+      {/* Generated Meal Plan Card */}
       {!showForm && generatedPlan && (
         <div className="mx-4 md:mx-8 mb-8">
           <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
@@ -1086,6 +1240,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                 )}
               </div>
 
+              {/* Daily Meal Plan */}
               <div>
                 <div className="flex items-center gap-2 mb-4">
                   <div className="w-8 h-8 bg-[#587A34]/10 rounded-full flex items-center justify-center">
@@ -1113,6 +1268,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                     </div>
                   </div>
 
+                  {/* Lunch */}
                   <div className="bg-green-50 rounded-xl p-4 border border-green-100">
                     <div className="flex items-center gap-2 mb-3">
                       <Sun className="w-5 h-5 text-green-600" />
@@ -1127,6 +1283,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                     </div>
                   </div>
 
+                  {/* Dinner */}
                   <div className="bg-[#E6F0DA] rounded-xl p-4 border border-[#B5D098]">
                     <div className="flex items-center gap-2 mb-3">
                       <Moon className="w-5 h-5 text-[#587A34]" />
@@ -1142,6 +1299,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                   </div>
                 </div>
 
+                {/* Total Daily Nutrition */}
                 <div className="mt-4 bg-gray-50 rounded-xl p-4 border border-gray-200">
                   <div className="flex items-center justify-between flex-wrap gap-3">
                     <div className="flex items-center gap-2">
@@ -1158,6 +1316,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                 </div>
               </div>
 
+              {/* Nutrition Preferences */}
               <div className="bg-white border rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <ChefHat className="w-4 h-4 text-[#587A34]" />
@@ -1185,6 +1344,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                 </div>
               </div>
 
+              {/* Snacks */}
               {generatedPlan.includeSnacks && generatedPlan.snacks?.length > 0 && (
                 <div className="border-l-4 border-[#B5D098] pl-4">
                   <div className="flex items-center gap-2 mb-2">
@@ -1202,6 +1362,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                 </div>
               )}
 
+              {/* Water Goal */}
               {generatedPlan.includeWaterGoal && generatedPlan.waterGoal && (
                 <div className="border-l-4 border-[#587A34] pl-4">
                   <div className="flex items-center gap-2">
@@ -1212,6 +1373,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                 </div>
               )}
 
+              {/* Grocery List */}
               {generatedPlan.generateGroceryList && generatedPlan.groceryList?.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-dashed border-gray-200">
                   <div className="flex items-center gap-2 mb-3">
@@ -1242,6 +1404,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
               </div>
             </div>
 
+            {/* Generate New Meal Plan Button */}
             <div className="flex justify-center pt-4 pb-6 px-6">
               <button
                 onClick={handleNewMealPlan}
