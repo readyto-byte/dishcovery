@@ -76,14 +76,13 @@ const Sidebar = ({ currentPage, setCurrentPage, sidebarOpen, setSidebarOpen, onL
                     : 'hover:bg-[#B5D098]/40 rounded-r-lg'
                 }`}
               >
+                {/* Restored Pill Shape */}
                 {currentPage === item.id && (
                   <span className="absolute inset-y-0 left-0 right-0 bg-[#B5D098] z-0" />
                 )}
 
                 <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-all duration-200 relative z-10 ${
-                  currentPage === item.id
-                    ? 'bg-[#32491B]'
-                    : 'bg-[#B5D098]/50 group-hover:bg-[#B5D098]'
+                  currentPage === item.id ? 'bg-[#32491B]' : 'bg-[#B5D098]/50 group-hover:bg-[#B5D098]'
                 }`}>
                   <i className={`fas ${item.icon} text-base ${
                     currentPage === item.id ? 'text-[#F0E6D1]' : 'text-[#32491B]'
@@ -111,11 +110,10 @@ const Sidebar = ({ currentPage, setCurrentPage, sidebarOpen, setSidebarOpen, onL
               </span>
             </button>
           </div>
-
         </div>
       </aside>
     </>
   );
 };
 
-export default Sidebar;
+export default Sidebar; 
