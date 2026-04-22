@@ -1,4 +1,4 @@
-/** Format a DB ISO timestamp for the meal plan header */
+
 export function formatMealPlanCreatedAt(iso) {
   if (!iso) {
     return new Date().toLocaleDateString("en-US", {
@@ -35,7 +35,6 @@ export function textToKitchenEquipment(text) {
   return base;
 }
 
-/** Map a `meal_plan` API row (snake_case) into the dashboard form shape */
 export function mapDbRowToFormData(row) {
   if (!row) return null;
   const h =
@@ -70,10 +69,6 @@ export function mapDbRowToFormData(row) {
   };
 }
 
-/**
- * Build the same object the meal plan UI uses for the "generated" view,
- * from preference fields (form shape).
- */
 export function buildGeneratedPlanFromPreferences(prefs, createdAtIso) {
   const fd = prefs || {};
 
