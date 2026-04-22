@@ -136,6 +136,123 @@ const LogoutConfirmModal = ({ onConfirm, onCancel, isLoggingOut }) => (
   </>
 );
 
+const LoadingScreen = () => {
+  const [messageIndex, setMessageIndex] = useState(0);
+  const loadingMessages = [
+    "Warming up the kitchen...",
+    "Gathering fresh ingredients...",
+    "Preparing your workspace...",
+    "Checking your preferences...",
+    "Almost ready to cook...",
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMessageIndex((prev) => (prev + 1) % loadingMessages.length);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="relative min-h-screen bg-gradient-to-br from-[#B5D098] via-[#9bc47a] to-[#7da35c] flex items-center justify-center overflow-hidden">
+
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-[#587A34]/30 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-[#32491B]/30 rounded-full blur-3xl animate-pulse delay-1000" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#839705]/20 rounded-full blur-3xl animate-pulse delay-500" />
+        <div className="absolute top-20 right-1/4 w-40 h-40 bg-[#F0E6D1]/10 rounded-full blur-2xl animate-pulse delay-700" />
+        <div className="absolute bottom-20 left-1/3 w-60 h-60 bg-[#32491B]/20 rounded-full blur-3xl animate-pulse delay-300" />
+      </div>
+
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 animate-float-slow opacity-20">
+          <svg className="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/>
+            <path d="M12 8a4 4 0 1 0 4 4 4 4 0 0 0-4-4zm0 6a2 2 0 1 1 2-2 2 2 0 0 1-2 2z"/>
+          </svg>
+        </div>
+        <div className="absolute bottom-1/3 right-1/4 animate-float opacity-30">
+          <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M20 3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H4V5h16v14z"/>
+            <path d="M6 7h12v2H6zm0 4h12v2H6zm0 4h8v2H6z"/>
+          </svg>
+        </div>
+        <div className="absolute top-1/2 right-1/3 animate-float-fast opacity-15">
+          <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/>
+            <path d="M12 6v6l4 2-4 2v-6z"/>
+          </svg>
+        </div>
+      </div>
+
+      <div className="relative z-10 text-center">
+        <div className="mb-8 flex justify-center">
+          <div className="relative">
+            <div className="absolute inset-0 rounded-full bg-white/20 animate-ping" />
+            <div className="absolute inset-0 rounded-full bg-white/30 animate-pulse" />
+            <div className="relative w-28 h-28 rounded-full bg-gradient-to-br from-[#32491B] to-[#587A34] flex items-center justify-center shadow-2xl">
+              <span className="text-4xl font-bold text-white tracking-tight">D</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative w-20 h-20 mx-auto mb-6">
+          <div className="absolute inset-0 rounded-full border-4 border-white/20" />
+          <div className="absolute inset-0 rounded-full border-4 border-t-white border-r-transparent border-b-transparent border-l-transparent animate-spin" />
+          <div className="absolute inset-2 rounded-full border-4 border-t-transparent border-r-[#F0E6D1] border-b-transparent border-l-transparent animate-spin" style={{ animationDuration: '0.8s' }} />
+        </div>
+
+        <h2 className="text-3xl font-bold text-white mb-3 drop-shadow-lg">
+          Dishcovery
+        </h2>
+        <p className="text-white/90 font-medium text-lg mb-2">
+          {loadingMessages[messageIndex]}
+        </p>
+        <p className="text-white/70 text-sm">
+          Please wait while we set up your personalized experience
+        </p>
+
+        <div className="flex justify-center gap-2 mt-8">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className={`transition-all duration-300 rounded-full ${
+                i === messageIndex 
+                  ? 'w-6 h-2 bg-white' 
+                  : 'w-2 h-2 bg-white/40'
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+
+      <style jsx>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-20px) rotate(5deg); }
+        }
+        @keyframes float-slow {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-15px) rotate(-3deg); }
+        }
+        @keyframes float-fast {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-25px) rotate(8deg); }
+        }
+        .animate-float {
+          animation: float 4s ease-in-out infinite;
+        }
+        .animate-float-slow {
+          animation: float-slow 6s ease-in-out infinite;
+        }
+        .animate-float-fast {
+          animation: float-fast 3s ease-in-out infinite;
+        }
+      `}</style>
+    </div>
+  );
+};
+
 const DashboardPage = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -180,30 +297,19 @@ const DashboardPage = () => {
         console.log("Profiles API response:", response);
         
         const profiles = Array.isArray(response?.data) ? response.data : [];
-
-        if (profiles.length > 0) {
+        console.log("Number of profiles found:", profiles.length);
+        
+        if (profiles.length === 0) {
+          console.log("RESULT: No profiles found - SHOWING modal");
+          setShowFirstTimeModal(true);
+        } else {
           console.log("RESULT: User has profiles - NOT showing modal");
           setShowFirstTimeModal(false);
-          localStorage.setItem('dishcovery_first_time_modal_seen', 'true');
-          console.log("Saved to localStorage: dishcovery_first_time_modal_seen = true");
-          
-          // Set the active profile
+
           const active = profiles.find(p => p.is_default === true) || profiles.find(p => p.is_active === true);
           if (active) {
             console.log("Setting active profile:", active.name);
             setActiveProfile({ id: active.id, name: active.name, avatar: active.avatar_url });
-          }
-        } else {
-          console.log("Step 3: No profiles found, checking localStorage flag...");
-          const hasSeenModal = localStorage.getItem('dishcovery_first_time_modal_seen');
-          console.log("dishcovery_first_time_modal_seen value:", hasSeenModal);
-          
-          if (!hasSeenModal) {
-            console.log("RESULT: No profiles AND modal not seen before - SHOWING modal");
-            setShowFirstTimeModal(true);
-          } else {
-            console.log("RESULT: No profiles but modal seen before - NOT showing modal");
-            setShowFirstTimeModal(false);
           }
         }
       } catch (error) {
@@ -225,14 +331,14 @@ const DashboardPage = () => {
 
   const handleFirstTimeModalClose = () => {
     setShowFirstTimeModal(false);
-    localStorage.setItem('dishcovery_first_time_modal_seen', 'true');
-    // Trigger refresh of profile page
+
     setProfileRefreshKey(prev => prev + 1);
-    // Also refresh the active profile by fetching it
+
     const fetchActiveProfile = async () => {
       try {
         const response = await apiCall("/api/profiles");
         const profiles = Array.isArray(response?.data) ? response.data : [];
+
         const active = profiles.find(p => p.is_default === true) || profiles.find(p => p.is_active === true);
         if (active) {
           setActiveProfile({ id: active.id, name: active.name, avatar: active.avatar_url });
@@ -434,7 +540,10 @@ Return as JSON with the structure above.`;
       case 'history':
         return <HistoryPage onViewRecipe={setSelectedRecipe} />;
       case 'meal-plan':
-        return <MealPlanPage onViewRecipe={setSelectedRecipe} activeProfile={activeProfile} />;
+        return <MealPlanPage 
+          onViewRecipe={setSelectedRecipe} 
+          activeProfile={activeProfile}
+        />;
       case 'profile':
         return (
           <ProfilePage
@@ -461,7 +570,6 @@ Return as JSON with the structure above.`;
         localStorage.removeItem(MEAL_PLAN_STORAGE_KEY);
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
-        localStorage.removeItem('dishcovery_first_time_modal_seen');
       } catch {
       }
       navigate("/", { replace: true });
@@ -469,14 +577,7 @@ Return as JSON with the structure above.`;
   };
 
   if (isChecking) {
-    return (
-      <div className="relative min-h-screen bg-[#B5D098] flex items-center justify-center">
-        <div className="text-[#32491B] text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#32491B] mb-4"></div>
-          <p>Loading...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   return (
