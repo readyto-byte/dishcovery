@@ -182,10 +182,17 @@ const HistoryPage = ({ onViewRecipe }) => {
         )}
 
         {!isLoading && historyRecipes.length === 0 && (
-          <div className="rounded-xl bg-white/70 px-4 py-5 text-sm text-[#2d3f1a]">
-            No generated recipes in history yet. Create a recipe to see it here.
-          </div>
-        )}
+      <div className="rounded-2xl flex flex-col items-center justify-center py-20 px-6 text-center"
+        style={{ background: 'linear-gradient(160deg, #d6e8b8 0%, #c8dba8 100%)' }}
+      >
+        <div className="w-28 h-28 rounded-full bg-[#b5cc94]/60 flex items-center justify-center mb-6">
+          <i className="fas fa-history text-5xl text-[#587A34]/60"></i>
+        </div>
+        <h3 className="text-xl font-bold text-[#2d3f1a] mb-2">No Recipe History Yet</h3>
+        <p className="text-[#4a5e30] text-sm mb-2">Start generating recipes to see them here!</p>
+        <p className="text-[#4a5e30]/70 text-sm italic">Your viewed recipes will appear in this collection.</p>
+      </div>
+    )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {historyRecipes.map((recipe) => {
