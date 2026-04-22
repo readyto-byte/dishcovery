@@ -304,7 +304,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
       foodBudget: "",
       maxCookingTime: "",
       carbPreference: "",
-      kitchenEquipment: { stove: false, microwave: false, airFryer: false },
+      kitchenEquipment: { stove: false, microwave: false, airFryer: false, oven: false },
       allergies: "",
       medicalConditions: "",
       sexGender: "",
@@ -645,7 +645,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
                 <div className="md:col-span-2">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Kitchen Equipment Available</label>
                   <div className="flex gap-6">
-                    {[["stove", "Stove"], ["microwave", "Microwave"], ["airFryer", "Air fryer"]].map(([key, label]) => (
+                    {[["stove", "Stove"], ["microwave", "Microwave"], ["airFryer", "Air fryer"], ["oven", "Oven"]].map(([key, label]) => (  
                       <label key={key} className="flex items-center gap-2 cursor-pointer">
                         <input type="checkbox" checked={formData.kitchenEquipment[key]} onChange={() => handleKitchenEquipmentChange(key)} className="w-4 h-4 rounded border-gray-300 text-[#587A34] focus:ring-[#587A34]" />
                         <span className="text-gray-700">{label}</span>
