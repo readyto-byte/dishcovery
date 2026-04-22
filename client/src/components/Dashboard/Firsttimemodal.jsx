@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { apiCall } from "../../api/config";
 
 const DIETARY_OPTIONS = ["Keto", "Gluten-Free", "Vegan", "Vegetarian", "Paleo", "Dairy-Free"];
 const ALLERGY_OPTIONS = ["Nuts", "Shellfish", "Eggs", "Soy", "Wheat", "Fish"];
@@ -61,7 +62,6 @@ const AvatarUpload = ({ name, avatar, onAvatarChange }) => {
   );
 };
 
-/* ── Tag Toggle Button ── */
 const TagButton = ({ label, selected, onClick, variant = "green" }) => {
   const variants = {
     green: selected
@@ -82,7 +82,6 @@ const TagButton = ({ label, selected, onClick, variant = "green" }) => {
   );
 };
 
-/* ── Step Indicator ── */
 const StepDots = ({ total, current }) => (
   <div className="flex items-center gap-2 justify-center">
     {Array.from({ length: total }).map((_, i) => (
@@ -101,8 +100,8 @@ const StepDots = ({ total, current }) => (
 );
 
 /* ── Main Modal ── */
-const FirstTimeProfileModal = ({ onComplete, isSaving = false }) => {
-  const [step, setStep] = useState(0); // 0: welcome, 1: basic info, 2: dietary, 3: allergies
+const FirsttimeModal = ({ onClose }) => {
+  const [step, setStep] = useState(0);
   const [name, setName] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [avatar, setAvatar] = useState(null);
@@ -111,8 +110,16 @@ const FirstTimeProfileModal = ({ onComplete, isSaving = false }) => {
   const [error, setError] = useState("");
   const [animating, setAnimating] = useState(false);
   const [direction, setDirection] = useState("forward");
+  const [isSaving, setIsSaving] = useState(false);
 
   const TOTAL_STEPS = 4;
+
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
 
   const toggleItem = (list, setList, val) => {
     setList((prev) => (prev.includes(val) ? prev.filter((x) => x !== val) : [...prev, val]));
@@ -142,9 +149,39 @@ const FirstTimeProfileModal = ({ onComplete, isSaving = false }) => {
     }, 180);
   };
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
     if (!name.trim()) { setStep(1); setError("Please enter your name."); return; }
-    onComplete({ name: name.trim(), dateOfBirth, avatar, dietaryRestrictions: dietary, allergies });
+    
+    setIsSaving(true);
+    setError("");
+    
+    try {
+      const response = await apiCall("/api/profiles", {
+        method: "POST",
+        body: JSON.stringify({
+          name: name.trim(),
+          date_of_birth: dateOfBirth,
+          avatar_url: avatar,
+          dietary_restrictions: dietary,
+          allergies: allergies,
+          is_active: true, 
+        }),
+      });
+      
+      if (!response?.data) {
+        throw new Error("Profile created but no data returned.");
+      }
+
+      localStorage.setItem('dishcovery_first_time_modal_seen', 'true');
+
+      setTimeout(() => {
+        onClose();
+      }, 500);
+    } catch (err) {
+      console.error("Error saving profile:", err);
+      setError(err.message || "Failed to save profile. Please try again.");
+      setIsSaving(false);
+    }
   };
 
   const slideClass = animating
@@ -154,17 +191,20 @@ const FirstTimeProfileModal = ({ onComplete, isSaving = false }) => {
     : "opacity-100 translate-x-0";
 
   return (
-    <>
-      {/* Backdrop */}
-      <div className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm" />
+    <div className="fixed inset-0 z-[9999]">
 
-      {/* Modal */}
-      <div className="fixed inset-0 z-[1001] flex items-center justify-center p-4">
+      <div 
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      <div className="relative z-[10000] flex items-center justify-center min-h-screen p-4">
         <div
           className="w-full max-w-md rounded-3xl shadow-2xl overflow-hidden flex flex-col"
           style={{ background: "linear-gradient(160deg, #f7f0e3 0%, #ede0c4 100%)" }}
+          onClick={(e) => e.stopPropagation()}
         >
-          {/* Top accent bar */}
+
           <div className="h-1.5 w-full shrink-0" style={{ background: "linear-gradient(90deg, #32491B, #839705, #B5D098)" }} />
 
           {/* Header */}
@@ -176,7 +216,6 @@ const FirstTimeProfileModal = ({ onComplete, isSaving = false }) => {
                 </svg>
               </div>
               <div>
-                <p className="text-[#B5D098] text-xs font-semibold uppercase tracking-widest">Welcome to Dishcovery</p>
                 <h2 className="text-[#F0E6D1] font-extrabold text-lg leading-tight">Set Up Your Profile</h2>
               </div>
             </div>
@@ -188,38 +227,40 @@ const FirstTimeProfileModal = ({ onComplete, isSaving = false }) => {
             </div>
           </div>
 
-          {/* Step Content */}
-          <div className="px-7 py-6 flex-1 overflow-y-auto">
+          <div className="px-7 py-6 flex-1 overflow-y-auto max-h-[60vh]">
             <div className={`transition-all duration-180 ${slideClass}`}>
 
-              {/* Step 0: Welcome */}
               {step === 0 && (
                 <div className="flex flex-col items-center text-center gap-5 py-4">
-                  <div className="w-20 h-20 rounded-3xl bg-[#32491B]/10 flex items-center justify-center shadow-inner">
-                    <span className="text-4xl">🍽️</span>
-                  </div>
                   <div>
-                    <h3 className="text-[#2d3f1a] font-extrabold text-xl mb-2">Hello, Chef!</h3>
+                    <h3 className="text-[#2d3f1a] font-extrabold text-xl mb-2">Welcome to Dishcovery</h3>
                     <p className="text-[#4a5e30] text-sm leading-relaxed">
                       It looks like this is your first time here. Let's take a moment to create your profile so we can suggest recipes tailored just for you.
                     </p>
                   </div>
                   <div className="w-full bg-[#B5D098]/30 rounded-2xl p-4 text-left space-y-2">
-                    {[
-                      { icon: "👤", text: "Your name & birthday" },
-                      { icon: "🥗", text: "Dietary restrictions" },
-                      { icon: "⚠️", text: "Allergies & sensitivities" },
-                    ].map(({ icon, text }) => (
-                      <div key={text} className="flex items-center gap-3 text-sm text-[#32491B]">
-                        <span className="text-base">{icon}</span>
-                        <span className="font-medium">{text}</span>
-                      </div>
-                    ))}
+                    <div className="flex items-center gap-3 text-sm text-[#32491B]">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      <span className="font-medium">Your name and birthday</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm text-[#32491B]">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="font-medium">Dietary restrictions</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm text-[#32491B]">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                      <span className="font-medium">Allergies and sensitivities</span>
+                    </div>
                   </div>
                 </div>
               )}
 
-              {/* Step 1: Basic Info */}
               {step === 1 && (
                 <div className="space-y-5">
                   <AvatarUpload name={name} avatar={avatar} onAvatarChange={setAvatar} />
@@ -250,13 +291,12 @@ const FirstTimeProfileModal = ({ onComplete, isSaving = false }) => {
                 </div>
               )}
 
-              {/* Step 2: Dietary Restrictions */}
               {step === 2 && (
                 <div className="space-y-4">
                   <div>
                     <h3 className="text-[#2d3f1a] font-bold text-base mb-1">Dietary Restrictions</h3>
                     <p className="text-[#4a5e30] text-xs leading-relaxed mb-4">
-                      Select any that apply — we'll avoid ingredients that don't match your diet.
+                      Select any that apply. We will avoid ingredients that do not match your diet.
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {DIETARY_OPTIONS.map((opt) => (
@@ -273,8 +313,10 @@ const FirstTimeProfileModal = ({ onComplete, isSaving = false }) => {
 
                   {dietary.length === 0 && (
                     <div className="rounded-xl bg-[#B5D098]/20 border border-[#B5D098]/50 px-4 py-3 text-xs text-[#4a5e30] flex items-center gap-2">
-                      <span>💡</span>
-                      <span>No restrictions? No problem — you can skip this step.</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span>No restrictions? No problem. You can skip this step.</span>
                     </div>
                   )}
 
@@ -286,13 +328,12 @@ const FirstTimeProfileModal = ({ onComplete, isSaving = false }) => {
                 </div>
               )}
 
-              {/* Step 3: Allergies */}
               {step === 3 && (
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-[#2d3f1a] font-bold text-base mb-1">Allergies & Sensitivities</h3>
+                    <h3 className="text-[#2d3f1a] font-bold text-base mb-1">Allergies and Sensitivities</h3>
                     <p className="text-[#4a5e30] text-xs leading-relaxed mb-4">
-                      We'll make sure to flag or exclude recipes containing these allergens.
+                      We will make sure to flag or exclude recipes containing these allergens.
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {ALLERGY_OPTIONS.map((opt) => (
@@ -309,8 +350,10 @@ const FirstTimeProfileModal = ({ onComplete, isSaving = false }) => {
 
                   {allergies.length === 0 && (
                     <div className="rounded-xl bg-[#B5D098]/20 border border-[#B5D098]/50 px-4 py-3 text-xs text-[#4a5e30] flex items-center gap-2">
-                      <span>✅</span>
-                      <span>No allergies? Great — you can skip this step or add one later.</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span>No allergies? Great. You can skip this step or add one later.</span>
                     </div>
                   )}
 
@@ -320,7 +363,6 @@ const FirstTimeProfileModal = ({ onComplete, isSaving = false }) => {
                     </div>
                   )}
 
-                  {/* Summary before finish */}
                   <div className="mt-2 rounded-2xl bg-[#32491B]/8 border border-[#B5D098]/40 px-4 py-4 space-y-2">
                     <p className="text-[#32491B] text-xs font-bold uppercase tracking-wider mb-2">Profile Summary</p>
                     <div className="flex items-center gap-3">
@@ -335,7 +377,6 @@ const FirstTimeProfileModal = ({ onComplete, isSaving = false }) => {
               )}
             </div>
 
-            {/* Error */}
             {error && (
               <p className="mt-3 text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2 border border-red-200">
                 {error}
@@ -343,7 +384,6 @@ const FirstTimeProfileModal = ({ onComplete, isSaving = false }) => {
             )}
           </div>
 
-          {/* Footer / Navigation */}
           <div className="px-7 pb-6 pt-2 shrink-0 border-t border-[#B5D098]/30">
             <div className="flex gap-3">
               {step > 0 && (
@@ -363,7 +403,7 @@ const FirstTimeProfileModal = ({ onComplete, isSaving = false }) => {
                   onClick={goNext}
                   className="flex-1 py-3 rounded-xl bg-[#32491B] hover:bg-[#253813] text-[#F0E6D1] font-semibold text-sm transition-all duration-200 shadow-md cursor-pointer"
                 >
-                  {step === 0 ? "Let's Go 🍳" : "Next"}
+                  {step === 0 ? "Let's Go" : "Next"}
                 </button>
               ) : (
                 <button
@@ -378,16 +418,15 @@ const FirstTimeProfileModal = ({ onComplete, isSaving = false }) => {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                       </svg>
-                      Saving…
+                      Saving...
                     </>
                   ) : (
-                    "Finish & Start Cooking 🎉"
+                    "Finish and Start Cooking"
                   )}
                 </button>
               )}
             </div>
 
-            {/* Skip option on dietary/allergy steps */}
             {(step === 2 || step === 3) && (
               <button
                 type="button"
@@ -401,8 +440,8 @@ const FirstTimeProfileModal = ({ onComplete, isSaving = false }) => {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
-export default FirstTimeProfileModal;
+export default FirsttimeModal;
