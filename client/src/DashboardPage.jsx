@@ -1,425 +1,76 @@
-import { useState, useRef } from "react";
+import { useState, useEffect } from 'react';
+import { useNavigate } from "react-router-dom";
+import API_BASE_URL, { apiCall } from "./api/config.js";
+import Sidebar from "./components/Dashboard/Sidebar";
+import DashboardNavbar from "./components/Dashboard/DashboardNavbar";
+import WelcomeBanner from "./components/Dashboard/WelcomeBanner";
+import CreateRecipeSection from "./components/Dashboard/CreateRecipeSection";
+import RecipeCard from "./components/Dashboard/RecipeCard";
+import RecipeOptionsGrid from "./components/Dashboard/RecipeOptionsGrid";
+import MealPlanPage from "./components/Dashboard/MealPlanPage";
+import HistoryPage from "./components/Dashboard/HistoryPage";
+import ProfilePage from "./components/Dashboard/ProfilePage";
+import SettingsPage from "./components/Dashboard/SettingsPage";
+import FavoritesPage from "./components/Dashboard/FavoritesPage";
+import FirsttimeModal from "./components/Dashboard/FirsttimeModal";
 
-const DIETARY_OPTIONS = ["Keto", "Gluten-Free", "Vegan", "Vegetarian", "Paleo", "Dairy-Free"];
-const ALLERGY_OPTIONS = ["Nuts", "Shellfish", "Eggs", "Soy", "Wheat", "Fish"];
+const MEAL_PLAN_STORAGE_KEY = 'dishcovery_meal_plan';
 
-/* ── Avatar ── */
-const Avatar = ({ name, avatar, size = "lg" }) => {
-  const initials = (name || "?")
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-  const sizeClass = size === "lg" ? "w-20 h-20 text-2xl" : "w-10 h-10 text-sm";
-  if (avatar) {
-    return (
-      <img
-        src={avatar}
-        alt={name}
-        className={`${sizeClass} rounded-full object-cover shadow-lg border-4 border-[#B5D098]`}
-      />
-    );
-  }
-  return (
-    <div className={`${sizeClass} rounded-full bg-[#3a5220] flex items-center justify-center text-[#F0E6D1] font-bold shadow-lg`}>
-      {initials}
-    </div>
-  );
-};
-
-/* ── Avatar Upload ── */
-const AvatarUpload = ({ name, avatar, onAvatarChange }) => {
-  const fileInputRef = useRef(null);
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => onAvatarChange(ev.target.result);
-    reader.readAsDataURL(file);
-  };
-  return (
-    <div className="flex flex-col items-center gap-3">
-      <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-        <Avatar name={name || "?"} avatar={avatar} size="lg" />
-        <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-        </div>
-      </div>
-      <button
-        type="button"
-        onClick={() => fileInputRef.current?.click()}
-        className="px-4 py-1.5 rounded-full bg-[#587A34]/20 text-[#3a5220] text-xs font-semibold hover:bg-[#587A34]/30 transition-colors border border-[#587A34]/30"
-      >
-        {avatar ? "Change Photo" : "Upload Photo"}
-      </button>
-      <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
-    </div>
-  );
-};
-
-/* ── Tag Toggle Button ── */
-const TagButton = ({ label, selected, onClick, variant = "green" }) => {
-  const variants = {
-    green: selected
-      ? "bg-[#587A34] text-white border-[#587A34]"
-      : "bg-white text-[#587A34] border-[#587A34]/40 hover:border-[#587A34]",
-    red: selected
-      ? "bg-red-500 text-white border-red-500"
-      : "bg-white text-red-500 border-red-300 hover:border-red-500",
-  };
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${variants[variant]}`}
-    >
-      {label}
-    </button>
-  );
-};
-
-/* ── Step Indicator ── */
-const StepDots = ({ total, current }) => (
-  <div className="flex items-center gap-2 justify-center">
-    {Array.from({ length: total }).map((_, i) => (
-      <div
-        key={i}
-        className={`rounded-full transition-all duration-300 ${
-          i === current
-            ? "w-6 h-2 bg-[#587A34]"
-            : i < current
-            ? "w-2 h-2 bg-[#B5D098]"
-            : "w-2 h-2 bg-[#587A34]/20"
-        }`}
-      />
-    ))}
-  </div>
-);
-
-/* ── Main Modal ── */
-const FirsttimeModal = ({ onClose }) => {
-  const [step, setStep] = useState(0);
-  const [name, setName] = useState("");
-  const [dateOfBirth, setDateOfBirth] = useState("");
-  const [avatar, setAvatar] = useState(null);
-  const [dietary, setDietary] = useState([]);
-  const [allergies, setAllergies] = useState([]);
-  const [error, setError] = useState("");
-  const [animating, setAnimating] = useState(false);
-  const [direction, setDirection] = useState("forward");
-  const [isSaving, setIsSaving] = useState(false);
-
-  const TOTAL_STEPS = 4;
-
-  const toggleItem = (list, setList, val) => {
-    setList((prev) => (prev.includes(val) ? prev.filter((x) => x !== val) : [...prev, val]));
-  };
-
-  const goNext = () => {
-    if (step === 1) {
-      if (!name.trim()) { setError("Please enter your name."); return; }
-      if (!dateOfBirth) { setError("Please enter your date of birth."); return; }
-    }
-    setError("");
-    setDirection("forward");
-    setAnimating(true);
-    setTimeout(() => {
-      setStep((s) => s + 1);
-      setAnimating(false);
-    }, 180);
-  };
-
-  const goBack = () => {
-    setError("");
-    setDirection("back");
-    setAnimating(true);
-    setTimeout(() => {
-      setStep((s) => s - 1);
-      setAnimating(false);
-    }, 180);
-  };
-
-  const handleFinish = async () => {
-    if (!name.trim()) { setStep(1); setError("Please enter your name."); return; }
-    
-    setIsSaving(true);
-    try {
-      const profileData = { 
-        name: name.trim(), 
-        dateOfBirth, 
-        avatar, 
-        dietaryRestrictions: dietary, 
-        allergies 
-      };
-      localStorage.setItem('dishcovery_user_profile', JSON.stringify(profileData));
-      
-      setTimeout(() => {
-        onClose();
-      }, 500);
-    } catch (error) {
-      console.error("Error saving profile:", error);
-      setError("Failed to save profile. Please try again.");
-      setIsSaving(false);
-    }
-  };
-
-  const slideClass = animating
-    ? direction === "forward"
-      ? "opacity-0 translate-x-4"
-      : "opacity-0 -translate-x-4"
-    : "opacity-100 translate-x-0";
+const RecipeDetailsModal = ({ recipe, onClose }) => {
+  if (!recipe) return null;
 
   return (
     <>
-      {/* Backdrop */}
-      <div className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm" />
-
-      {/* Modal */}
-      <div className="fixed inset-0 z-[1001] flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div
-          className="w-full max-w-md rounded-3xl shadow-2xl overflow-hidden flex flex-col"
-          style={{ background: "linear-gradient(160deg, #f7f0e3 0%, #ede0c4 100%)" }}
+          className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl bg-[#F0E6D1]"
+          onClick={(e) => e.stopPropagation()}
         >
-          {/* Top accent bar */}
-          <div className="h-1.5 w-full shrink-0" style={{ background: "linear-gradient(90deg, #32491B, #839705, #B5D098)" }} />
-
-          {/* Header */}
-          <div className="px-7 pt-6 pb-5 shrink-0" style={{ background: "linear-gradient(135deg, #32491B 0%, #587A34 100%)" }}>
-            <div className="flex items-center gap-3 mb-1">
-              <div className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-[#B5D098]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-              <div>
-                <h2 className="text-[#F0E6D1] font-extrabold text-lg leading-tight">Set Up Your Profile</h2>
-              </div>
-            </div>
-            <p className="text-[#B5D098]/80 text-xs mt-2 leading-relaxed">
-              Help us personalize your recipe recommendations by creating your profile.
-            </p>
-            <div className="mt-4">
-              <StepDots total={TOTAL_STEPS} current={step} />
-            </div>
+          <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-[#32491B] text-[#F0E6D1]">
+            <h2 className="text-xl font-bold">{recipe.title || "Recipe Details"}</h2>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 transition-all cursor-pointer"
+              aria-label="Close recipe details"
+            >
+              <i className="fas fa-times"></i>
+            </button>
           </div>
 
-          {/* Step Content */}
-          <div className="px-7 py-6 flex-1 overflow-y-auto">
-            <div className={`transition-all duration-180 ${slideClass}`}>
+          <div className="p-6 space-y-5 text-[#1B211A]">
+            <p className="text-sm text-black/70">{recipe.description || "No description available."}</p>
 
-              {/* Step 0: Welcome */}
-              {step === 0 && (
-                <div className="flex flex-col items-center text-center gap-5 py-4">
-                  {/* Removed the people icon div */}
-                  <div>
-                    <h3 className="text-[#2d3f1a] font-extrabold text-xl mb-2">Welcome to Dishcovery</h3>
-                    <p className="text-[#4a5e30] text-sm leading-relaxed">
-                      It looks like this is your first time here. Let's take a moment to create your profile so we can suggest recipes tailored just for you.
-                    </p>
-                  </div>
-                  <div className="w-full bg-[#B5D098]/30 rounded-2xl p-4 text-left space-y-2">
-                    <div className="flex items-center gap-3 text-sm text-[#32491B]">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                      <span className="font-medium">Your name and birthday</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-sm text-[#32491B]">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span className="font-medium">Dietary restrictions</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-sm text-[#32491B]">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                      </svg>
-                      <span className="font-medium">Allergies and sensitivities</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {step === 1 && (
-                <div className="space-y-5">
-                  <AvatarUpload name={name} avatar={avatar} onAvatarChange={setAvatar} />
-
-                  <div>
-                    <label className="block text-[#3a5220] text-xs font-semibold uppercase tracking-wider mb-1.5">
-                      Name <span className="text-red-400">*</span>
-                    </label>
-                    <input
-                      value={name}
-                      onChange={(e) => { setName(e.target.value); setError(""); }}
-                      placeholder="What should we call you?"
-                      className="w-full bg-white border border-[#587A34]/30 rounded-xl px-4 py-2.5 text-[#3a5220] text-sm focus:outline-none focus:ring-2 focus:ring-[#587A34]/50 placeholder:text-[#3a5220]/30"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[#3a5220] text-xs font-semibold uppercase tracking-wider mb-1.5">
-                      Date of Birth <span className="text-red-400">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      value={dateOfBirth}
-                      onChange={(e) => { setDateOfBirth(e.target.value); setError(""); }}
-                      className="w-full bg-white border border-[#587A34]/30 rounded-xl px-4 py-2.5 text-[#3a5220] text-sm focus:outline-none focus:ring-2 focus:ring-[#587A34]/50"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {step === 2 && (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-[#2d3f1a] font-bold text-base mb-1">Dietary Restrictions</h3>
-                    <p className="text-[#4a5e30] text-xs leading-relaxed mb-4">
-                      Select any that apply. We will avoid ingredients that do not match your diet.
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {DIETARY_OPTIONS.map((opt) => (
-                        <TagButton
-                          key={opt}
-                          label={opt}
-                          selected={dietary.includes(opt)}
-                          onClick={() => toggleItem(dietary, setDietary, opt)}
-                          variant="green"
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  {dietary.length === 0 && (
-                    <div className="rounded-xl bg-[#B5D098]/20 border border-[#B5D098]/50 px-4 py-3 text-xs text-[#4a5e30] flex items-center gap-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span>No restrictions? No problem. You can skip this step.</span>
-                    </div>
-                  )}
-
-                  {dietary.length > 0 && (
-                    <div className="rounded-xl bg-[#587A34]/10 px-4 py-3 text-xs text-[#3a5220]">
-                      <span className="font-semibold">Selected: </span>{dietary.join(", ")}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {step === 3 && (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-[#2d3f1a] font-bold text-base mb-1">Allergies and Sensitivities</h3>
-                    <p className="text-[#4a5e30] text-xs leading-relaxed mb-4">
-                      We will make sure to flag or exclude recipes containing these allergens.
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {ALLERGY_OPTIONS.map((opt) => (
-                        <TagButton
-                          key={opt}
-                          label={opt}
-                          selected={allergies.includes(opt)}
-                          onClick={() => toggleItem(allergies, setAllergies, opt)}
-                          variant="red"
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  {allergies.length === 0 && (
-                    <div className="rounded-xl bg-[#B5D098]/20 border border-[#B5D098]/50 px-4 py-3 text-xs text-[#4a5e30] flex items-center gap-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span>No allergies? Great. You can skip this step or add one later.</span>
-                    </div>
-                  )}
-
-                  {allergies.length > 0 && (
-                    <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-xs text-red-700">
-                      <span className="font-semibold">Allergic to: </span>{allergies.join(", ")}
-                    </div>
-                  )}
-
-                  <div className="mt-2 rounded-2xl bg-[#32491B]/8 border border-[#B5D098]/40 px-4 py-4 space-y-2">
-                    <p className="text-[#32491B] text-xs font-bold uppercase tracking-wider mb-2">Profile Summary</p>
-                    <div className="flex items-center gap-3">
-                      <Avatar name={name || "?"} avatar={avatar} size="sm" />
-                      <div>
-                        <p className="text-[#2d3f1a] font-semibold text-sm">{name || "—"}</p>
-                        <p className="text-[#4a5e30] text-xs">{dateOfBirth || "No birthday set"}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+            <div className="flex gap-4 text-sm text-black/70">
+              <span><i className="far fa-clock mr-1"></i>{recipe.time || recipe.prepTime || "N/A"}</span>
+              <span><i className="fas fa-users mr-1"></i>{recipe.servings || "-"}</span>
             </div>
 
-            {error && (
-              <p className="mt-3 text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2 border border-red-200">
-                {error}
-              </p>
-            )}
-          </div>
-
-          <div className="px-7 pb-6 pt-2 shrink-0 border-t border-[#B5D098]/30">
-            <div className="flex gap-3">
-              {step > 0 && (
-                <button
-                  type="button"
-                  onClick={goBack}
-                  disabled={isSaving}
-                  className="flex-1 py-3 rounded-xl border border-[#32491B]/20 bg-white/50 hover:bg-white/80 text-[#32491B] font-semibold text-sm transition-all duration-200 cursor-pointer disabled:opacity-40"
-                >
-                  Back
-                </button>
-              )}
-
-              {step < TOTAL_STEPS - 1 ? (
-                <button
-                  type="button"
-                  onClick={goNext}
-                  className="flex-1 py-3 rounded-xl bg-[#32491B] hover:bg-[#253813] text-[#F0E6D1] font-semibold text-sm transition-all duration-200 shadow-md cursor-pointer"
-                >
-                  {step === 0 ? "Let's Go" : "Next"}
-                </button>
+            <div>
+              <h3 className="font-semibold text-[#32491B] mb-2">Ingredients</h3>
+              {Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0 ? (
+                <ul className="list-disc pl-5 space-y-1 text-sm">
+                  {recipe.ingredients.map((item, index) => (
+                    <li key={`${item}-${index}`}>{item}</li>
+                  ))}
+                </ul>
               ) : (
-                <button
-                  type="button"
-                  onClick={handleFinish}
-                  disabled={isSaving}
-                  className="flex-1 py-3 rounded-xl bg-[#32491B] hover:bg-[#253813] text-[#F0E6D1] font-semibold text-sm transition-all duration-200 shadow-md cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
-                >
-                  {isSaving ? (
-                    <>
-                      <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                      </svg>
-                      Saving...
-                    </>
-                  ) : (
-                    "Finish and Start Cooking"
-                  )}
-                </button>
+                <p className="text-sm text-black/60">No ingredients listed.</p>
               )}
             </div>
 
-            {(step === 2 || step === 3) && (
-              <button
-                type="button"
-                onClick={step === TOTAL_STEPS - 1 ? handleFinish : goNext}
-                disabled={isSaving}
-                className="w-full mt-2 text-center text-xs text-[#4a5e30]/60 hover:text-[#4a5e30] transition-colors py-1 cursor-pointer"
-              >
-                Skip this step
-              </button>
-            )}
+            <div>
+              <h3 className="font-semibold text-[#32491B] mb-2">Instructions</h3>
+              {Array.isArray(recipe.instructions) && recipe.instructions.length > 0 ? (
+                <ol className="list-decimal pl-5 space-y-2 text-sm">
+                  {recipe.instructions.map((step, index) => (
+                    <li key={`${step}-${index}`}>{step}</li>
+                  ))}
+                </ol>
+              ) : (
+                <p className="text-sm text-black/60">No instructions listed.</p>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -427,4 +78,403 @@ const FirsttimeModal = ({ onClose }) => {
   );
 };
 
-export default FirsttimeModal;
+const LogoutConfirmModal = ({ onConfirm, onCancel, isLoggingOut }) => (
+  <>
+    <div
+      className="fixed inset-0 z-50 bg-black/10 backdrop-blur-md"
+      onClick={!isLoggingOut ? onCancel : undefined}
+    />
+    <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+      <div
+        className="pointer-events-auto mx-4 w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden"
+        style={{ background: 'linear-gradient(160deg, #f7f0e3 0%, #ede0c4 100%)' }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg, #32491B, #839705, #B5D098)' }} />
+        <div className="px-7 pt-7 pb-6">
+          <div className="flex justify-center mb-5">
+            <div className="w-14 h-14 rounded-2xl bg-[#32491B]/10 flex items-center justify-center shadow-inner">
+              {isLoggingOut ? (
+                <svg className="animate-spin w-6 h-6 text-[#32491B]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                </svg>
+              ) : (
+                <i className="fas fa-sign-out-alt text-[#32491B] text-xl"></i>
+              )}
+            </div>
+          </div>
+          <h2 className="text-center font-bold text-[#1B211A] text-xl mb-2 tracking-tight">
+            {isLoggingOut ? 'Logging out...' : 'Leaving so soon?'}
+          </h2>
+          <p className="text-center text-[#4a5e30] text-sm leading-relaxed mb-7">
+            {isLoggingOut
+              ? 'Please wait while we sign you out.'
+              : <>Are you sure you want to log out of <span className="font-semibold text-[#32491B]">Dishcovery</span>?</>
+            }
+          </p>
+          <div className="h-px bg-gradient-to-r from-transparent via-[#B5D098] to-transparent mb-6" />
+          <div className="flex gap-3">
+            <button
+              onClick={onCancel}
+              disabled={isLoggingOut}
+              className="flex-1 py-3 rounded-xl border border-[#32491B]/20 bg-white/50 hover:bg-white/80 text-[#32491B] font-semibold text-sm tracking-wide transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Stay
+            </button>
+            <button
+              onClick={onConfirm}
+              disabled={isLoggingOut}
+              className="flex-1 py-3 rounded-xl bg-[#32491B] hover:bg-[#253813] text-[#F0E6D1] font-semibold text-sm tracking-wide transition-all duration-200 shadow-md cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              Yes, Log Out
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </>
+);
+
+const DashboardPage = () => {
+  const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [currentPage, setCurrentPage] = useState('dashboard');
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [generatedRecipe, setGeneratedRecipe] = useState(null);
+  const [recipeOptions, setRecipeOptions] = useState([]);
+  const [showOptions, setShowOptions] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState("");
+  const [aiResponse, setAiResponse] = useState(null);
+  const [lastRequestTime, setLastRequestTime] = useState(0);
+  const [showFirstTimeModal, setShowFirstTimeModal] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
+
+  const [activeProfile, setActiveProfile] = useState(null);
+
+  useEffect(() => {
+    const checkFirstTime = async () => {
+      try {
+        const hasSeenModal = localStorage.getItem('dishcovery_first_time_modal_seen');
+        
+        // If they've never seen the modal, show it
+        if (!hasSeenModal) {
+          setShowFirstTimeModal(true);
+          setIsChecking(false);
+          return;
+        }
+        
+        const response = await apiCall("/api/profiles");
+        const profiles = Array.isArray(response?.data) ? response.data : [];
+        
+        if (profiles.length === 0) {
+          setShowFirstTimeModal(true);
+        }
+      } catch (error) {
+        console.error("Error checking profiles:", error);
+        // If there's an error (like not authenticated), don't show modal
+        setShowFirstTimeModal(false);
+      } finally {
+        setIsChecking(false);
+      }
+    };
+    
+    checkFirstTime();
+  }, []);
+
+  const handleActiveProfileChange = (profile) => {
+    setActiveProfile(profile);
+  };
+
+  const handleFirstTimeModalClose = () => {
+    setShowFirstTimeModal(false);
+    localStorage.setItem('dishcovery_first_time_modal_seen', 'true');
+    // Instead of reloading, just refresh the profiles
+    window.dispatchEvent(new CustomEvent('refreshProfiles'));
+  };
+
+  const mapSuggestionToCard = (suggestion, fallbackEstimatedTime, recipeId) => ({
+    id: recipeId,
+    title: suggestion?.title || "Generated Recipe",
+    description: suggestion?.description || "",
+    prepTime: fallbackEstimatedTime || "N/A",
+    cookTime: suggestion?.cookTimeMin ? `${suggestion.cookTimeMin} min` : "N/A",
+    servings: suggestion?.servings || "-",
+    difficulty: "Medium",
+    tags: Array.isArray(suggestion?.keyIngredients) && suggestion.keyIngredients.length > 0
+      ? ["ai", "generated", "recipe"]
+      : ["ai", "generated"],
+    ingredients: Array.isArray(suggestion?.keyIngredients) ? suggestion.keyIngredients : [],
+    instructions: Array.isArray(suggestion?.instructions) ? suggestion.instructions : [],
+  });
+
+  const handleGenerateWithOptions = async (promptText, history, numOptions = 3) => {
+    const now = Date.now();
+    const timeSinceLastRequest = now - lastRequestTime;
+    if (timeSinceLastRequest < 2000 && lastRequestTime !== 0) {
+      setGenerateError(`Please wait ${Math.ceil((2000 - timeSinceLastRequest) / 1000)} seconds between requests.`);
+      return;
+    }
+    
+    try {
+      setIsGenerating(true);
+      setGenerateError("");
+      setLastRequestTime(now);
+      setShowOptions(false);
+      setRecipeOptions([]);
+      
+      let finalPrompt = `Generate ${numOptions} different recipe variations for: "${promptText}".
+      
+Return the response as a JSON object with this exact structure:
+{
+  "options": [
+    {
+      "title": "Option 1 title",
+      "description": "Brief description",
+      "keyIngredients": ["ingredient1", "ingredient2"],
+      "cookTimeMin": 30,
+      "servings": 4,
+      "instructions": ["step1", "step2"]
+    }
+  ]
+}`;
+      
+      if (history && history.length > 0 && aiResponse) {
+        finalPrompt = `Previous recipe context: "${aiResponse.headline}"
+        
+User request: Generate ${numOptions} variations for "${promptText}"
+
+Please provide ${numOptions} different ways to modify/adapt the previous recipe.
+Return as JSON with the structure above.`;
+      }
+      
+      const response = await apiCall("/api/recipes", {
+        method: "POST",
+        body: JSON.stringify({
+          profiles: activeProfile ? [activeProfile] : [],
+          conversation: [{ role: "user", content: finalPrompt }],
+        }),
+      });
+
+      const recipeResponse = response?.response;
+      
+      if (recipeResponse?.options && Array.isArray(recipeResponse.options)) {
+        const options = recipeResponse.options.map((opt, index) => ({
+          id: `option-${index}`,
+          title: opt.title || `Option ${index + 1}`,
+          description: opt.description || "",
+          prepTime: opt.cookTimeMin ? `${opt.cookTimeMin} min` : "N/A",
+          cookTime: opt.cookTimeMin ? `${opt.cookTimeMin} min` : "N/A",
+          servings: opt.servings || "-",
+          difficulty: ["Easy", "Medium", "Hard"][index % 3],
+          tags: ["ai", "generated"],
+          ingredients: Array.isArray(opt.keyIngredients) ? opt.keyIngredients : [],
+          instructions: Array.isArray(opt.instructions) ? opt.instructions : [],
+        }));
+        
+        if (options.length > 1) {
+          setRecipeOptions(options);
+          setShowOptions(true);
+        } else if (options.length === 1) {
+          setGeneratedRecipe(options[0]);
+          setAiResponse({
+            headline: options[0].title,
+            summary: options[0].description,
+          });
+        }
+      } else if (Array.isArray(recipeResponse?.suggestions) && recipeResponse.suggestions.length > 0) {
+        const cards = recipeResponse.suggestions.map((suggestion, index) =>
+          mapSuggestionToCard(
+            suggestion,
+            recipeResponse?.estimatedTime,
+            suggestion?.id ?? `suggestion-${index}`
+          )
+        );
+
+        if (cards.length > 1) {
+          setRecipeOptions(cards);
+          setShowOptions(true);
+          setGeneratedRecipe(null);
+          setAiResponse(null);
+        } else {
+          setGeneratedRecipe(cards[0]);
+          setAiResponse({
+            headline: cards[0].title,
+            summary: cards[0].description,
+          });
+        }
+      } else {
+        throw new Error("No recipe options were returned.");
+      }
+      
+    } catch (error) {
+      console.error("Recipe generation error:", error);
+      
+      if (error.message?.includes("503") || error.message?.includes("high demand") || error.message?.includes("UNAVAILABLE")) {
+        setGenerateError("Gemini is currently busy. Please wait a few seconds and try again.");
+      } else {
+        setGenerateError(error.message || "Failed to generate recipe.");
+      }
+      setGeneratedRecipe(null);
+      setAiResponse(null);
+      setShowOptions(false);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleSelectOption = (selectedRecipe) => {
+    console.log("User selected option:", selectedRecipe.title);
+    setGeneratedRecipe(selectedRecipe);
+    setAiResponse({
+      headline: selectedRecipe.title,
+      summary: selectedRecipe.description || "You selected this recipe! Ask a follow-up to refine it further.",
+    });
+    setShowOptions(false);
+    setRecipeOptions([]);
+  };
+
+  const handleGenerateRecipe = async (promptText, history) => {
+    await handleGenerateWithOptions(promptText, history, 3);
+  };
+
+  const handleResetRecipe = () => {
+    console.log("Resetting recipe conversation");
+    setAiResponse(null);
+    setGeneratedRecipe(null);
+    setGenerateError("");
+    setShowOptions(false);
+    setRecipeOptions([]);
+  };
+
+  const renderPage = () => {
+    switch (currentPage) {
+      case 'dashboard':
+        return (
+          <>
+            <WelcomeBanner activeProfile={activeProfile} />
+            
+            <CreateRecipeSection 
+              onGenerate={handleGenerateRecipe} 
+              isLoading={isGenerating}
+              aiResponse={aiResponse}
+              onReset={handleResetRecipe}
+            />
+            
+            {generateError && (
+              <div className="mx-4 md:mx-8 mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {generateError}
+              </div>
+            )}
+            
+            {showOptions && recipeOptions.length > 0 && (
+              <RecipeOptionsGrid 
+                options={recipeOptions}
+                onSelectOption={handleSelectOption}
+                isLoading={isGenerating}
+              />
+            )}
+            
+            {!showOptions && (isGenerating || generatedRecipe) && (
+              <RecipeCard recipeData={generatedRecipe || {}} isLoading={isGenerating} />
+            )}
+          </>
+        );
+      case 'history':
+        return <HistoryPage onViewRecipe={setSelectedRecipe} />;
+      case 'meal-plan':
+        return <MealPlanPage onViewRecipe={setSelectedRecipe} />;
+      case 'profile':
+        return (
+          <ProfilePage
+            activeProfile={activeProfile}
+            onActiveProfileChange={handleActiveProfileChange}
+          />
+        );
+      case 'settings':
+        return <SettingsPage />;
+      case 'favorites':
+        return <FavoritesPage onViewRecipe={setSelectedRecipe} />;
+      default:
+        return null;
+    }
+  };
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await fetch(`${API_BASE_URL}/api/auth/logout`, { method: "POST" });
+    } finally {
+      try {
+        localStorage.removeItem(MEAL_PLAN_STORAGE_KEY);
+      } catch {
+        /* ignore */
+      }
+      navigate("/", { replace: true });
+    }
+  };
+
+  if (isChecking) {
+    return (
+      <div className="relative min-h-screen bg-[#B5D098] flex items-center justify-center">
+        <div className="text-[#32491B] text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#32491B] mb-4"></div>
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative min-h-screen bg-[#B5D098]">
+      <Sidebar
+        currentPage={currentPage}
+        setCurrentPage={setCurrentPage}
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        onLogout={() => setShowLogoutConfirm(true)}
+      />
+      <main style={{ marginLeft: sidebarOpen ? '18rem' : '0' }} className="transition-all duration-300">
+        <DashboardNavbar
+          setCurrentPage={setCurrentPage}
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+          activeProfile={activeProfile}
+          onActiveProfileChange={handleActiveProfileChange}
+        />
+        <div className="pb-12">
+          {renderPage()}
+        </div>
+      </main>
+
+      {showFirstTimeModal && (
+        <FirsttimeModal onClose={handleFirstTimeModalClose} />
+      )}
+
+      {/* Logout Confirmation Modal */}
+      {(showLogoutConfirm || isLoggingOut) && (
+        <LogoutConfirmModal
+          onConfirm={() => {
+            setShowLogoutConfirm(false);
+            handleLogout();
+          }}
+          onCancel={() => setShowLogoutConfirm(false)}
+          isLoggingOut={isLoggingOut}
+        />
+      )}
+
+      {/* Recipe Details Modal */}
+      {selectedRecipe && (
+        <RecipeDetailsModal
+          recipe={selectedRecipe}
+          onClose={() => setSelectedRecipe(null)}
+        />
+      )}
+    </div>
+  );
+};
+
+export default DashboardPage;

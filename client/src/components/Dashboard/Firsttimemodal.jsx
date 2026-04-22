@@ -175,14 +175,18 @@ const FirsttimeModal = ({ onClose }) => {
 
   return (
     <>
-      {/* Backdrop */}
-      <div className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm" />
-
-      {/* Modal */}
-      <div className="fixed inset-0 z-[1001] flex items-center justify-center p-4">
+      {/* Backdrop - higher z-index to cover dashboard */}
+      <div 
+        className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm" 
+        onClick={onClose}
+      />
+      
+      {/* Modal - even higher z-index */}
+      <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
         <div
           className="w-full max-w-md rounded-3xl shadow-2xl overflow-hidden flex flex-col"
           style={{ background: "linear-gradient(160deg, #f7f0e3 0%, #ede0c4 100%)" }}
+          onClick={(e) => e.stopPropagation()}
         >
           {/* Top accent bar */}
           <div className="h-1.5 w-full shrink-0" style={{ background: "linear-gradient(90deg, #32491B, #839705, #B5D098)" }} />
@@ -214,11 +218,6 @@ const FirsttimeModal = ({ onClose }) => {
               {/* Step 0: Welcome */}
               {step === 0 && (
                 <div className="flex flex-col items-center text-center gap-5 py-4">
-                  <div className="w-20 h-20 rounded-3xl bg-[#32491B]/10 flex items-center justify-center shadow-inner">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-[#587A34]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </div>
                   <div>
                     <h3 className="text-[#2d3f1a] font-extrabold text-xl mb-2">Welcome to Dishcovery</h3>
                     <p className="text-[#4a5e30] text-sm leading-relaxed">
