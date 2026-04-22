@@ -94,8 +94,37 @@ function mapBodyToRow(accountId, body) {
 const SELECT_COLUMNS =
   'id, account_id, meal_plan_id, age, sex, height_cm, weight_kg, goal, activity_level, budget, cuisine_pref, cooking_time, cooking_skill, available_equipment, allergies, dislikes, medical_condition, carb_goal, fat_goal, hydration_goal, snack_pref, schedule, grocery_list, created_at, status';
 
+async function deactivateActiveMealPlans(accountId) {
+  const { error } = await supabaseAdmin
+    .from('meal_plan')
+    .update({ status: false })
+    .eq('account_id', accountId)
+    .eq('status', true);
+
+  if (error) {
+    throw error;
+  }
+}
+
+async function getActiveMealPlan(accountId) {
+  const { data, error } = await supabaseAdmin
+    .from('meal_plan')
+    .select(SELECT_COLUMNS)
+    .eq('account_id', accountId)
+    .eq('status', true)
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  if (error) {
+    throw error;
+  }
+
+  return data && data.length > 0 ? data[0] : null;
+}
+
 async function createMealPlan(accountId, body) {
-  const row = mapBodyToRow(accountId, body);
+  await deactivateActiveMealPlans(accountId);
+  const row = mapBodyToRow(accountId, { ...body, status: true });
 
   const { data, error } = await supabaseAdmin.from('meal_plan').insert([row]).select(SELECT_COLUMNS).single();
 
@@ -124,4 +153,6 @@ async function listMealPlans(accountId, limit = 20) {
 module.exports = {
   createMealPlan,
   listMealPlans,
+  getActiveMealPlan,
+  deactivateActiveMealPlans,
 };

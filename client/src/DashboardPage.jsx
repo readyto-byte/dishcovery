@@ -12,6 +12,8 @@ import ProfilePage from "./components/Dashboard/ProfilePage";
 import SettingsPage from "./components/Dashboard/SettingsPage";
 import FavoritesPage from "./components/Dashboard/FavoritesPage";
 
+const MEAL_PLAN_STORAGE_KEY = "dishcovery_meal_plan_local";
+
 const RecipeDetailsModal = ({ recipe, onClose }) => {
   if (!recipe) return null;
 
@@ -235,6 +237,11 @@ const DashboardPage = () => {
     try {
       await fetch(`${API_BASE_URL}/api/auth/logout`, { method: "POST" });
     } finally {
+      try {
+        localStorage.removeItem(MEAL_PLAN_STORAGE_KEY);
+      } catch {
+        /* ignore */
+      }
       navigate("/", { replace: true });
     }
   };
