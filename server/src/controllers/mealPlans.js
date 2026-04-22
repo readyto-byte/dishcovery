@@ -126,6 +126,22 @@ function hasLikelyJumbledText(value) {
   return tokens.some((token) => isLikelyJumbledToken(token));
 }
 
+function isFoodLikeFreeText(value) {
+  const text = String(value || '').trim();
+  if (!text) return true;
+
+  // Keep this conservative: allow letters, spaces, commas, hyphens, apostrophes, periods, and parentheses.
+  // Disallow digits and weird symbols so random strings get blocked early.
+  if (text.length > 120) return false;
+  if (/\d/.test(text)) return false;
+  if (!/^[a-zA-Z\s,.'()\-]+$/.test(text)) return false;
+
+  const tokens = text.split(/[\s,;/|]+/).filter(Boolean);
+  if (tokens.length === 0) return false;
+  if (tokens.some((t) => t.length > 30)) return false;
+  return true;
+}
+
 function validateMealPlanBody(body = {}) {
   const errors = [];
 
@@ -159,13 +175,22 @@ function validateMealPlanBody(body = {}) {
   if (hasValue(body.allergies) && hasLikelyJumbledText(body.allergies)) {
     errors.push('Allergies looks invalid. Please enter clear words (example: "Nuts, Dairy").');
   }
+  if (hasValue(body.allergies) && !isFoodLikeFreeText(body.allergies)) {
+    errors.push('Allergies must be real words only (letters/commas). Example: "Nuts, Dairy".');
+  }
 
   if (hasValue(body.medicalConditions) && hasLikelyJumbledText(body.medicalConditions)) {
     errors.push('Medical conditions looks invalid. Please enter clear words (example: "Diabetes").');
   }
+  if (hasValue(body.medicalConditions) && !isFoodLikeFreeText(body.medicalConditions)) {
+    errors.push('Medical conditions must be real words only (letters/commas). Example: "Diabetes".');
+  }
 
   if (hasValue(body.foodsDislike) && hasLikelyJumbledText(body.foodsDislike)) {
     errors.push('Foods to avoid looks invalid. Please enter clear words (example: "Onion, Ampalaya").');
+  }
+  if (hasValue(body.foodsDislike) && !isFoodLikeFreeText(body.foodsDislike)) {
+    errors.push('Foods to avoid must be food words only (letters/commas). Example: "Onion, Ampalaya".');
   }
 
   if (errors.length > 0) {
