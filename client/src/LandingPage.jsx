@@ -9,6 +9,7 @@ import Navbar from "./components/LandingPage_comp/Navbar"
 import SampleRecipe from "./components/LandingPage_comp/SampleRecipe"
 import Signup from "./components/LandingPage_comp/Signup"
 import Login from "./components/LandingPage_comp/Login"
+import MeetTheTeam from "./components/LandingPage_comp/MeetTheTeam"  // ← ADD THIS
 
 const LandingPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -34,6 +35,7 @@ const LandingPage = () => {
       <HowItWorks />
       <SampleRecipe />
       <AboutSection />
+      <MeetTheTeam />      {/* ← ADD THIS - between AboutSection and FooterSection */}
       <FooterSection />
 
       <Signup
