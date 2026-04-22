@@ -29,6 +29,115 @@ const normalizeMealTitle = (title, fallback) => {
   return cleaned || fallback;
 };
 
+const hasValue = (v) => !(v === undefined || v === null || String(v).trim() === "");
+
+const isLikelyJumbledToken = (token) => {
+  const clean = String(token || "").toLowerCase().replace(/[^a-z]/g, "");
+  if (clean.length < 4) return false;
+  const vowelCount = (clean.match(/[aeiou]/g) || []).length;
+  const vowelRatio = vowelCount / clean.length;
+  if (vowelCount === 0) return true;
+  if (clean.length >= 7 && vowelRatio < 0.2) return true;
+  return false;
+};
+
+const hasLikelyJumbledText = (value) => {
+  const text = String(value || "").trim();
+  if (!text) return false;
+  const tokens = text.split(/[\s,;/|]+/).filter(Boolean);
+  if (tokens.length === 0) return false;
+  return tokens.some((t) => isLikelyJumbledToken(t));
+};
+
+const isFoodLikeFreeText = (value) => {
+  const text = String(value || "").trim();
+  if (!text) return true;
+  if (text.length > 120) return false;
+  if (/\d/.test(text)) return false;
+  if (!/^[a-zA-Z\s,.'()\-]+$/.test(text)) return false;
+  const tokens = text.split(/[\s,;/|]+/).filter(Boolean);
+  if (tokens.length === 0) return false;
+  if (tokens.some((t) => t.length > 30)) return false;
+  return true;
+};
+
+const validateMealPlanForm = (fd) => {
+  const errors = [];
+
+  const hasAnyInput =
+    hasValue(fd.age) ||
+    hasValue(fd.height) ||
+    hasValue(fd.weight) ||
+    hasValue(fd.goal) ||
+    hasValue(fd.foodBudget) ||
+    hasValue(fd.maxCookingTime) ||
+    hasValue(fd.carbPreference) ||
+    hasValue(fd.sexGender) ||
+    hasValue(fd.activityLevel) ||
+    hasValue(fd.preferredCuisine) ||
+    hasValue(fd.cookingSkillLevel) ||
+    hasValue(fd.fatPreference) ||
+    hasValue(fd.allergies) ||
+    hasValue(fd.medicalConditions) ||
+    hasValue(fd.foodsDislike) ||
+    hasValue(fd.mealSchedule) ||
+    Boolean(fd.includeWaterGoal) ||
+    Boolean(fd.includeSnacks) ||
+    Boolean(fd.generateGroceryList) ||
+    Boolean(fd.kitchenEquipment?.stove) ||
+    Boolean(fd.kitchenEquipment?.microwave) ||
+    Boolean(fd.kitchenEquipment?.airFryer);
+
+  if (!hasAnyInput) {
+    errors.push("Please enter at least one preference before generating a meal plan.");
+  }
+
+  if (hasValue(fd.age)) {
+    const raw = String(fd.age).trim();
+    const n = parseInt(raw, 10);
+    if (!Number.isFinite(n) || String(n) !== raw) {
+      errors.push("Age must be a valid whole number.");
+    } else if (n < 10 || n > 120) {
+      errors.push("Age must be between 10 and 120.");
+    }
+  }
+
+  if (hasValue(fd.height)) {
+    const s = String(fd.height).trim();
+    if (!/\d/.test(s)) {
+      errors.push('Height must include numbers (e.g., "170 cm" or "5\'7").');
+    }
+  }
+
+  if (hasValue(fd.weight)) {
+    const s = String(fd.weight).trim();
+    if (!/\d/.test(s)) {
+      errors.push('Weight must include numbers (e.g., "70 kg" or "154 lbs").');
+    }
+  }
+
+  if (hasValue(fd.allergies) && hasLikelyJumbledText(fd.allergies)) {
+    errors.push('Allergies looks invalid. Use clear words (e.g., "Nuts, Dairy").');
+  }
+  if (hasValue(fd.allergies) && !isFoodLikeFreeText(fd.allergies)) {
+    errors.push('Allergies must be real words only (letters/commas). Example: "Nuts, Dairy".');
+  }
+  if (hasValue(fd.medicalConditions) && hasLikelyJumbledText(fd.medicalConditions)) {
+    errors.push('Medical conditions looks invalid. Use clear words (e.g., "Diabetes").');
+  }
+  if (hasValue(fd.medicalConditions) && !isFoodLikeFreeText(fd.medicalConditions)) {
+    errors.push('Medical conditions must be real words only (letters/commas). Example: "Diabetes".');
+  }
+  if (hasValue(fd.foodsDislike) && hasLikelyJumbledText(fd.foodsDislike)) {
+    errors.push('Foods to avoid looks invalid. Use clear words (e.g., "Onion, Ampalaya").');
+  }
+  if (hasValue(fd.foodsDislike) && !isFoodLikeFreeText(fd.foodsDislike)) {
+    errors.push('Foods to avoid must be food words only (letters/commas). Example: "Onion, Ampalaya".');
+  }
+
+  return { ok: errors.length === 0, errors };
+};
+
 const buildAiGeneratedPlan = (fd, aiResponse, createdAtIso) => {
   const suggestions = Array.isArray(aiResponse?.suggestions) ? aiResponse.suggestions : [];
   if (suggestions.length < 3) {
@@ -129,6 +238,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
   const [mealPlanSaving, setMealPlanSaving] = useState(false);
   const [hydrating, setHydrating] = useState(true);
   const [downloading, setDownloading] = useState(false);
+  const formValidation = validateMealPlanForm(formData);
 
   useEffect(() => {
     let cancelled = false;
@@ -323,6 +433,14 @@ const MealPlanPage = ({ onViewRecipe }) => {
 
   const generateMealPlan = async () => {
     const snapshot = { ...formData };
+    const validation = validateMealPlanForm(snapshot);
+    if (!validation.ok) {
+      setMealPlanSaveError(`Please fix: ${validation.errors.join(" ")}`);
+      setMealPlanSaveOk(false);
+      setMealPlanSaving(false);
+      setShowForm(true);
+      return;
+    }
     setShowForm(false);
     setMealPlanSaveError(null);
     setMealPlanSaveOk(false);
@@ -736,10 +854,20 @@ const MealPlanPage = ({ onViewRecipe }) => {
               </div>
 
               <div className="mt-8 flex justify-center">
-                <button onClick={generateMealPlan} className="bg-[#587A34] hover:bg-[#3c5a23] text-white font-bold py-3.5 px-10 rounded-xl shadow-md transition-all text-lg flex items-center gap-2">
-                  <Utensils className="w-5 h-5" /> Generate My Meal Plan
+                <button
+                  onClick={generateMealPlan}
+                  disabled={mealPlanSaving || !formValidation.ok}
+                  className="bg-[#587A34] hover:bg-[#3c5a23] text-white font-bold py-3.5 px-10 rounded-xl shadow-md transition-all text-lg flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <Utensils className="w-5 h-5" /> {mealPlanSaving ? "Generating..." : "Generate My Meal Plan"}
                 </button>
               </div>
+
+              {!formValidation.ok && (
+                <p className="mt-3 text-xs text-red-700 text-center">
+                  {formValidation.errors?.[0] || "Please fix the highlighted inputs to generate your meal plan."}
+                </p>
+              )}
             </div>
           </div>
         </div>
