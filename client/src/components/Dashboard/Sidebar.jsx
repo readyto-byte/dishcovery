@@ -39,7 +39,7 @@ const Sidebar = ({ currentPage, setCurrentPage, sidebarOpen, setSidebarOpen, onL
         } lg:translate-x-0`}
         style={{ width: '272px', background: 'linear-gradient(160deg, #f7f0e3 0%, #ede0c4 100%)' }}
       >
-        <div className="relative h-full flex flex-col overflow-y-auto">
+        <div className="relative h-full flex flex-col overflow-hidden">
           <div className="flex items-center justify-center px-6 pt-10 pb-7">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => { setCurrentPage('dashboard'); if (window.innerWidth < 1024) setSidebarOpen(false); }}>
               <div className="w-8 h-8 rounded-lg bg-[#32491B] flex items-center justify-center shadow-md">
