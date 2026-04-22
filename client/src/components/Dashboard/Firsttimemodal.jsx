@@ -1,4 +1,5 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { apiCall } from "../../api/config";
 
 const DIETARY_OPTIONS = ["Keto", "Gluten-Free", "Vegan", "Vegetarian", "Paleo", "Dairy-Free"];
 const ALLERGY_OPTIONS = ["Nuts", "Shellfish", "Eggs", "Soy", "Wheat", "Fish"];
@@ -61,7 +62,6 @@ const AvatarUpload = ({ name, avatar, onAvatarChange }) => {
   );
 };
 
-/* ── Tag Toggle Button ── */
 const TagButton = ({ label, selected, onClick, variant = "green" }) => {
   const variants = {
     green: selected
@@ -82,7 +82,6 @@ const TagButton = ({ label, selected, onClick, variant = "green" }) => {
   );
 };
 
-/* ── Step Indicator ── */
 const StepDots = ({ total, current }) => (
   <div className="flex items-center gap-2 justify-center">
     {Array.from({ length: total }).map((_, i) => (
@@ -114,6 +113,13 @@ const FirsttimeModal = ({ onClose }) => {
   const [isSaving, setIsSaving] = useState(false);
 
   const TOTAL_STEPS = 4;
+
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
 
   const toggleItem = (list, setList, val) => {
     setList((prev) => (prev.includes(val) ? prev.filter((x) => x !== val) : [...prev, val]));
@@ -147,22 +153,33 @@ const FirsttimeModal = ({ onClose }) => {
     if (!name.trim()) { setStep(1); setError("Please enter your name."); return; }
     
     setIsSaving(true);
+    setError("");
+    
     try {
-      const profileData = { 
-        name: name.trim(), 
-        dateOfBirth, 
-        avatar, 
-        dietaryRestrictions: dietary, 
-        allergies 
-      };
-      localStorage.setItem('dishcovery_user_profile', JSON.stringify(profileData));
+      const response = await apiCall("/api/profiles", {
+        method: "POST",
+        body: JSON.stringify({
+          name: name.trim(),
+          date_of_birth: dateOfBirth,
+          avatar_url: avatar,
+          dietary_restrictions: dietary,
+          allergies: allergies,
+          is_active: true, 
+        }),
+      });
       
+      if (!response?.data) {
+        throw new Error("Profile created but no data returned.");
+      }
+
+      localStorage.setItem('dishcovery_first_time_modal_seen', 'true');
+
       setTimeout(() => {
         onClose();
       }, 500);
-    } catch (error) {
-      console.error("Error saving profile:", error);
-      setError("Failed to save profile. Please try again.");
+    } catch (err) {
+      console.error("Error saving profile:", err);
+      setError(err.message || "Failed to save profile. Please try again.");
       setIsSaving(false);
     }
   };
@@ -174,21 +191,20 @@ const FirsttimeModal = ({ onClose }) => {
     : "opacity-100 translate-x-0";
 
   return (
-    <>
-      {/* Backdrop - higher z-index to cover dashboard */}
+    <div className="fixed inset-0 z-[9999]">
+
       <div 
-        className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm" 
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
-      
-      {/* Modal - even higher z-index */}
-      <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+
+      <div className="relative z-[10000] flex items-center justify-center min-h-screen p-4">
         <div
           className="w-full max-w-md rounded-3xl shadow-2xl overflow-hidden flex flex-col"
           style={{ background: "linear-gradient(160deg, #f7f0e3 0%, #ede0c4 100%)" }}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Top accent bar */}
+
           <div className="h-1.5 w-full shrink-0" style={{ background: "linear-gradient(90deg, #32491B, #839705, #B5D098)" }} />
 
           {/* Header */}
@@ -211,11 +227,9 @@ const FirsttimeModal = ({ onClose }) => {
             </div>
           </div>
 
-          {/* Step Content */}
-          <div className="px-7 py-6 flex-1 overflow-y-auto">
+          <div className="px-7 py-6 flex-1 overflow-y-auto max-h-[60vh]">
             <div className={`transition-all duration-180 ${slideClass}`}>
 
-              {/* Step 0: Welcome */}
               {step === 0 && (
                 <div className="flex flex-col items-center text-center gap-5 py-4">
                   <div>
@@ -247,7 +261,6 @@ const FirsttimeModal = ({ onClose }) => {
                 </div>
               )}
 
-              {/* Step 1: Basic Info */}
               {step === 1 && (
                 <div className="space-y-5">
                   <AvatarUpload name={name} avatar={avatar} onAvatarChange={setAvatar} />
@@ -278,7 +291,6 @@ const FirsttimeModal = ({ onClose }) => {
                 </div>
               )}
 
-              {/* Step 2: Dietary Restrictions */}
               {step === 2 && (
                 <div className="space-y-4">
                   <div>
@@ -316,7 +328,6 @@ const FirsttimeModal = ({ onClose }) => {
                 </div>
               )}
 
-              {/* Step 3: Allergies */}
               {step === 3 && (
                 <div className="space-y-4">
                   <div>
@@ -352,7 +363,6 @@ const FirsttimeModal = ({ onClose }) => {
                     </div>
                   )}
 
-                  {/* Summary before finish */}
                   <div className="mt-2 rounded-2xl bg-[#32491B]/8 border border-[#B5D098]/40 px-4 py-4 space-y-2">
                     <p className="text-[#32491B] text-xs font-bold uppercase tracking-wider mb-2">Profile Summary</p>
                     <div className="flex items-center gap-3">
@@ -367,7 +377,6 @@ const FirsttimeModal = ({ onClose }) => {
               )}
             </div>
 
-            {/* Error */}
             {error && (
               <p className="mt-3 text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2 border border-red-200">
                 {error}
@@ -375,7 +384,6 @@ const FirsttimeModal = ({ onClose }) => {
             )}
           </div>
 
-          {/* Footer / Navigation */}
           <div className="px-7 pb-6 pt-2 shrink-0 border-t border-[#B5D098]/30">
             <div className="flex gap-3">
               {step > 0 && (
@@ -419,7 +427,6 @@ const FirsttimeModal = ({ onClose }) => {
               )}
             </div>
 
-            {/* Skip option on dietary/allergy steps */}
             {(step === 2 || step === 3) && (
               <button
                 type="button"
@@ -433,7 +440,7 @@ const FirsttimeModal = ({ onClose }) => {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

@@ -152,21 +152,20 @@ const DashboardPage = () => {
   const [lastRequestTime, setLastRequestTime] = useState(0);
   const [showFirstTimeModal, setShowFirstTimeModal] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
-
   const [activeProfile, setActiveProfile] = useState(null);
+  const [profileRefreshKey, setProfileRefreshKey] = useState(0);
 
   useEffect(() => {
     const checkFirstTime = async () => {
       try {
         const hasSeenModal = localStorage.getItem('dishcovery_first_time_modal_seen');
-        
-        // If they've never seen the modal, show it
+
         if (!hasSeenModal) {
           setShowFirstTimeModal(true);
           setIsChecking(false);
           return;
         }
-        
+
         const response = await apiCall("/api/profiles");
         const profiles = Array.isArray(response?.data) ? response.data : [];
         
@@ -175,7 +174,6 @@ const DashboardPage = () => {
         }
       } catch (error) {
         console.error("Error checking profiles:", error);
-        // If there's an error (like not authenticated), don't show modal
         setShowFirstTimeModal(false);
       } finally {
         setIsChecking(false);
@@ -192,8 +190,22 @@ const DashboardPage = () => {
   const handleFirstTimeModalClose = () => {
     setShowFirstTimeModal(false);
     localStorage.setItem('dishcovery_first_time_modal_seen', 'true');
-    // Instead of reloading, just refresh the profiles
-    window.dispatchEvent(new CustomEvent('refreshProfiles'));
+    // Trigger refresh of profile page
+    setProfileRefreshKey(prev => prev + 1);
+    // Also refresh the active profile by fetching it
+    const fetchActiveProfile = async () => {
+      try {
+        const response = await apiCall("/api/profiles");
+        const profiles = Array.isArray(response?.data) ? response.data : [];
+        const active = profiles.find(p => p.is_active === true);
+        if (active) {
+          setActiveProfile({ id: active.id, name: active.name, avatar: active.avatar_url });
+        }
+      } catch (error) {
+        console.error("Error fetching active profile:", error);
+      }
+    };
+    fetchActiveProfile();
   };
 
   const mapSuggestionToCard = (suggestion, fallbackEstimatedTime, recipeId) => ({
@@ -390,6 +402,7 @@ Return as JSON with the structure above.`;
       case 'profile':
         return (
           <ProfilePage
+            key={profileRefreshKey}
             activeProfile={activeProfile}
             onActiveProfileChange={handleActiveProfileChange}
           />
@@ -411,7 +424,6 @@ Return as JSON with the structure above.`;
       try {
         localStorage.removeItem(MEAL_PLAN_STORAGE_KEY);
       } catch {
-        /* ignore */
       }
       navigate("/", { replace: true });
     }
@@ -450,6 +462,7 @@ Return as JSON with the structure above.`;
         </div>
       </main>
 
+      {/* First Time Modal */}
       {showFirstTimeModal && (
         <FirsttimeModal onClose={handleFirstTimeModalClose} />
       )}
