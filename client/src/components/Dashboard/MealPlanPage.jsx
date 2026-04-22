@@ -197,39 +197,42 @@ const fetchAiMealPlan = async (fd, createdAtIso) => {
   return buildAiGeneratedPlan(fd, res?.response, createdAtIso);
 };
 
-const MealPlanPage = ({ onViewRecipe }) => {
+const getEmptyMealPlanFormData = () => ({
+  age: "",
+  height: "",
+  goal: "",
+  foodBudget: "",
+  maxCookingTime: "",
+  carbPreference: "",
+  kitchenEquipment: {
+    stove: false,
+    microwave: false,
+    airFryer: false,
+    oven: false,
+  },
+  allergies: "",
+  medicalConditions: "",
+  sexGender: "",
+  weight: "",
+  activityLevel: "",
+  preferredCuisine: "",
+  cookingSkillLevel: "",
+  fatPreference: "",
+  foodsDislike: "",
+  mealSchedule: "",
+  includeWaterGoal: false,
+  includeSnacks: false,
+  generateGroceryList: false,
+});
+
+const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
   const [plan, setPlan] = useState(defaultPlan());
   const [activeSlot, setActiveSlot] = useState(null);
   const [inputValue, setInputValue] = useState("");
   const [selectedMeal, setSelectedMeal] = useState(null);
   const [mealDetailLoading, setMealDetailLoading] = useState(false);
 
-  const [formData, setFormData] = useState({
-    age: "",
-    height: "",
-    goal: "",
-    foodBudget: "",
-    maxCookingTime: "",
-    carbPreference: "",
-    kitchenEquipment: {
-      stove: false,
-      microwave: false,
-      airFryer: false,
-    },
-    allergies: "",
-    medicalConditions: "",
-    sexGender: "",
-    weight: "",
-    activityLevel: "",
-    preferredCuisine: "",
-    cookingSkillLevel: "",
-    fatPreference: "",
-    foodsDislike: "",
-    mealSchedule: "",
-    includeWaterGoal: false,
-    includeSnacks: false,
-    generateGroceryList: false,
-  });
+  const [formData, setFormData] = useState(getEmptyMealPlanFormData);
 
   const [generatedPlan, setGeneratedPlan] = useState(null);
   const [showForm, setShowForm] = useState(true);
@@ -239,15 +242,28 @@ const MealPlanPage = ({ onViewRecipe }) => {
   const [hydrating, setHydrating] = useState(true);
   const [downloading, setDownloading] = useState(false);
   const formValidation = validateMealPlanForm(formData);
+  const activeProfileId = activeProfile?.id ?? null;
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setHydrating(true);
+      setGeneratedPlan(null);
+      setShowForm(true);
+      setFormData(getEmptyMealPlanFormData());
+      setMealPlanSaveError(null);
+      setMealPlanSaveOk(false);
       try {
-        const res = await apiCall("/api/meal-plans/active");
+        const query = activeProfileId ? `?profileId=${encodeURIComponent(activeProfileId)}` : "";
+        const res = await apiCall(`/api/meal-plans/active${query}`);
         if (cancelled) return;
         const row = res?.data;
+        if (!row) {
+          setFormData(getEmptyMealPlanFormData());
+          setGeneratedPlan(null);
+          setShowForm(true);
+          return;
+        }
         if (row) {
           const form = mapDbRowToFormData(row);
           if (form) {
@@ -262,13 +278,17 @@ const MealPlanPage = ({ onViewRecipe }) => {
             setShowForm(false);
           }
         }
-      } catch {
+      } catch (err) {
+        if (!cancelled) {
+          setMealPlanSaveError(err?.message || "Could not load meal plan for this profile.");
+          setShowForm(true);
+        }
       } finally {
         if (!cancelled) setHydrating(false);
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [activeProfileId]);
 
   const fetchMealDetail = async (meal, type) => {
     setSelectedMeal({
@@ -407,28 +427,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
   };
 
   const resetForm = () => {
-    setFormData({
-      age: "",
-      height: "",
-      goal: "",
-      foodBudget: "",
-      maxCookingTime: "",
-      carbPreference: "",
-      kitchenEquipment: { stove: false, microwave: false, airFryer: false, oven: false },
-      allergies: "",
-      medicalConditions: "",
-      sexGender: "",
-      weight: "",
-      activityLevel: "",
-      preferredCuisine: "",
-      cookingSkillLevel: "",
-      fatPreference: "",
-      foodsDislike: "",
-      mealSchedule: "",
-      includeWaterGoal: false,
-      includeSnacks: false,
-      generateGroceryList: false,
-    });
+    setFormData(getEmptyMealPlanFormData());
   };
 
   const generateMealPlan = async () => {
@@ -456,7 +455,7 @@ const MealPlanPage = ({ onViewRecipe }) => {
 
       const res = await apiCall("/api/meal-plans", {
         method: "POST",
-        body: JSON.stringify(snapshot),
+        body: JSON.stringify({ ...snapshot, profileId: activeProfileId }),
       });
       setMealPlanSaveOk(true);
       if (res?.data?.created_at) {
@@ -473,7 +472,10 @@ const MealPlanPage = ({ onViewRecipe }) => {
 
   const handleNewMealPlan = async () => {
     try {
-      await apiCall("/api/meal-plans/deactivate-active", { method: "POST", body: "{}" });
+      await apiCall("/api/meal-plans/deactivate-active", {
+        method: "POST",
+        body: JSON.stringify({ profileId: activeProfileId }),
+      });
     } catch {}
     resetForm();
     setGeneratedPlan(null);

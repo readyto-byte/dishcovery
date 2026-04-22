@@ -13,7 +13,7 @@ const DashboardNavbar = ({ setCurrentPage, sidebarOpen, setSidebarOpen, activePr
       const rows = Array.isArray(response?.data) ? response.data : [];
       setProfiles(rows);
       if (!activeProfile) {
-        const active = rows.find((p) => p.is_active) || null;
+        const active = rows.find((p) => p.is_default) || rows.find((p) => p.is_active) || null;
         if (active) {
           onActiveProfileChange?.({ id: active.id, name: active.name ?? "", avatar: active.avatar_url ?? null });
         }

@@ -164,7 +164,9 @@ const FirsttimeModal = ({ onClose }) => {
           avatar_url: avatar,
           dietary_restrictions: dietary,
           allergies: allergies,
-          is_active: true, 
+          is_active: true,
+          is_default: true,
+          isDefault: true,
         }),
       });
       
