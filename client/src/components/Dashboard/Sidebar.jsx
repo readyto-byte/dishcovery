@@ -41,7 +41,7 @@ const Sidebar = ({ currentPage, setCurrentPage, sidebarOpen, setSidebarOpen, onL
       >
         <div className="relative h-full flex flex-col overflow-y-auto">
           <div className="flex items-center justify-center px-6 pt-10 pb-7">
-            <div className="flex items-center gap-2 cursor-pointer">
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => { setCurrentPage('dashboard'); if (window.innerWidth < 1024) setSidebarOpen(false); }}>
               <div className="w-8 h-8 rounded-lg bg-[#32491B] flex items-center justify-center shadow-md">
                 <i className="fas fa-utensils text-[#F0E6D1] text-sm"></i>
               </div>
@@ -63,12 +63,11 @@ const Sidebar = ({ currentPage, setCurrentPage, sidebarOpen, setSidebarOpen, onL
                   if (window.innerWidth < 1024) setSidebarOpen(false);
                 }}
                 className={`relative flex items-center gap-4 pl-6 pr-0 py-3.5 w-full text-left transition-all duration-200 group cursor-pointer ${
-                  currentPage === item.id ? '' : 'hover:bg-[#B5D098]/40 rounded-r-full'
+                  currentPage === item.id ? '' : 'hover:bg-[#B5D098]/40'
                 }`}
               >
-                {/* Restored Pill Shape */}
                 {currentPage === item.id && (
-                  <span className="absolute inset-y-0 left-0 right-[-2px] bg-[#B5D098] rounded-r-full z-0" />
+                  <span className="absolute inset-y-0 left-0 right-0 bg-[#B5D098] z-0" />
                 )}
 
                 <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-all duration-200 relative z-10 ${

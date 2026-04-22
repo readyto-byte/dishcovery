@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import API_BASE_URL, { apiCall } from "./api/config.js";
 import Sidebar from "./components/Dashboard/Sidebar";
@@ -12,7 +12,9 @@ import HistoryPage from "./components/Dashboard/HistoryPage";
 import ProfilePage from "./components/Dashboard/ProfilePage";
 import SettingsPage from "./components/Dashboard/SettingsPage";
 import FavoritesPage from "./components/Dashboard/FavoritesPage";
+import FirsttimeModal from "./components/Dashboard/FirsttimeModal";
 
+const MEAL_PLAN_STORAGE_KEY = 'dishcovery_meal_plan';
 
 const RecipeDetailsModal = ({ recipe, onClose }) => {
   if (!recipe) return null;
@@ -148,11 +150,75 @@ const DashboardPage = () => {
   const [generateError, setGenerateError] = useState("");
   const [aiResponse, setAiResponse] = useState(null);
   const [lastRequestTime, setLastRequestTime] = useState(0);
-
+  const [showFirstTimeModal, setShowFirstTimeModal] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
   const [activeProfile, setActiveProfile] = useState(null);
+  const [profileRefreshKey, setProfileRefreshKey] = useState(0);
+
+  useEffect(() => {
+    const checkFirstTime = async () => {
+      try {
+
+        const hasSeenModal = localStorage.getItem('dishcovery_first_time_modal_seen');
+        
+        const response = await apiCall("/api/profiles");
+        const profiles = Array.isArray(response?.data) ? response.data : [];
+        
+
+        if (profiles.length > 0) {
+
+          setShowFirstTimeModal(false);
+
+          localStorage.setItem('dishcovery_first_time_modal_seen', 'true');
+          
+          // Set the active profile
+          const active = profiles.find(p => p.is_active === true);
+          if (active) {
+            setActiveProfile({ id: active.id, name: active.name, avatar: active.avatar_url });
+          }
+        } else {
+
+          if (!hasSeenModal) {
+            setShowFirstTimeModal(true);
+          } else {
+            setShowFirstTimeModal(false);
+          }
+        }
+      } catch (error) {
+        console.error("Error checking profiles:", error);
+
+        setShowFirstTimeModal(false);
+      } finally {
+        setIsChecking(false);
+      }
+    };
+    
+    checkFirstTime();
+  }, []);
 
   const handleActiveProfileChange = (profile) => {
     setActiveProfile(profile);
+  };
+
+  const handleFirstTimeModalClose = () => {
+    setShowFirstTimeModal(false);
+    localStorage.setItem('dishcovery_first_time_modal_seen', 'true');
+    // Trigger refresh of profile page
+    setProfileRefreshKey(prev => prev + 1);
+    // Also refresh the active profile by fetching it
+    const fetchActiveProfile = async () => {
+      try {
+        const response = await apiCall("/api/profiles");
+        const profiles = Array.isArray(response?.data) ? response.data : [];
+        const active = profiles.find(p => p.is_active === true);
+        if (active) {
+          setActiveProfile({ id: active.id, name: active.name, avatar: active.avatar_url });
+        }
+      } catch (error) {
+        console.error("Error fetching active profile:", error);
+      }
+    };
+    fetchActiveProfile();
   };
 
   const mapSuggestionToCard = (suggestion, fallbackEstimatedTime, recipeId) => ({
@@ -286,7 +352,7 @@ Return as JSON with the structure above.`;
   };
 
   const handleSelectOption = (selectedRecipe) => {
-    console.log("✅ User selected option:", selectedRecipe.title);
+    console.log("User selected option:", selectedRecipe.title);
     setGeneratedRecipe(selectedRecipe);
     setAiResponse({
       headline: selectedRecipe.title,
@@ -301,7 +367,7 @@ Return as JSON with the structure above.`;
   };
 
   const handleResetRecipe = () => {
-    console.log("🔄 Resetting recipe conversation");
+    console.log("Resetting recipe conversation");
     setAiResponse(null);
     setGeneratedRecipe(null);
     setGenerateError("");
@@ -349,6 +415,7 @@ Return as JSON with the structure above.`;
       case 'profile':
         return (
           <ProfilePage
+            key={profileRefreshKey}
             activeProfile={activeProfile}
             onActiveProfileChange={handleActiveProfileChange}
           />
@@ -370,11 +437,21 @@ Return as JSON with the structure above.`;
       try {
         localStorage.removeItem(MEAL_PLAN_STORAGE_KEY);
       } catch {
-        /* ignore */
       }
       navigate("/", { replace: true });
     }
   };
+
+  if (isChecking) {
+    return (
+      <div className="relative min-h-screen bg-[#B5D098] flex items-center justify-center">
+        <div className="text-[#32491B] text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#32491B] mb-4"></div>
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen bg-[#B5D098]">
@@ -398,6 +475,12 @@ Return as JSON with the structure above.`;
         </div>
       </main>
 
+      {/* First Time Modal */}
+      {showFirstTimeModal && (
+        <FirsttimeModal onClose={handleFirstTimeModalClose} />
+      )}
+
+      {/* Logout Confirmation Modal */}
       {(showLogoutConfirm || isLoggingOut) && (
         <LogoutConfirmModal
           onConfirm={() => {
@@ -409,6 +492,7 @@ Return as JSON with the structure above.`;
         />
       )}
 
+      {/* Recipe Details Modal */}
       {selectedRecipe && (
         <RecipeDetailsModal
           recipe={selectedRecipe}

@@ -67,7 +67,7 @@ const DashboardNavbar = ({ setCurrentPage, sidebarOpen, setSidebarOpen, activePr
 
   return (
     <nav
-      className="px-4 md:px-8 py-4 flex items-center justify-between shadow-lg sticky top-0 z-10 w-full"
+      className="px-4 md:px-8 py-4 flex items-center justify-between shadow-lg sticky top-0 z-30 w-full"
       style={{
         background: "rgba(50, 73, 27, 0.6)",
         backdropFilter: "blur(12px)",
