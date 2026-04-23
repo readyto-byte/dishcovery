@@ -24,9 +24,8 @@ const FavoritesLoadingSkeleton = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div key={i} className="bg-[#F0E6D1] rounded-2xl shadow-lg overflow-hidden border border-gray-100">
-              <div className="h-12 bg-[#587A34] flex items-center justify-between px-4">
-                <div className="skeleton h-6 w-20 opacity-30" />
-                <div className="skeleton h-6 w-24 opacity-30" />
+              <div className="h-12 bg-[#587A34] flex items-center justify-end px-4">
+                <div className="skeleton h-6 w-6 rounded-full opacity-30" />
               </div>
               <div className="p-5 space-y-3">
                 <div className="skeleton h-6 w-3/4 opacity-30" />
@@ -118,9 +117,6 @@ const FavoritesPage = ({ onViewRecipe }) => {
               My <span className="text-[#B5D098]">Favorites</span>
             </h1>
             <div className="flex items-center mt-1">
-              <div className="w-6 h-6 bg-[#B5D098]/30 rounded-full flex items-center justify-center mr-2">
-                <i className="fas fa-heart text-[#B5D098] text-[10px]"></i>
-              </div>
               <p className="text-[#B5D098] text-sm">
                 {favorites.length} saved {favorites.length === 1 ? 'recipe' : 'recipes'}
               </p>
@@ -165,18 +161,16 @@ const FavoritesPage = ({ onViewRecipe }) => {
                 key={recipe.id}
                 className="bg-[#F0E6D1] rounded-2xl shadow-lg overflow-hidden hover:scale-105 transition-all duration-300"
               >
-                <div className="relative h-12 bg-[#587A34] flex items-center justify-between px-4">
-                  <div className="bg-red-500 rounded-full px-3 py-1 text-xs font-bold text-white">
-                    <i className="fas fa-heart mr-1"></i> Favorite
-                  </div>
+                <div className="relative h-12 bg-[#587A34] flex items-center justify-end px-4">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       removeFromFavorites(recipe.id);
                     }}
-                    className="bg-white/20 hover:bg-red-500 rounded-full px-3 py-1 text-xs font-bold text-white transition-all cursor-pointer"
+                    className="bg-white/20 hover:bg-red-500 rounded-full p-2 text-white transition-all cursor-pointer"
+                    title="Remove from favorites"
                   >
-                    <i className="fas fa-trash-alt mr-1"></i> Remove
+                    <i className="fas fa-trash-alt"></i>
                   </button>
                 </div>
                 <div className="p-5">
