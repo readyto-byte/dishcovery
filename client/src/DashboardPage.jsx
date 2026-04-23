@@ -500,7 +500,7 @@ Return as JSON with the structure above.`;
   if (isChecking) return <LoadingScreen />;
 
   return (
-    <div className="relative min-h-screen bg-[#B5D098]">
+    <div className="flex h-screen overflow-hidden bg-[#B5D098]">
       <Sidebar
         currentPage={currentPage}
         setCurrentPage={setCurrentPage}
@@ -508,7 +508,7 @@ Return as JSON with the structure above.`;
         setSidebarOpen={setSidebarOpen}
         onLogout={() => setShowLogoutConfirm(true)}
       />
-      <main style={{ marginLeft: sidebarOpen ? '18rem' : '0' }} className="transition-all duration-300">
+      <main style={{ marginLeft: sidebarOpen ? '18rem' : '0' }} className="flex-1 h-screen overflow-y-auto transition-all duration-300">
         <DashboardNavbar
           setCurrentPage={setCurrentPage}
           sidebarOpen={sidebarOpen}
