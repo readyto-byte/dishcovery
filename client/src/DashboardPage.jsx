@@ -501,12 +501,12 @@ const DashboardPage = () => {
               />
             )}
             {!showOptions && (isGenerating || generatedRecipe) && (
-              <RecipeCard recipeData={generatedRecipe || {}} isLoading={isGenerating} />
+              <RecipeCard recipeData={generatedRecipe || {}} isLoading={isGenerating} activeProfile={activeProfile} />
             )}
           </>
         );
       case 'history':
-        return <HistoryPage onViewRecipe={setSelectedRecipe} />;
+        return <HistoryPage onViewRecipe={setSelectedRecipe} activeProfile={activeProfile} />;
       case 'meal-plan':
         return <MealPlanPage onViewRecipe={setSelectedRecipe} activeProfile={activeProfile} />;
       case 'profile':
@@ -520,7 +520,7 @@ const DashboardPage = () => {
       case 'settings':
         return <SettingsPage />;
       case 'favorites':
-        return <FavoritesPage onViewRecipe={setSelectedRecipe} />;
+        return <FavoritesPage onViewRecipe={setSelectedRecipe} activeProfile={activeProfile} />;
       default:
         return null;
     }
