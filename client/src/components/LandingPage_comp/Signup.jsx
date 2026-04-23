@@ -2,6 +2,14 @@ import { useState } from "react";
 import { Eye, EyeOff, X, Mail, CheckCircle2, Check } from "lucide-react";
 import API_BASE_URL from "../../api/config.js";
 
+const NAME_ALLOWED_REGEX = /^[A-Za-z]+(?:[ '-][A-Za-z]+)*$/;
+
+const normalizeNameInput = (value) => {
+  const trimmed = String(value || "");
+  // allow letters, space, apostrophe, hyphen; strip everything else (numbers, symbols)
+  return trimmed.replace(/[^A-Za-z '-]/g, "");
+};
+
 const Signup = ({ isOpen, onClose, onSwitch, onSignupSuccess }) => {
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -23,7 +31,7 @@ const Signup = ({ isOpen, onClose, onSwitch, onSignupSuccess }) => {
     uppercase: /[A-Z]/.test(password),
     lowercase: /[a-z]/.test(password),
     number:    /\d/.test(password),
-    special:   /[!@#$%^&*()\-_=+\[\]{}|;':",.<>?/`~\\]/.test(password),
+    special:   /[!@#$%^&*()_=+[\]{}|;':",.<>?/`~\\-]/.test(password),
   };
   const passwordValid = Object.values(pwChecks).every(Boolean);
   const passwordsMatch = confirmPassword.length > 0 && confirmPassword === password;
@@ -57,7 +65,10 @@ const Signup = ({ isOpen, onClose, onSwitch, onSignupSuccess }) => {
     e.preventDefault();
     setError("");
 
-    if (!email || !username || !firstName || !lastName || !password || !confirmPassword) {
+    const resolvedFirst = firstName.trim();
+    const resolvedLast = lastName.trim();
+
+    if (!email || !username || !resolvedFirst || !resolvedLast || !password || !confirmPassword) {
       setError("Please fill in all fields.");
       return;
     }
@@ -71,6 +82,11 @@ const Signup = ({ isOpen, onClose, onSwitch, onSignupSuccess }) => {
     const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
     if (!usernameRegex.test(username.trim())) {
       setError("Username must be 3–20 characters and contain only letters, numbers, or underscores.");
+      return;
+    }
+
+    if (!NAME_ALLOWED_REGEX.test(resolvedFirst) || !NAME_ALLOWED_REGEX.test(resolvedLast)) {
+      setError("First and last name must contain letters only (spaces, hyphens, and apostrophes are allowed).");
       return;
     }
 
@@ -89,7 +105,7 @@ const Signup = ({ isOpen, onClose, onSwitch, onSignupSuccess }) => {
       const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, username, firstName, lastName, password }),
+        body: JSON.stringify({ email, username, firstName: resolvedFirst, lastName: resolvedLast, password }),
       });
 
       const responseText = await response.text();
@@ -113,6 +129,9 @@ const Signup = ({ isOpen, onClose, onSwitch, onSignupSuccess }) => {
       setUserEmail(email);
       setShowSuccessModal(true);
       resetFormState();
+      if (typeof onSignupSuccess === "function") {
+        onSignupSuccess();
+      }
     } catch (err) {
       if (err instanceof TypeError && err.message.toLowerCase().includes("fetch")) {
         setError("Network error: cannot reach API. Start backend (`npm run dev` in project root) and restart frontend dev server.");
@@ -169,7 +188,7 @@ const Signup = ({ isOpen, onClose, onSwitch, onSignupSuccess }) => {
                 type="text"
                 placeholder="First name"
                 value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
+                onChange={(e) => setFirstName(normalizeNameInput(e.target.value))}
                 className={fieldOk}
                 autoComplete="given-name"
               />
@@ -177,7 +196,7 @@ const Signup = ({ isOpen, onClose, onSwitch, onSignupSuccess }) => {
                 type="text"
                 placeholder="Last name"
                 value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
+                onChange={(e) => setLastName(normalizeNameInput(e.target.value))}
                 className={fieldOk}
                 autoComplete="family-name"
               />
