@@ -295,8 +295,70 @@ async function cacheRecipeResponse(searchQuery, response) {
   return data;
 }
 
+async function generateMealRecipeDetail(title) {
+  if (!title || typeof title !== 'string' || !title.trim()) {
+    throw new Error('A meal title is required.');
+  }
+
+  const prompt = `Give me a detailed recipe for "${title.trim()}". Return ONLY a raw JSON object with no markdown, no backticks, no explanation. Use exactly these fields:
+{
+  "prepTime": "X min",
+  "cookTime": "X min",
+  "servings": "X serving(s)",
+  "difficulty": "Easy",
+  "description": "one sentence description",
+  "ingredients": ["ingredient 1", "ingredient 2"],
+  "instructions": ["step 1", "step 2"],
+  "tags": ["tag1", "tag2"]
+}`;
+
+  let result = null;
+  let lastError = null;
+
+  for (let attempt = 0; attempt <= GENERATION_MAX_RETRIES; attempt += 1) {
+    try {
+      result = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+          thinkingConfig: {
+            thinkingBudget: 0,
+          },
+        },
+      });
+      lastError = null;
+      break;
+    } catch (error) {
+      lastError = error;
+      if (attempt >= GENERATION_MAX_RETRIES || !isRetryableAiError(error)) {
+        break;
+      }
+      const backoffMs = getRetryDelayMs(error, attempt);
+      await sleep(backoffMs);
+    }
+  }
+
+  if (!result && lastError) {
+    if (isFreeTierQuotaError(lastError)) {
+      throw new Error(
+        'Gemini free-tier request quota reached. Please wait for quota reset or upgrade your plan.'
+      );
+    }
+    throw lastError;
+  }
+
+  const text = result.text;
+  try {
+    const cleaned = extractJsonObject(text);
+    return JSON.parse(cleaned);
+  } catch {
+    throw new Error('Failed to parse meal recipe detail from AI: ' + text);
+  }
+}
+
 module.exports = {
   searchRecipes,
   getCachedRecipeResponse,
   cacheRecipeResponse,
+  generateMealRecipeDetail,
 };

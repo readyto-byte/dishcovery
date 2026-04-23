@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { searchRecipes, getCachedRecipeResponse, cacheRecipeResponse } = require('../controllers/recipes');
+const { searchRecipes, getCachedRecipeResponse, cacheRecipeResponse, generateMealRecipeDetail } = require('../controllers/recipes');
 const { addHistoryRecord } = require('../controllers/history');
 
 function normalizeProfileForCache(profile = {}) {
@@ -82,6 +82,25 @@ router.post('/', async (req, res) => {
     });
 
     res.json({ success: true, response: responseWithIds });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.post('/meal-detail', async (req, res) => {
+  try {
+    const accountId = req.user?.id;
+    if (!accountId) {
+      return res.status(401).json({ success: false, error: 'Authentication required' });
+    }
+
+    const { title } = req.body;
+    if (!title || typeof title !== 'string' || !title.trim()) {
+      return res.status(400).json({ success: false, error: 'A meal title is required.' });
+    }
+
+    const detail = await generateMealRecipeDetail(title);
+    res.json({ success: true, detail });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
