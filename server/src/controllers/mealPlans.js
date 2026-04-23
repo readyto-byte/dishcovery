@@ -5,7 +5,6 @@ const { searchRecipes } = require('./recipes');
 // Keep `meal_plans` as fallback for older/newer deployments.
 const MEAL_PLAN_TABLE_PRIMARY = 'meal_plan';
 const MEAL_PLAN_TABLE_FALLBACK = 'meal_plans';
-const APPROPRIATE_INPUT_ERROR = 'Inputs must be appropriate.';
 
 const ALLOWED_MEAL_PLAN_FIELDS = new Set([
   'age', 'sex', 'sexGender', 'height', 'height_cm', 'weight', 'weight_kg',
@@ -23,9 +22,6 @@ const ALLOWED_MEAL_PLAN_FIELDS = new Set([
 
 const ALLOWED_KITCHEN_EQUIPMENT_FIELDS = new Set(['stove', 'microwave', 'airFryer', 'oven']);
 
-const SQL_INJECTION_PATTERN = /(\b(select|insert|update|delete|drop|truncate|alter|create|union|exec|execute|grant|revoke)\b|--|\/\*|\*\/|;\s*$|\bor\s+1\s*=\s*1\b|\band\s+1\s*=\s*1\b)/i;
-const INAPPROPRIATE_PATTERN = /(\b(rocks?|sand|pen|space chicken|moon rock cheese)\b|\b(how many moons|capital of france|meaning of life)\b|\b(bomb|gun|drug|naked|kidnap|kill|death|die|murder|suicide)\b|\b(build a house|fix a car|program a computer)\b|\b(kill my (wife|husband|child))\b)/i;
-const RANDOM_SYMBOL_NOISE_PATTERN = /[^a-zA-Z0-9\s,.'()\-:/+$%]/;
 
 function round2(n) {
   if (n == null || !Number.isFinite(n)) return null;
@@ -174,21 +170,6 @@ function validateAllowedFields(body = {}) {
   }
 }
 
-function hasInappropriateOrInjectionContent(value) {
-  if (!hasValue(value)) return false;
-  const text = String(value).trim();
-  return SQL_INJECTION_PATTERN.test(text) || INAPPROPRIATE_PATTERN.test(text);
-}
-
-function hasRandomCharacterNoise(value) {
-  if (!hasValue(value)) return false;
-  const text = String(value).trim();
-  if (text.length > 180) return true;
-  if (RANDOM_SYMBOL_NOISE_PATTERN.test(text)) return true;
-  if (/([^\w\s])\1{2,}/.test(text)) return true;
-  return false;
-}
-
 function isLikelyJumbledToken(token) {
   const clean = String(token || '').toLowerCase().replace(/[^a-z]/g, '');
   if (clean.length < 4) return false;
@@ -230,52 +211,6 @@ function validateMealPlanBody(body = {}) {
   validateAllowedFields(body);
 
   const errors = [];
-  const strictTextFields = [
-    body.goal,
-    body.activityLevel ?? body.activity_level,
-    body.preferredCuisine ?? body.cuisine_pref,
-    body.foodBudget ?? body.budget,
-    body.maxCookingTime ?? body.cooking_time,
-    body.cookingSkillLevel ?? body.cooking_skill,
-    body.carbPreference ?? body.carb_goal,
-    body.fatPreference ?? body.fat_goal,
-    body.allergies,
-    body.medicalConditions ?? body.medical_condition,
-    body.foodsDislike ?? body.dislikes,
-    body.mealSchedule ?? body.schedule,
-    body.sexGender ?? body.sex,
-    body.height ?? body.height_cm,
-    body.weight ?? body.weight_kg,
-  ];
-
-  if (strictTextFields.some((field) => hasInappropriateOrInjectionContent(field))) {
-    const error = new Error(APPROPRIATE_INPUT_ERROR);
-    error.statusCode = 400;
-    throw error;
-  }
-
-  if (strictTextFields.some((field) => hasRandomCharacterNoise(field))) {
-    const error = new Error(APPROPRIATE_INPUT_ERROR);
-    error.statusCode = 400;
-    throw error;
-  }
-
-  const humanWordFields = [
-    body.goal,
-    body.activityLevel ?? body.activity_level,
-    body.preferredCuisine ?? body.cuisine_pref,
-    body.cookingSkillLevel ?? body.cooking_skill,
-    body.carbPreference ?? body.carb_goal,
-    body.fatPreference ?? body.fat_goal,
-    body.allergies,
-    body.medicalConditions ?? body.medical_condition,
-    body.foodsDislike ?? body.dislikes,
-  ];
-  if (humanWordFields.some((field) => hasLikelyJumbledText(field))) {
-    const error = new Error(APPROPRIATE_INPUT_ERROR);
-    error.statusCode = 400;
-    throw error;
-  }
 
   if (hasValue(body.age)) {
     const parsedAge = parseAge(body.age);
