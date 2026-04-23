@@ -73,7 +73,6 @@ const Signup = ({ isOpen, onClose, onSwitch, onSignupSuccess }) => {
       return;
     }
 
-<<<<<<< Updated upstream
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
       setError("Please enter a valid email address.");
@@ -83,10 +82,8 @@ const Signup = ({ isOpen, onClose, onSwitch, onSignupSuccess }) => {
     const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
     if (!usernameRegex.test(username.trim())) {
       setError("Username must be 3–20 characters and contain only letters, numbers, or underscores.");
-=======
     if (!NAME_ALLOWED_REGEX.test(resolvedFirst) || !NAME_ALLOWED_REGEX.test(resolvedLast)) {
       setError("First and last name must contain letters only (spaces, hyphens, and apostrophes are allowed).");
->>>>>>> Stashed changes
       return;
     }
 
@@ -185,26 +182,16 @@ const Signup = ({ isOpen, onClose, onSwitch, onSignupSuccess }) => {
                 type="text"
                 placeholder="First name"
                 value={firstName}
-<<<<<<< Updated upstream
-                onChange={(e) => setFirstName(e.target.value)}
-                className={fieldOk}
-=======
                 onChange={(e) => setFirstName(normalizeNameInput(e.target.value))}
                 className={fieldClassName}
->>>>>>> Stashed changes
                 autoComplete="given-name"
               />
               <input
                 type="text"
                 placeholder="Last name"
                 value={lastName}
-<<<<<<< Updated upstream
-                onChange={(e) => setLastName(e.target.value)}
-                className={fieldOk}
-=======
                 onChange={(e) => setLastName(normalizeNameInput(e.target.value))}
                 className={fieldClassName}
->>>>>>> Stashed changes
                 autoComplete="family-name"
               />
             </div>
