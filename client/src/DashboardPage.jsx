@@ -551,7 +551,7 @@ const DashboardPage = () => {
         setSidebarOpen={setSidebarOpen}
         onLogout={() => setShowLogoutConfirm(true)}
       />
-      <main style={{ marginLeft: sidebarOpen ? '18rem' : '0' }} className="flex-1 h-screen overflow-y-auto transition-all duration-300">
+      <main className="flex-1 h-screen overflow-y-auto transition-all duration-300 lg:ml-[272px]">
         <DashboardNavbar
           setCurrentPage={setCurrentPage}
           sidebarOpen={sidebarOpen}
