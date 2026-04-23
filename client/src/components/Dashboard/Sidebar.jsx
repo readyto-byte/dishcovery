@@ -34,10 +34,10 @@ const Sidebar = ({ currentPage, setCurrentPage, sidebarOpen, setSidebarOpen, onL
       />
 
       <aside
-        className={`fixed top-0 left-0 h-[100dvh] z-50 transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 left-0 h-screen z-50 transition-transform duration-300 ease-in-out overflow-hidden ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0`}
-        style={{ width: '272px', background: 'linear-gradient(160deg, #f7f0e3 0%, #ede0c4 100%)' }}
+        style={{ width: '272px', minHeight: '100vh', background: 'linear-gradient(160deg, #f7f0e3 0%, #ede0c4 100%)' }}
       >
         <div className="relative h-full flex flex-col overflow-hidden">
           <div className="flex items-center justify-center px-6 pt-10 pb-7">
