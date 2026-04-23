@@ -203,7 +203,7 @@ function validateMealPlanBody(body = {}) {
 
 function mealPlanPromptFromBody(body = {}) {
   return [
-    'Create a personalized one-day meal plan with exactly 3 meals: breakfast, lunch, and dinner.',
+    '[MEAL PLAN] Create a personalized one-day meal plan with exactly 3 meals: breakfast, lunch, and dinner.',
     'User preferences:',
     `- Age: ${body.age || 'not specified'}`,
     `- Sex/Gender: ${body.sexGender || 'not specified'}`,

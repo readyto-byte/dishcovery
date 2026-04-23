@@ -23,6 +23,12 @@ function normalizeProfileForCache(profile = {}) {
   };
 }
 
+function hasRecipeError(errorValue) {
+  if (errorValue === null || errorValue === undefined) return false;
+  const normalized = String(errorValue).trim().toLowerCase();
+  return normalized !== '' && normalized !== 'null';
+}
+
 router.post('/', async (req, res) => {
   try {
     const accountId = req.user?.id;
@@ -63,6 +69,23 @@ router.post('/', async (req, res) => {
       conversation,
       avoidTitles: resolvedAvoidTitles,
     });
+
+    if (hasRecipeError(response?.error)) {
+      const blockedResponse = {
+        ...response,
+        suggestions: [],
+      };
+
+      await addHistoryRecord(accountId, {
+        search_query: query,
+        recipe_id: null,
+        source_api: 'gemini-2.5-flash',
+        output_response: blockedResponse,
+      });
+
+      return res.json({ success: true, response: blockedResponse });
+    }
+
     const cachedRows = await cacheRecipeResponse(cacheQuery, response);
     const responseWithIds = {
       ...response,
