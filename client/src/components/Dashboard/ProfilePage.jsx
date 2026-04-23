@@ -257,6 +257,10 @@ const ProfileModal = ({ profile, onSave, onClose }) => {
   const handleSave = () => {
     if (!name.trim()) { setFormError("Name is required."); return; }
     if (!dateOfBirth) { setFormError("Date of birth is required."); return; }
+    if (dateOfBirth > new Date().toISOString().split("T")[0]) {
+    setFormError("Date of birth cannot be in the future.");
+    return;
+  }
     setFormError("");
     onSave({ ...(profile || {}), name: name.trim(), dateOfBirth, avatar, dietaryRestrictions: dietary, allergies });
   };
@@ -284,6 +288,7 @@ const ProfileModal = ({ profile, onSave, onClose }) => {
             <label className="block text-[#3a5220] text-xs font-semibold uppercase tracking-wider mb-1">Date of Birth</label>
             <input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} max={new Date().toISOString().split("T")[0]}
               className="w-full bg-white border border-[#587A34]/30 rounded-lg px-3 py-2 text-[#3a5220] text-sm focus:outline-none focus:ring-2 focus:ring-[#587A34]/50" />
+              {formError && <p className="mt-1.5 text-xs text-red-600">{formError}</p>}
           </div>
 
           <div>
@@ -323,8 +328,6 @@ const ProfileModal = ({ profile, onSave, onClose }) => {
             </div>
             <CustomTagInput onAdd={(val) => addCustom(allergies, setAllergies, val)} placeholder="e.g. Sesame, Mustard..." accentClass="bg-red-500 text-white border-red-500" />
           </div>
-
-          {formError ? <p className="text-sm text-red-600">{formError}</p> : null}
 
           <div className="flex gap-3 pt-1">
             <button onClick={onClose} className="flex-1 py-2 rounded-lg border border-[#587A34]/40 text-[#587A34] text-sm font-semibold hover:bg-[#587A34]/10 transition-colors">Cancel</button>
