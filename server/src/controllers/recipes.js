@@ -169,6 +169,7 @@ Return ONLY a valid JSON object with this exact structure:
     {
       "title": "Recipe Title",
       "description": "Brief description under 100 words",
+      "difficulty": "Easy",
       "cookTimeMin": 30,
       "servings": "4 servings",
       "estimatedCostPhp": 150,
@@ -187,13 +188,12 @@ Return ONLY a valid JSON object with this exact structure:
   ]
 }
 
-- Make sure any foreign words from any language is translated to English and use English for prompting and generating responses.
-- Make sure any foreign words from any language is translated to English and it must follow the following restrictions and conditions given.
-- DO NOT RETURN THE ERROR MESSAGE This is either an error message or null. If it is an error message, return it here. If it is null, return null."
+- Make sure any foreign words from any language are translated to English and responses remain in English.
 - ALWAYS include "header" as a friendly compliment or short response.
 - "header" must be fewer than 7 words.
 - Examples of valid "header": "Great choice!", "Lovely taste!", "Quick and easy!".
 - Always return exactly ${numOptions} suggestions.
+- ALWAYS include "difficulty" as one of: "Easy", "Medium", "Hard".
 - Each recipe must include ingredient measurements in "keyIngredients" (for example, "1/4 cup", "2 tsp", "3 slices").
 - Keep each recipe "description" under 100 words.
 - ALWAYS include nutritionalInfo with calories (as number), protein, carbs, fat, and fiber (as strings with units like "15g").
