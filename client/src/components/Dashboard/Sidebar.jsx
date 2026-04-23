@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import dcLogo from "../../assets/DC.png";
 
 const Sidebar = ({ currentPage, setCurrentPage, sidebarOpen, setSidebarOpen, onLogout }) => {
 
@@ -40,11 +41,24 @@ const Sidebar = ({ currentPage, setCurrentPage, sidebarOpen, setSidebarOpen, onL
         style={{ width: '272px', minHeight: '100vh', background: 'linear-gradient(160deg, #f7f0e3 0%, #ede0c4 100%)' }}
       >
         <div className="relative h-full flex flex-col overflow-hidden">
+
+          {/* 🔥 LOGO SECTION FIXED HERE */}
           <div className="flex items-center justify-center px-6 pt-10 pb-7">
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => { setCurrentPage('dashboard'); if (window.innerWidth < 1024) setSidebarOpen(false); }}>
-              <div className="w-8 h-8 rounded-lg bg-[#32491B] flex items-center justify-center shadow-md">
-                <i className="fas fa-utensils text-[#F0E6D1] text-sm"></i>
+            <div 
+              className="flex items-center gap-2 cursor-pointer"
+              onClick={() => { 
+                setCurrentPage('dashboard'); 
+                if (window.innerWidth < 1024) setSidebarOpen(false); 
+              }}
+            >
+              <div className="w-8 h-8 rounded-lg overflow-hidden bg-[#32491B] flex items-center justify-center shadow-md">
+                <img 
+                  src={dcLogo}
+                  alt="Dishcovery Logo"
+                  className="w-full h-full object-cover"
+                />
               </div>
+
               <div className="font-lemon font-bold text-2xl">
                 <span className="text-[#1B211A]">Dish</span>
                 <span className="text-[#839705]">covery</span>
