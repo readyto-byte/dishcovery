@@ -3,6 +3,8 @@ import {Mail,User,Lock,Trash2,Eye,EyeOff,CheckCircle,XCircle,AlertTriangle,Save,
 import heroBg from "../../assets/hero-bg.jpg";
 import { apiCall } from "../../api/config";
 
+const NAME_ALLOWED_REGEX = /^[A-Za-z]+(?:[ '\-][A-Za-z]+)*$/;
+
 const inputClass = (hasError) =>
   `w-full px-3 py-2 text-sm rounded-md border ${
     hasError ? "border-red-400" : "border-[#c8b99a]"
@@ -285,6 +287,9 @@ const SettingsPage = () => {
   const handleUpdateIdentity = async (field, value) => {
     if (!value.trim()) return setErrors({ [field]: `${field} cannot be empty` });
     if (value.length < 2) return setErrors({ [field]: `${field} must be at least 2 characters` });
+    if ((field === "firstName" || field === "lastName") && !NAME_ALLOWED_REGEX.test(value.trim())) {
+      return setErrors({ [field]: "Name must contain letters only (spaces, hyphens, and apostrophes are allowed)." });
+    }
     setIsLoading(true);
     try {
       let payload = {};

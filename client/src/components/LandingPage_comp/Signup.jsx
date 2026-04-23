@@ -2,6 +2,14 @@ import { useState } from "react";
 import { Eye, EyeOff, X, Mail, CheckCircle2, Check } from "lucide-react";
 import API_BASE_URL from "../../api/config.js";
 
+const NAME_ALLOWED_REGEX = /^[A-Za-z]+(?:[ '\-][A-Za-z]+)*$/;
+
+const normalizeNameInput = (value) => {
+  const trimmed = String(value || "");
+  // allow letters, space, apostrophe, hyphen; strip everything else (numbers, symbols)
+  return trimmed.replace(/[^A-Za-z '\-]/g, "");
+};
+
 const Signup = ({ isOpen, onClose, onSwitch, onSignupSuccess }) => {
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -57,11 +65,15 @@ const Signup = ({ isOpen, onClose, onSwitch, onSignupSuccess }) => {
     e.preventDefault();
     setError("");
 
-    if (!email || !username || !firstName || !lastName || !password || !confirmPassword) {
+    const resolvedFirst = firstName.trim();
+    const resolvedLast = lastName.trim();
+
+    if (!email || !username || !resolvedFirst || !resolvedLast || !password || !confirmPassword) {
       setError("Please fill in all fields.");
       return;
     }
 
+<<<<<<< Updated upstream
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
       setError("Please enter a valid email address.");
@@ -71,6 +83,10 @@ const Signup = ({ isOpen, onClose, onSwitch, onSignupSuccess }) => {
     const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
     if (!usernameRegex.test(username.trim())) {
       setError("Username must be 3–20 characters and contain only letters, numbers, or underscores.");
+=======
+    if (!NAME_ALLOWED_REGEX.test(resolvedFirst) || !NAME_ALLOWED_REGEX.test(resolvedLast)) {
+      setError("First and last name must contain letters only (spaces, hyphens, and apostrophes are allowed).");
+>>>>>>> Stashed changes
       return;
     }
 
@@ -89,7 +105,7 @@ const Signup = ({ isOpen, onClose, onSwitch, onSignupSuccess }) => {
       const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, username, firstName, lastName, password }),
+        body: JSON.stringify({ email, username, firstName: resolvedFirst, lastName: resolvedLast, password }),
       });
 
       const responseText = await response.text();
@@ -169,16 +185,26 @@ const Signup = ({ isOpen, onClose, onSwitch, onSignupSuccess }) => {
                 type="text"
                 placeholder="First name"
                 value={firstName}
+<<<<<<< Updated upstream
                 onChange={(e) => setFirstName(e.target.value)}
                 className={fieldOk}
+=======
+                onChange={(e) => setFirstName(normalizeNameInput(e.target.value))}
+                className={fieldClassName}
+>>>>>>> Stashed changes
                 autoComplete="given-name"
               />
               <input
                 type="text"
                 placeholder="Last name"
                 value={lastName}
+<<<<<<< Updated upstream
                 onChange={(e) => setLastName(e.target.value)}
                 className={fieldOk}
+=======
+                onChange={(e) => setLastName(normalizeNameInput(e.target.value))}
+                className={fieldClassName}
+>>>>>>> Stashed changes
                 autoComplete="family-name"
               />
             </div>
