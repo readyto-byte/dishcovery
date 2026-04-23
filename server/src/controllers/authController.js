@@ -18,6 +18,12 @@ function getEmailRedirectToWithName(firstName) {
     redirectUrl.searchParams.set('name', String(firstName).trim());
   }
   return redirectUrl.toString();
+function normalizeAccountStatus(status) {
+  if (typeof status !== 'string') {
+    return ''
+  }
+
+  return status.trim().replace(/^"+|"+$/g, '').toUpperCase()
 }
 
 // Sign Up
@@ -50,8 +56,8 @@ async function signUp({ email, password, firstName, lastName, username }) {
       first_name: firstName,
       last_name: lastName,
       username: normalizedUsername,
-      // Account starts unverified until confirmation email is completed.
       is_verified: false,
+      status: 'ACTIVE',
     }])
     .single()
 
@@ -119,21 +125,20 @@ async function logIn(loginInfo, password) {
   }
 
   let accountData = null
-  const { data: account, error: accountError } = await supabaseAdmin
-    .from('account')
-    .select('*')
-    .eq('id', authData.user.id)
-    .single()
-
-  if (accountError) {
-    await supabase.auth.signOut()
-    throw accountError
+  if (authData?.user?.id) {
+    const { data, error } = await supabaseAdmin
+      .from('account')
+      .select('*')
+      .eq('id', authData.user.id)
+      .single()
+    if (error) {
+      throw error
+    }
+    accountData = data
   }
 
-  accountData = account
-
-  // Keep account.is_verified aligned with Auth confirmation state.
-  if (!accountData.is_verified && isAuthVerified) {
+  // Keep account.is_verified aligned with Supabase Auth (email confirmed).
+  if (accountData && authData.user.email_confirmed_at && !accountData.is_verified && normalizeAccountStatus(accountData?.status) !== 'INACTIVE') {
     const { data: updated, error: updateError } = await supabaseAdmin
       .from('account')
       .update({ is_verified: true })
@@ -147,10 +152,23 @@ async function logIn(loginInfo, password) {
     accountData = updated
   }
 
-  const isAccountVerified = Boolean(accountData?.is_verified)
-  if (!isAuthVerified || !isAccountVerified) {
+  const normalizedStatus = normalizeAccountStatus(accountData?.status)
+  const isRestricted = normalizedStatus === 'RESTRICTED'
+  const isActive = normalizedStatus === 'ACTIVE'
+
+  if (normalizedStatus === 'INACTIVE') {
     await supabase.auth.signOut()
-    throw new Error('Account not verified. Please confirm your email first.')
+    throw new Error('Account is deleted.')
+  }
+
+  if (!accountData?.is_verified) {
+    await supabase.auth.signOut()
+    throw new Error('Account not verified. Please check your email.')
+  }
+
+  if (!isActive || isRestricted) {
+    await supabase.auth.signOut()
+    throw new Error('Account is not active.')
   }
 
   return { auth: authData, account: accountData }
