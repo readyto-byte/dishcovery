@@ -4,7 +4,7 @@ const crypto = require('crypto');
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-const GENERATION_MAX_RETRIES = 3;
+const GENERATION_MAX_RETRIES = 2;
 const RETRYABLE_ERROR_PATTERNS = /(unavailable|high demand|try again later|503|429|rate limit|resource exhausted|quota exceeded|too many requests)/i;
 
 function buildConversationText(conversation = []) {
@@ -76,6 +76,7 @@ function isFreeTierQuotaError(error) {
 }
 
 async function searchRecipes({ profiles, promptText = '', history = [], numOptions = 3, avoidTitles = [] }) {
+  numOptions = Math.min(Number(numOptions) || 3, 3);
   console.log('searchRecipes input:', { profileCount: profiles?.length ?? 0, historyCount: history?.length ?? 0, numOptions, avoidTitlesCount: avoidTitles?.length ?? 0 });
   let profileInfo = 'No profiles specified.';
   if (profiles && profiles.length > 0) {
