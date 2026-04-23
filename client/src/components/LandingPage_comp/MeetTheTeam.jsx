@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 import TyroneImg from '../../assets/Tyrone.jpg';
 import RachelleImg from '../../assets/Rachelle.jpg';
-import GinoImg from '../../assets/Gino.jpg';
+import GinoImg from '../../assets/Gino.png';
 import MauiImg from '../../assets/Maui.jpg';
 import JosefImg from '../../assets/Josef.png';
 
