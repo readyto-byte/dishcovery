@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import heroBg from "../../assets/hero-bg.jpg";
-import pic1 from "../../assets/placeholder1.jpg";
-import pic2 from "../../assets/placeholder2.jpg";
+import pic1 from "../../assets/placeholder1.png";
+import pic2 from "../../assets/placeholder2.png";
 import { ArrowRight } from "lucide-react";
 
 const HeroSection = () => {

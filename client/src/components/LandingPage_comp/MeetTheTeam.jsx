@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 import TyroneImg from '../../assets/Tyrone.jpg';
 import RachelleImg from '../../assets/Rachelle.jpg';
-import GinoImg from '../../assets/Gino.jpg';
+import GinoImg from '../../assets/Gino.png';
 import MauiImg from '../../assets/Maui.jpg';
 import JosefImg from '../../assets/Josef.png';
 
@@ -100,57 +100,44 @@ const MeetTheTeam = () => {
     setTimeout(() => setIsAnimating(false), 600);
   };
 
-  // For mobile: show 3 members (-1, 0, 1)
-  // For desktop: show 5 members (-2, -1, 0, 1, 2)
   const getVisibleMembers = () => {
     const members = [];
     const total = orderedTeam.length;
-    const range = isMobile ? 1 : 2;
-    for (let offset = -range; offset <= range; offset++) {
+    for (let offset = -2; offset <= 2; offset++) {
       let index = (activeIndex + offset + total) % total;
       members.push({ ...orderedTeam[index], position: offset, isCenter: offset === 0, originalIndex: index });
     }
     return members;
   };
 
-  // Proper spacing to avoid overlap - using percentage-based positioning
   const getItemStyle = (position) => {
+    const absPosition = Math.abs(position);
     if (position === 0) {
       return { 
-        transform: 'translateX(0px) scale(1) translateY(-8px)', 
+        transform: 'translateX(0px) scale(1) translateY(-5px)', 
         opacity: 1, 
         zIndex: 30,
-        position: 'relative',
         transition: 'all 0.6s cubic-bezier(0.34, 1.2, 0.64, 1)'
       };
     }
-    if (Math.abs(position) === 1) {
-      // First side members - properly spaced
-      const translateX = position === -1 
-        ? (isMobile ? '-55%' : '-120px')
-        : (isMobile ? '55%' : '120px');
-      const rotate = position === -1 ? '-4deg' : '4deg';
+    if (absPosition === 1) {
+      const translateX = position === -1 ? (isMobile ? -70 : -140) : (isMobile ? 70 : 140);
+      const rotate = position === -1 ? '-3deg' : '3deg';
       return { 
-        transform: `translateX(${translateX}) scale(${isMobile ? 0.8 : 0.85}) translateY(8px) rotate(${rotate})`, 
-        opacity: isMobile ? 0.85 : 0.9, 
+        transform: `translateX(${translateX}px) scale(${isMobile ? 0.7 : 0.85}) translateY(5px) rotate(${rotate})`, 
+        opacity: isMobile ? 0.5 : 0.8, 
         zIndex: 20,
-        position: 'relative',
         transition: 'all 0.6s cubic-bezier(0.34, 1.2, 0.64, 1)'
       };
     }
-    if (Math.abs(position) === 2) {
-      // Outer members - only visible on desktop
-      const translateX = position === -2 ? '-220px' : '220px';
-      const rotate = position === -2 ? '-8deg' : '8deg';
-      return { 
-        transform: `translateX(${translateX}) scale(0.7) translateY(16px) rotate(${rotate})`, 
-        opacity: 0.5, 
-        zIndex: 10,
-        position: 'relative',
-        transition: 'all 0.6s cubic-bezier(0.34, 1.2, 0.64, 1)'
-      };
-    }
-    return {};
+    const translateX = position === -2 ? (isMobile ? -120 : -260) : (isMobile ? 120 : 260);
+    const rotate = position === -2 ? '-8deg' : '8deg';
+    return { 
+      transform: `translateX(${translateX}px) scale(${isMobile ? 0.5 : 0.65}) translateY(12px) rotate(${rotate})`, 
+      opacity: isMobile ? 0.2 : 0.3, 
+      zIndex: 10,
+      transition: 'all 0.6s cubic-bezier(0.34, 1.2, 0.64, 1)'
+    };
   };
 
   const activeMember = orderedTeam[activeIndex];
@@ -164,9 +151,6 @@ const MeetTheTeam = () => {
     }, 5000);
     return () => clearInterval(interval);
   }, [activeIndex, isAnimating]);
-
-  // Calculate container height based on screen size
-  const containerHeight = isMobile ? '320px' : '420px';
 
   return (
     <section className="py-12 md:py-16 px-4 bg-gradient-to-br from-[#0a0f0a] via-[#1a2415] to-[#0d140a] relative overflow-hidden">
@@ -208,164 +192,96 @@ const MeetTheTeam = () => {
           </p>
         </div>
 
-        <div className="relative mb-6 md:mb-8">
+        <div className="relative mb-3 md:mb-4">
           <button 
             onClick={handlePrevious} 
             disabled={isAnimating}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-40 p-2 md:p-3 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-[#8BAE66] hover:border-[#8BAE66] hover:scale-110 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-40 p-1.5 md:p-2.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-[#8BAE66] hover:border-[#8BAE66] hover:scale-110 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Previous"
           >
-            <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
+            <ChevronLeft className="w-4 h-4 md:w-5 md:h-5" />
           </button>
           <button 
             onClick={handleNext} 
             disabled={isAnimating}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-40 p-2 md:p-3 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-[#8BAE66] hover:border-[#8BAE66] hover:scale-110 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-40 p-1.5 md:p-2.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-[#8BAE66] hover:border-[#8BAE66] hover:scale-110 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Next"
           >
-            <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
+            <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
           </button>
 
-          {/* Use flex container with justify-center and proper gaps for spacing */}
-          <div 
-            className="relative flex justify-center items-center" 
-            style={{ minHeight: containerHeight }}
-          >
-            {/* Desktop: 5 profiles with explicit gaps */}
-            {!isMobile && (
-              <div className="flex justify-center items-center gap-8 lg:gap-12 w-full">
-                {visibleMembers.map((member, idx) => {
-                  const isCenter = member.position === 0;
-                  return (
-                    <div
-                      key={`${member.id}-${idx}`}
-                      className={`flex flex-col items-center transition-all duration-500 cursor-pointer ${
-                        isCenter ? 'scale-100 -translate-y-2' : 'scale-90 translate-y-2 opacity-70 hover:opacity-90 hover:scale-95'
-                      }`}
-                      onClick={() => {
-                        if (!isAnimating && !isCenter) {
-                          setIsAnimating(true);
-                          setActiveIndex(member.originalIndex);
-                          setShowEmailTooltip(false);
-                          setTimeout(() => setIsAnimating(false), 600);
-                        }
-                      }}
-                    >
-                      <div className="relative">
-                        {isCenter && (
-                          <div className="absolute inset-0 rounded-full animate-pulse-glow-ring" style={{ 
-                            background: 'radial-gradient(circle, rgba(139,174,102,0.4) 0%, rgba(139,174,102,0) 80%)', 
-                            width: 'calc(100% + 30px)', 
-                            height: 'calc(100% + 30px)', 
-                            left: '-15px', 
-                            top: '-15px' 
-                          }} />
-                        )}
-                        <div className={`relative rounded-full overflow-hidden transition-all duration-500 ${
-                          isCenter 
-                            ? 'ring-4 ring-[#8BAE66] ring-offset-4 ring-offset-[#0a0f0a] shadow-2xl shadow-[#8BAE66]/30 animate-glow' 
-                            : 'ring-2 ring-white/20 shadow-lg hover:ring-[#8BAE66]/40'
-                        }`}>
-                          <img 
-                            src={member.image} 
-                            alt={member.name} 
-                            className="w-28 h-28 lg:w-32 lg:h-32 object-cover transition-transform duration-500 hover:scale-110" 
-                            onError={(e) => { e.target.src = 'https://via.placeholder.com/128?text=No+Image'; }} 
-                          />
-                        </div>
-                      </div>
-                      {isCenter && (
-                        <div className="text-center mt-3 animate-slideUp">
-                          <p className="font-bold text-white text-sm lg:text-base animate-text-shine">{member.name}</p>
-                          <p className="text-[#8BAE66] text-xs font-semibold mt-1">{member.role}</p>
-                        </div>
-                      )}
-                      {!isCenter && (
-                        <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap pointer-events-none">
-                          <div className="bg-[#1a2415]/90 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full border border-[#8BAE66]/30">
-                            {member.name.split(' ')[0]}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+          <div className="relative flex justify-center items-center min-h-[280px] md:min-h-[400px]">
+            {visibleMembers.map((member) => {
+              const style = getItemStyle(member.position);
+              return (
+                <div
+                  key={`${member.id}-${member.position}`}
+                  className="absolute cursor-pointer group"
+                  style={style}
+                  onClick={() => { 
+                    if (!isAnimating && !member.isCenter) {
+                      setIsAnimating(true);
+                      setActiveIndex(member.originalIndex);
+                      setShowEmailTooltip(false);
+                      setTimeout(() => setIsAnimating(false), 600);
+                    }
+                  }}
+                >
+                  <div className="flex flex-col items-center">
+                    <div className="relative">
 
-            {/* Mobile: 3 profiles with flex gaps - no overlap */}
-            {isMobile && (
-              <div className="flex justify-center items-center gap-6 w-full px-8">
-                {visibleMembers.map((member, idx) => {
-                  const isCenter = member.position === 0;
-                  return (
-                    <div
-                      key={`${member.id}-${idx}`}
-                      className={`flex flex-col items-center transition-all duration-500 cursor-pointer ${
-                        isCenter 
-                          ? 'scale-100 -translate-y-3 z-20' 
-                          : 'scale-85 translate-y-3 opacity-80 hover:opacity-100 hover:scale-90 z-10'
-                      }`}
-                      onClick={() => {
-                        if (!isAnimating && !isCenter) {
-                          setIsAnimating(true);
-                          setActiveIndex(member.originalIndex);
-                          setShowEmailTooltip(false);
-                          setTimeout(() => setIsAnimating(false), 600);
-                        }
-                      }}
-                    >
-                      <div className="relative">
-                        {isCenter && (
-                          <div className="absolute inset-0 rounded-full animate-pulse-glow-ring" style={{ 
-                            background: 'radial-gradient(circle, rgba(139,174,102,0.4) 0%, rgba(139,174,102,0) 80%)', 
-                            width: 'calc(100% + 20px)', 
-                            height: 'calc(100% + 20px)', 
-                            left: '-10px', 
-                            top: '-10px' 
-                          }} />
-                        )}
-                        <div className={`relative rounded-full overflow-hidden transition-all duration-500 ${
-                          isCenter 
-                            ? 'ring-3 ring-[#8BAE66] ring-offset-2 ring-offset-[#0a0f0a] shadow-2xl shadow-[#8BAE66]/30 animate-glow' 
-                            : 'ring-2 ring-white/20 shadow-lg hover:ring-[#8BAE66]/40'
-                        }`}>
-                          <img 
-                            src={member.image} 
-                            alt={member.name} 
-                            className="w-24 h-24 sm:w-28 sm:h-28 object-cover transition-transform duration-500 hover:scale-105" 
-                            onError={(e) => { e.target.src = 'https://via.placeholder.com/128?text=No+Image'; }} 
-                          />
+                      {member.isCenter && (
+                        <div className="absolute inset-0 rounded-full animate-pulse-glow-ring" style={{ 
+                          background: 'radial-gradient(circle, rgba(139,174,102,0.4) 0%, rgba(139,174,102,0) 80%)', 
+                          width: 'calc(100% + 30px)', 
+                          height: 'calc(100% + 30px)', 
+                          left: '-15px', 
+                          top: '-15px' 
+                        }} />
+                      )}
+
+                      <div className={`relative rounded-full overflow-hidden transition-all duration-500 ${
+                        member.isCenter 
+                          ? 'ring-3 md:ring-4 ring-[#8BAE66] ring-offset-2 md:ring-offset-4 ring-offset-[#0a0f0a] shadow-2xl shadow-[#8BAE66]/30 animate-glow' 
+                          : 'ring-2 ring-white/20 shadow-lg group-hover:ring-[#8BAE66]/40 group-hover:scale-105'
+                      }`}>
+                        <img 
+                          src={member.image} 
+                          alt={member.name} 
+                          className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 lg:w-36 lg:h-36 object-cover transition-transform duration-500 group-hover:scale-110" 
+                          onError={(e) => { e.target.src = 'https://via.placeholder.com/128?text=No+Image'; }} 
+                        />
+                      </div>
+                    </div>
+
+                    {member.isCenter && (
+                      <div className="text-center mt-1.5 md:mt-2 animate-slideUp">
+                        <p className="font-bold text-white text-xs sm:text-sm md:text-base lg:text-lg animate-text-shine">{member.name}</p>
+                        <p className="text-[#8BAE66] text-[10px] md:text-xs font-semibold mt-0.5">{member.role}</p>
+                      </div>
+                    )}
+
+                    {!member.isCenter && (
+                      <div className="absolute -bottom-6 md:-bottom-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+                        <div className="bg-[#1a2415]/90 backdrop-blur-sm text-white text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded-full border border-[#8BAE66]/30">
+                          {member.name.split(' ')[0]}
                         </div>
                       </div>
-                      {isCenter && (
-                        <div className="text-center mt-2 animate-slideUp">
-                          <p className="font-bold text-white text-xs sm:text-sm animate-text-shine">{member.name}</p>
-                          <p className="text-[#8BAE66] text-[10px] font-semibold mt-0.5">{member.role}</p>
-                        </div>
-                      )}
-                      {!isCenter && (
-                        <div className="absolute -bottom-7 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap pointer-events-none">
-                          <div className="bg-[#1a2415]/90 backdrop-blur-sm text-white text-[10px] px-1.5 py-0.5 rounded-full border border-[#8BAE66]/30">
-                            {member.name.split(' ')[0]}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        <div className="max-w-2xl mx-auto mt-4 md:mt-6">
+        <div className="max-w-2xl mx-auto mt-0">
           <div className="relative group">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-[#8BAE66] to-[#BBCB2E] rounded-xl md:rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-500 animate-gradient"></div>
-            <div className="relative bg-white/5 backdrop-blur-xl rounded-xl md:rounded-2xl border border-white/10 p-4 md:p-5 transition-all duration-300 hover:bg-white/10 hover:scale-[1.01] md:hover:scale-[1.02]">
+            <div className="relative bg-white/5 backdrop-blur-xl rounded-xl md:rounded-2xl border border-white/10 p-3 md:p-5 transition-all duration-300 hover:bg-white/10 hover:scale-[1.01] md:hover:scale-[1.02]">
               <div className="flex items-start gap-3 md:gap-4">
                 <div className="hidden md:block flex-shrink-0">
-                  <div className="w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden ring-2 ring-[#8BAE66]/50 shadow-xl transition-all duration-300 group-hover:scale-110 group-hover:ring-[#8BAE66]">
+                  <div className="w-10 h-10 md:w-14 md:h-14 rounded-full overflow-hidden ring-2 ring-[#8BAE66]/50 shadow-xl transition-all duration-300 group-hover:scale-110 group-hover:ring-[#8BAE66]">
                     <img src={activeMember?.image} alt={activeMember?.name} className="w-full h-full object-cover" onError={(e) => { e.target.src = 'https://via.placeholder.com/56?text=No+Image'; }} />
                   </div>
                 </div>
@@ -378,13 +294,13 @@ const MeetTheTeam = () => {
                       </h3>
                       <p className="text-[#8BAE66] text-[10px] md:text-xs font-semibold mt-0.5">{activeMember?.role}</p>
                     </div>
-                    <div className="flex gap-2 md:gap-2.5 items-center">
+                    <div className="flex gap-1.5 md:gap-2 items-center">
                       <a href={activeMember?.social?.github} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-all duration-300 hover:scale-110 hover:rotate-12 transform">
-                        <Github className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                        <Github className="w-3 h-3 md:w-3.5 md:h-3.5" />
                       </a>
                       {activeMember?.social?.linkedin && (
                         <a href={activeMember.social.linkedin} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-all duration-300 hover:scale-110 hover:-rotate-12 transform">
-                          <Linkedin className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                          <Linkedin className="w-3 h-3 md:w-3.5 md:h-3.5" />
                         </a>
                       )}
                       <div className="relative">
@@ -393,23 +309,23 @@ const MeetTheTeam = () => {
                           className="text-gray-400 hover:text-white transition-all duration-300 hover:scale-110 transform"
                           aria-label="Show email"
                         >
-                          <Mail className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                          <Mail className="w-3 h-3 md:w-3.5 md:h-3.5" />
                         </button>
                         {showEmailTooltip && (
                           <div className="absolute bottom-full right-0 mb-2 z-50 animate-slideUp">
-                            <div className="bg-[#1a2415] border border-[#8BAE66]/30 text-white text-[10px] md:text-xs rounded-lg px-2 py-1.5 whitespace-nowrap shadow-xl flex items-center gap-2 backdrop-blur-sm">
+                            <div className="bg-[#1a2415] border border-[#8BAE66]/30 text-white text-[10px] md:text-xs rounded-lg px-1.5 md:px-2 py-1 md:py-1.5 whitespace-nowrap shadow-xl flex items-center gap-1 md:gap-2 backdrop-blur-sm">
                               <button
                                 onClick={() => {
                                   navigator.clipboard.writeText(activeMember?.social?.email || '');
                                   setCopied(true);
                                   setTimeout(() => setCopied(false), 2000);
                                 }}
-                                className="flex items-center justify-center w-5 h-5 rounded-md hover:bg-white/10 transition-colors"
+                                className="flex items-center justify-center w-4 h-4 md:w-5 md:h-5 rounded-md hover:bg-white/10 transition-colors"
                                 aria-label="Copy email"
                               >
-                                {copied ? <Check className="w-2.5 h-2.5 text-[#8BAE66]" /> : <Copy className="w-2.5 h-2.5 text-[#8BAE66]" />}
+                                {copied ? <Check className="w-2 h-2 md:w-2.5 md:h-2.5 text-[#8BAE66]" /> : <Copy className="w-2 h-2 md:w-2.5 md:h-2.5 text-[#8BAE66]" />}
                               </button>
-                              <span>{activeMember?.social?.email}</span>
+                              <span className="pr-1 md:pr-2">{activeMember?.social?.email}</span>
                             </div>
                             <div className="absolute top-full right-3 w-0 h-0" style={{ borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '5px solid #1a2415' }} />
                           </div>
@@ -432,7 +348,7 @@ const MeetTheTeam = () => {
           </div>
         </div>
 
-        <div className="flex justify-center gap-2 md:gap-2.5 mt-5 md:mt-7">
+        <div className="flex justify-center gap-1.5 md:gap-2 mt-4 md:mt-6">
           {orderedTeam.map((_, idx) => (
             <button
               key={idx}
@@ -446,8 +362,8 @@ const MeetTheTeam = () => {
               }}
               className={`transition-all duration-300 ${
                 idx === activeIndex 
-                  ? 'w-5 md:w-7 h-1 md:h-1.5 bg-gradient-to-r from-[#8BAE66] to-[#BBCB2E] rounded-full animate-pulse' 
-                  : 'w-1.5 md:w-2 h-1 md:h-1.5 bg-white/30 rounded-full hover:bg-white/50 hover:scale-125'
+                  ? 'w-4 md:w-6 h-1 md:h-1.5 bg-gradient-to-r from-[#8BAE66] to-[#BBCB2E] rounded-full animate-pulse' 
+                  : 'w-1 md:w-1.5 h-1 md:h-1.5 bg-white/30 rounded-full hover:bg-white/50 hover:scale-125'
               }`}
               aria-label={`Go to member ${idx + 1}`}
             />
@@ -513,7 +429,6 @@ const MeetTheTeam = () => {
         .animate-gradient { animation: gradient 3s ease-in-out infinite; }
         .animate-pulse { animation: pulse 2s ease-in-out infinite; }
         .bg-gradient-radial { background-image: radial-gradient(circle, var(--tw-gradient-stops)); }
-        .scale-85 { transform: scale(0.85); }
       `}</style>
     </section>
   );
