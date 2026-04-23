@@ -146,21 +146,25 @@ const HistoryPage = ({ onViewRecipe, activeProfile }) => {
   const mapHistoryToUi = (item) => {
     const parsed = parseOutputResponse(item.output_response);
     const firstSuggestion = parsed?.suggestions?.[0] || {};
-    const estimatedTime = parsed?.estimatedTime || "N/A";
+    
+    // Extract meaningful data
+    const recipeTitle = firstSuggestion.title || item.search_query || "Untitled Recipe";
+    const recipeTime = firstSuggestion.prepTime || firstSuggestion.cookTime || "30 min";
+    const recipeServings = firstSuggestion.servings || 4;
+    const recipeDifficulty = firstSuggestion.difficulty || "Medium";
+    
     const hasError = !!(parsed?.error && String(parsed.error).trim().toLowerCase() !== 'null');
-    const sourceLabel = item.source === 'meal-plan' ? 'Meal Plan' : item.source === 'error' ? 'Error' : 'Recipe Generation';
+    const sourceLabel = item.source === 'meal-plan' ? 'Meal Plan' : 'Recipe';
     const profileName = item.profiles?.name ?? null;
 
     return {
       id: item.id,
       recipeId: item.recipe_id ?? null,
-      title: hasError ? (item.search_query || "Invalid Request") : (firstSuggestion.title || item.search_query || "Generated Recipe"),
-      type: item.source_api === "cache" ? "Cached Recipe" : "AI Generated",
-      difficulty: "Medium",
-      time: estimatedTime,
-      servings: firstSuggestion.servings || "-",
+      title: hasError ? (item.search_query || "Invalid Request") : recipeTitle,
+      servings: recipeServings,
+      time: recipeTime,
+      difficulty: recipeDifficulty,
       viewed: getRelativeViewedTime(item.searched_date),
-      tags: ["history", "dishcovery", item.source_api || "recipe"],
       description: hasError ? (parsed?.message || parsed?.error || "") : (firstSuggestion.description || parsed?.message || ""),
       ingredients: Array.isArray(firstSuggestion.keyIngredients) ? firstSuggestion.keyIngredients : [],
       instructions: Array.isArray(firstSuggestion.instructions) ? firstSuggestion.instructions : [],
@@ -169,7 +173,6 @@ const HistoryPage = ({ onViewRecipe, activeProfile }) => {
       errorHeader: hasError ? (parsed?.header || "Invalid request") : null,
       sourceLabel,
       profileName,
-      nutritionalInfo: firstSuggestion.nutritionalInfo ?? null, // passed through to modal
     };
   };
 
@@ -320,18 +323,12 @@ const HistoryPage = ({ onViewRecipe, activeProfile }) => {
                     {recipe.hasError && (
                       <p className="text-red-500 text-xs mt-0.5 leading-snug italic">Query: {recipe.title}</p>
                     )}
-                    <p className="text-black/60 text-sm mt-1">{recipe.type} • {recipe.difficulty}</p>
+                    
                     <div className="flex flex-wrap gap-1.5 mt-2">
                       <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
-                        recipe.sourceLabel === 'Meal Plan' ? 'bg-[#32491B]/15 text-[#32491B]' :
-                        recipe.sourceLabel === 'Error' ? 'bg-red-100 text-red-600' :
-                        'bg-[#839705]/20 text-[#587A34]'
+                        recipe.sourceLabel === 'Meal Plan' ? 'bg-[#32491B]/15 text-[#32491B]' : 'bg-[#839705]/20 text-[#587A34]'
                       }`}>
-                        <i className={`mr-1 ${
-                          recipe.sourceLabel === 'Meal Plan' ? 'fas fa-calendar-alt' :
-                          recipe.sourceLabel === 'Error' ? 'fas fa-exclamation-circle' :
-                          'fas fa-robot'
-                        }`}></i>
+                        <i className={`mr-1 ${recipe.sourceLabel === 'Meal Plan' ? 'fas fa-calendar-alt' : 'fas fa-robot'}`}></i>
                         {recipe.sourceLabel}
                       </span>
                       {recipe.profileName && (
@@ -340,20 +337,11 @@ const HistoryPage = ({ onViewRecipe, activeProfile }) => {
                         </span>
                       )}
                     </div>
-                    <div className="flex flex-wrap gap-2 mt-3">
-                      {recipe.tags.map((tag, idx) => (
-                        <span
-                          key={idx}
-                          className="bg-[#839705]/20 text-[#32491B] px-2 py-0.5 rounded-full text-xs font-semibold"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
+                    
                     <div className="flex justify-between items-center mt-4 pt-3 border-t border-[#B5D098]/30">
                       <div className="flex gap-3 text-sm text-black/60">
                         <span><i className="far fa-clock"></i> {recipe.time}</span>
-                        <span><i className="fas fa-users"></i> {recipe.servings}</span>
+                        <span><i className="fas fa-users"></i> Serves {recipe.servings}</span>
                       </div>
                       <button
                         onClick={() => onViewRecipe(recipe)}
