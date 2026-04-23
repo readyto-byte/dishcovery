@@ -287,6 +287,7 @@ const FirsttimeModal = ({ onClose }) => {
                       type="date"
                       value={dateOfBirth}
                       onChange={(e) => { setDateOfBirth(e.target.value); setError(""); }}
+                      max={new Date().toISOString().split("T")[0]}
                       className="w-full bg-white border border-[#587A34]/30 rounded-xl px-4 py-2.5 text-[#3a5220] text-sm focus:outline-none focus:ring-2 focus:ring-[#587A34]/50"
                     />
                   </div>
