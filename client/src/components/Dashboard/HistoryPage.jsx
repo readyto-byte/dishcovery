@@ -4,7 +4,6 @@ import { apiCall } from "../../api/config";
 
 const RECIPES_PER_PAGE = 9;
 
-// Consistent Loading Skeleton for History
 const HistoryLoadingSkeleton = () => {
   return (
     <div className="pb-12">
@@ -395,7 +394,7 @@ const HistoryPage = ({ onViewRecipe }) => {
                     disabled={isClearing}
                     className="flex-1 py-2.5 rounded-xl bg-[#32491B] hover:bg-[#253813] text-[#F0E6D1] font-semibold text-sm transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    {isClearing ? 'Clearing...' : 'Yes, Clear'}
+                    {isClearing ? 'Clearing...' : 'Yes, Clear All'}
                   </button>
                 </div>
               </div>

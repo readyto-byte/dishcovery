@@ -54,6 +54,8 @@ const FavoritesPage = ({ onViewRecipe }) => {
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
 
   useEffect(() => {
     const loadFavorites = async () => {
@@ -85,14 +87,16 @@ const FavoritesPage = ({ onViewRecipe }) => {
   };
 
   const handleClearAllFavorites = async () => {
-    if (confirm('Are you sure you want to remove ALL recipes from your favorites?')) {
-      try {
-        setError("");
-        await apiCall("/api/favorites", { method: "DELETE" });
-        setFavorites([]);
-      } catch (err) {
-        setError(err.message || "Failed to clear favorites.");
-      }
+    try {
+      setIsClearing(true);
+      setError("");
+      await apiCall("/api/favorites", { method: "DELETE" });
+      setFavorites([]);
+      setShowClearConfirm(false);
+    } catch (err) {
+      setError(err.message || "Failed to clear favorites.");
+    } finally {
+      setIsClearing(false);
     }
   };
 
@@ -123,10 +127,12 @@ const FavoritesPage = ({ onViewRecipe }) => {
           </div>
           {favorites.length > 0 && (
             <button
-              onClick={handleClearAllFavorites}
-              className="shrink-0 bg-red-600/80 hover:bg-red-700 transition-all px-5 py-2 rounded-lg text-white font-semibold text-sm shadow-md cursor-pointer"
+              onClick={() => setShowClearConfirm(true)}
+              disabled={isClearing}
+              className="shrink-0 bg-[#587A34] hover:bg-[#32491B] transition-all px-5 py-2 rounded-lg text-white font-semibold text-sm shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <i className="fas fa-heart-broken mr-2"></i> Clear All
+              <i className="fas fa-heart-broken mr-2"></i> 
+              {isClearing ? "Clearing..." : "Clear All"}
             </button>
           )}
         </div>
@@ -205,6 +211,45 @@ const FavoritesPage = ({ onViewRecipe }) => {
           </div>
         )}
       </div>
+
+      {showClearConfirm && (
+        <>
+          <div
+            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
+            onClick={!isClearing ? () => setShowClearConfirm(false) : undefined}
+          />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div
+              className="w-full max-w-md rounded-2xl shadow-2xl overflow-hidden"
+              style={{ background: 'linear-gradient(160deg, #f7f0e3 0%, #ede0c4 100%)' }}
+            >
+              <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg, #32491B, #839705, #B5D098)' }} />
+              <div className="px-6 pt-6 pb-5">
+                <h3 className="text-xl font-bold text-[#1B211A] mb-2">Clear all favorites?</h3>
+                <p className="text-sm text-[#4a5e30] mb-6">
+                  This will permanently remove all recipes from your favorites.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowClearConfirm(false)}
+                    disabled={isClearing}
+                    className="flex-1 py-2.5 rounded-xl border border-[#32491B]/20 bg-white/50 hover:bg-white/80 text-[#32491B] font-semibold text-sm transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleClearAllFavorites}
+                    disabled={isClearing}
+                    className="flex-1 py-2.5 rounded-xl bg-[#587A34] hover:bg-[#32491B] text-white font-semibold text-sm transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {isClearing ? 'Clearing...' : 'Yes, Clear All'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
