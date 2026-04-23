@@ -191,8 +191,9 @@ const getEmptyMealPlanFormData = () => ({
 const inputClass = "w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:border-[#587A34] focus:ring-1 focus:ring-[#587A34] focus:outline-none transition";
 const selectClass = "w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:border-[#587A34] focus:ring-1 focus:ring-[#587A34] focus:outline-none transition bg-white";
 const labelClass = "block text-sm font-semibold text-gray-700 mb-1";
+
 // Loading Animation Component inside Meal Plan Section
-const MealPlanLoadingCard = ({ message }) => {
+const MealPlanLoadingCard = () => {
   const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
   const loadingMessages = [
     "Analyzing your preferences...",
@@ -411,10 +412,17 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
     setMealPlanSaveOk(false);
     setMealPlanSaving(true);
     
+    // Small delay to ensure loading state renders
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     try {
       let built = null;
-      try { built = await fetchAiMealPlan(snapshot); }
-      catch { built = buildGeneratedPlanFromPreferences(snapshot); }
+      try { 
+        built = await fetchAiMealPlan(snapshot); 
+      } catch (aiError) {
+        console.error("AI generation failed, using fallback:", aiError);
+        built = buildGeneratedPlanFromPreferences(snapshot);
+      }
       setGeneratedPlan(built);
       const res = await apiCall("/api/meal-plans", {
         method: "POST",
@@ -426,6 +434,8 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
       }
     } catch (err) {
       setMealPlanSaveError(err?.message || "Could not save your meal plan preferences.");
+      // If generation fails, show the form again
+      setShowForm(true);
     } finally {
       setMealPlanSaving(false);
       setIsGeneratingPlan(false);
@@ -654,8 +664,10 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
         </div>
       </div>
 
-      {showForm && isGeneratingPlan && <MealPlanLoadingCard />}
+      {/* Loading card - shows when generating */}
+      {isGeneratingPlan && <MealPlanLoadingCard />}
 
+      {/* Show form only when not generating and showForm is true */}
       {showForm && !isGeneratingPlan && (
         <div className="mx-4 md:mx-8 mb-8">
           <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
