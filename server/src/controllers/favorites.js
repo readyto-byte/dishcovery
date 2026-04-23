@@ -32,12 +32,18 @@ function mapFavoriteRow(row = {}) {
   };
 }
 
-async function getFavoritesByAccount(accountId) {
-  const { data, error } = await supabaseAdmin
+async function getFavoritesByAccount(accountId, profileId) {
+  let query = supabaseAdmin
     .from('favorites')
-    .select('id, user_id, recipe_id, saved_date, recipes(*)')
+    .select('id, user_id, recipe_id, saved_date, profile_id, recipes(*)')
     .eq('user_id', accountId)
     .order('saved_date', { ascending: false });
+
+  if (profileId) {
+    query = query.eq('profile_id', profileId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     throw error;
@@ -52,12 +58,19 @@ async function addFavorite(accountId, favoriteData) {
     throw new Error('recipe_id is required to save a favorite.');
   }
 
-  const { data: existingRows, error: existingError } = await supabaseAdmin
+  const profileId = favoriteData.profile_id ?? favoriteData.profileId ?? null;
+
+  let existingQuery = supabaseAdmin
     .from('favorites')
-    .select('id, user_id, recipe_id, saved_date, recipes(*)')
+    .select('id, user_id, recipe_id, saved_date, profile_id, recipes(*)')
     .eq('user_id', accountId)
-    .eq('recipe_id', recipeId)
-    .limit(1);
+    .eq('recipe_id', recipeId);
+
+  if (profileId) {
+    existingQuery = existingQuery.eq('profile_id', profileId);
+  }
+
+  const { data: existingRows, error: existingError } = await existingQuery.limit(1);
 
   if (existingError) {
     throw existingError;
@@ -71,6 +84,7 @@ async function addFavorite(accountId, favoriteData) {
     user_id: accountId,
     recipe_id: recipeId,
     saved_date: new Date().toISOString(),
+    profile_id: profileId,
   };
 
   const { error } = await supabaseAdmin
@@ -81,13 +95,18 @@ async function addFavorite(accountId, favoriteData) {
     throw error;
   }
 
-  const { data: insertedRows, error: insertedError } = await supabaseAdmin
+  let insertedQuery = supabaseAdmin
     .from('favorites')
-    .select('id, user_id, recipe_id, saved_date, recipes(*)')
+    .select('id, user_id, recipe_id, saved_date, profile_id, recipes(*)')
     .eq('user_id', accountId)
     .eq('recipe_id', recipeId)
-    .order('saved_date', { ascending: false })
-    .limit(1);
+    .order('saved_date', { ascending: false });
+
+  if (profileId) {
+    insertedQuery = insertedQuery.eq('profile_id', profileId);
+  }
+
+  const { data: insertedRows, error: insertedError } = await insertedQuery.limit(1);
 
   if (insertedError) {
     throw insertedError;
@@ -108,11 +127,17 @@ async function deleteFavoriteById(accountId, favoriteId) {
   }
 }
 
-async function clearFavoritesByAccount(accountId) {
-  const { error } = await supabaseAdmin
+async function clearFavoritesByAccount(accountId, profileId) {
+  let query = supabaseAdmin
     .from('favorites')
     .delete()
     .eq('user_id', accountId);
+
+  if (profileId) {
+    query = query.eq('profile_id', profileId);
+  }
+
+  const { error } = await query;
 
   if (error) {
     throw error;

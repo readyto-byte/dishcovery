@@ -51,7 +51,7 @@ const HistoryLoadingSkeleton = () => {
   );
 };
 
-const HistoryPage = ({ onViewRecipe }) => {
+const HistoryPage = ({ onViewRecipe, activeProfile }) => {
   const [historyRecipes, setHistoryRecipes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isClearing, setIsClearing] = useState(false);
@@ -68,7 +68,8 @@ const HistoryPage = ({ onViewRecipe }) => {
 
   const syncFavoriteStateFromApi = async () => {
     try {
-      const response = await apiCall("/api/favorites");
+      const profileParam = activeProfile?.id ? `?profile_id=${activeProfile.id}` : "";
+      const response = await apiCall(`/api/favorites${profileParam}`);
       const rows = Array.isArray(response?.data) ? response.data : [];
       setFavorites(new Set(rows.map((fav) => Number(fav.recipe_id)).filter((id) => Number.isFinite(id))));
     } catch (err) {
@@ -84,7 +85,8 @@ const HistoryPage = ({ onViewRecipe }) => {
     try {
       setError("");
       if (favorites.has(recipe.recipeId)) {
-        const response = await apiCall("/api/favorites");
+        const profileParam = activeProfile?.id ? `?profile_id=${activeProfile.id}` : "";
+        const response = await apiCall(`/api/favorites${profileParam}`);
         const rows = Array.isArray(response?.data) ? response.data : [];
         const match = rows.find((fav) => Number(fav.recipe_id) === Number(recipe.recipeId));
         if (match?.id) {
@@ -93,7 +95,7 @@ const HistoryPage = ({ onViewRecipe }) => {
       } else {
         await apiCall("/api/favorites", {
           method: "POST",
-          body: JSON.stringify({ recipe_id: recipe.recipeId }),
+          body: JSON.stringify({ recipe_id: recipe.recipeId, profile_id: activeProfile?.id ?? null }),
         });
       }
       await syncFavoriteStateFromApi();
