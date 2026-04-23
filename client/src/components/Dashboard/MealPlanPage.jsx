@@ -28,6 +28,10 @@ const normalizeMealTitle = (title, fallback) => {
   const cleaned = raw.replace(/^(breakfast|lunch|dinner)\s*[:\-]\s*/i, "").trim();
   return cleaned || fallback;
 };
+const isPlaceholderMealTitle = (title) => {
+  const normalized = String(title || "").trim().toLowerCase();
+  return normalized === "loading meal plan..." || normalized === "loading meal plan";
+};
 
 const hasValue = (v) => !(v === undefined || v === null || String(v).trim() === "");
 
@@ -405,6 +409,22 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
     });
     setMealDetailLoading(true);
     try {
+      // Guard against fallback/template meal titles that are not real generated recipes.
+      if (isPlaceholderMealTitle(meal?.title)) {
+        setSelectedMeal(prev => ({
+          ...prev,
+          prepTime: "—",
+          cookTime: "—",
+          servings: "—",
+          difficulty: "Unavailable",
+          description: "Meal details are unavailable because AI meal generation did not complete successfully. Please generate a new meal plan.",
+          ingredients: ["No ingredients available."],
+          instructions: ["Generate a new meal plan to view full recipe details."],
+          tags: ["Unavailable"],
+        }));
+        return;
+      }
+
       // Prefer the stored meal plan response details to avoid extra Gemini calls (quota-safe).
       const suggestion = getSuggestionForType(type);
       if (suggestion) {
