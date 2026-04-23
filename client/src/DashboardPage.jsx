@@ -16,6 +16,51 @@ import FirsttimeModal from "./components/Dashboard/FirsttimeModal";
 
 const MEAL_PLAN_STORAGE_KEY = 'dishcovery_meal_plan';
 
+const ErrorBanner = ({ message, onClose }) => {
+  if (!message) return null;
+
+  const isAiRefusal =
+    message.toLowerCase().includes("cannot fulfill") ||
+    message.toLowerCase().includes("safety") ||
+    message.toLowerCase().includes("guidelines") ||
+    message.toLowerCase().includes("harmful") ||
+    message.toLowerCase().includes("inappropriate") ||
+    message.toLowerCase().includes("failed to parse");
+
+  return (
+    <div className="mx-4 md:mx-8 mb-5">
+      <div className="rounded-2xl overflow-hidden shadow-md border border-red-200/60" style={{ background: 'linear-gradient(160deg, #fff5f5 0%, #ffe8e8 100%)' }}>
+        <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg, #b91c1c, #ef4444, #fca5a5)' }} />
+        <div className="px-5 py-4 flex items-start gap-4">
+          <div className="shrink-0 w-9 h-9 rounded-xl bg-red-100 flex items-center justify-center mt-0.5">
+            <i className={`fas ${isAiRefusal ? 'fa-shield-alt' : 'fa-exclamation-triangle'} text-red-600 text-sm`}></i>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-red-900 text-sm mb-0.5">
+              {isAiRefusal ? "Invalid Prompt" : "Something went wrong"}
+            </p>
+            <p className="text-red-700 text-sm leading-relaxed">{message}</p>
+            {isAiRefusal && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                <span className="text-xs text-red-600/70 font-medium self-center">Try:</span>
+                {["Chicken stir fry", "Vegan pasta", "15-min breakfast"].map((s, i) => (
+                  <span key={i} className="text-xs bg-red-100 text-red-700 px-2.5 py-1 rounded-full font-medium">{s}</span>
+                ))}
+              </div>
+            )}
+          </div>
+          <button
+            onClick={onClose}
+            className="shrink-0 w-7 h-7 rounded-full bg-red-100 hover:bg-red-200 flex items-center justify-center transition-colors cursor-pointer mt-0.5"
+          >
+            <i className="fas fa-times text-red-500 text-xs"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const RecipeDetailsModal = ({ recipe, onClose }) => {
   if (!recipe) return null;
 
@@ -149,18 +194,13 @@ const LoadingScreen = () => {
     const messageInterval = setInterval(() => {
       setMessageIndex((prev) => (prev + 1) % loadingMessages.length);
     }, 2000);
-
-    return () => {
-      clearInterval(messageInterval);
-    };
+    return () => clearInterval(messageInterval);
   }, []);
 
   return (
     <div className="fixed inset-0 bg-[#B5D098] flex items-center justify-center z-50">
-      {/* Glass card */}
       <div className="relative z-10 backdrop-blur-2xl bg-white/5 rounded-3xl px-10 py-8 shadow-2xl border border-white/30">
         <div className="text-center">
-          {/* Logo with glass effect */}
           <div className="mb-8">
             <div className="font-lemon font-bold text-4xl tracking-tight">
               <span className="text-[#1B211A] drop-shadow-sm">Dish</span>
@@ -168,36 +208,22 @@ const LoadingScreen = () => {
             </div>
             <div className="w-12 h-0.5 bg-gradient-to-r from-transparent via-[#839705] to-transparent mx-auto mt-3" />
           </div>
-
           <div className="flex items-center justify-center gap-3 mb-6">
             <div className="w-3 h-3 bg-[#32491B] rounded-full animate-glass-pulse" style={{ animationDelay: '0s' }} />
             <div className="w-3 h-3 bg-[#32491B] rounded-full animate-glass-pulse" style={{ animationDelay: '0.15s' }} />
             <div className="w-3 h-3 bg-[#32491B] rounded-full animate-glass-pulse" style={{ animationDelay: '0.3s' }} />
           </div>
-
-          {/* Rotating message */}
           <p className="text-[#1B211A] text-sm font-medium tracking-wide transition-all duration-300">
             {loadingMessages[messageIndex]}
           </p>
         </div>
       </div>
-
       <style jsx>{`
         @keyframes glass-pulse {
-          0%, 100% { 
-            transform: scale(1);
-            opacity: 0.3;
-            box-shadow: 0 0 0 0 rgba(50, 73, 27, 0);
-          }
-          50% { 
-            transform: scale(1.3);
-            opacity: 1;
-            box-shadow: 0 0 0 4px rgba(50, 73, 27, 0.2);
-          }
+          0%, 100% { transform: scale(1); opacity: 0.3; box-shadow: 0 0 0 0 rgba(50, 73, 27, 0); }
+          50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 0 4px rgba(50, 73, 27, 0.2); }
         }
-        .animate-glass-pulse {
-          animation: glass-pulse 1.5s ease-in-out infinite;
-        }
+        .animate-glass-pulse { animation: glass-pulse 1.5s ease-in-out infinite; }
       `}</style>
     </div>
   );
@@ -225,53 +251,30 @@ const DashboardPage = () => {
   useEffect(() => {
     const checkFirstTime = async () => {
       try {
-        console.log("=== FIRST TIME MODAL CHECK STARTED ===");
-        console.log("Step 1: Checking for access token...");
-        
         const accessToken = localStorage.getItem('access_token');
         const refreshToken = localStorage.getItem('refresh_token');
-        
-        console.log("Access token exists?", accessToken ? "YES" : "NO");
-        console.log("Refresh token exists?", refreshToken ? "YES" : "NO");
-        
         if (!accessToken && !refreshToken) {
-          console.log("RESULT: No auth tokens found - user not logged in");
-          console.log("NOT showing first time modal");
           setShowFirstTimeModal(false);
           setIsChecking(false);
           return;
         }
-        
-        console.log("Step 2: Auth tokens found, checking profiles from backend...");
         const response = await apiCall("/api/profiles");
-        console.log("Profiles API response:", response);
-        
         const profiles = Array.isArray(response?.data) ? response.data : [];
-        console.log("Number of profiles found:", profiles.length);
-        
         if (profiles.length === 0) {
-          console.log("RESULT: No profiles found - SHOWING modal");
           setShowFirstTimeModal(true);
         } else {
-          console.log("RESULT: User has profiles - NOT showing modal");
           setShowFirstTimeModal(false);
-
           const active = profiles.find(p => p.is_default === true) || profiles.find(p => p.is_active === true);
           if (active) {
-            console.log("Setting active profile:", active.name);
             setActiveProfile({ id: active.id, name: active.name, avatar: active.avatar_url });
           }
         }
-      } catch (error) {
-        console.error("ERROR in first time check:", error);
-        console.log("RESULT: Error occurred - NOT showing modal to be safe");
+      } catch {
         setShowFirstTimeModal(false);
       } finally {
-        console.log("=== FIRST TIME MODAL CHECK COMPLETED ===");
         setIsChecking(false);
       }
     };
-    
     checkFirstTime();
   }, []);
 
@@ -281,21 +284,16 @@ const DashboardPage = () => {
 
   const handleFirstTimeModalClose = () => {
     setShowFirstTimeModal(false);
-
     setProfileRefreshKey(prev => prev + 1);
-
     const fetchActiveProfile = async () => {
       try {
         const response = await apiCall("/api/profiles");
         const profiles = Array.isArray(response?.data) ? response.data : [];
-
         const active = profiles.find(p => p.is_default === true) || profiles.find(p => p.is_active === true);
         if (active) {
           setActiveProfile({ id: active.id, name: active.name, avatar: active.avatar_url });
         }
-      } catch (error) {
-        console.error("Error fetching active profile:", error);
-      }
+      } catch {}
     };
     fetchActiveProfile();
   };
@@ -322,14 +320,14 @@ const DashboardPage = () => {
       setGenerateError(`Please wait ${Math.ceil((2000 - timeSinceLastRequest) / 1000)} seconds between requests.`);
       return;
     }
-    
+
     try {
       setIsGenerating(true);
       setGenerateError("");
       setLastRequestTime(now);
       setShowOptions(false);
       setRecipeOptions([]);
-      
+
       let finalPrompt = `Generate ${numOptions} different recipe variations for: "${promptText}".
       
 Return the response as a JSON object with this exact structure:
@@ -345,7 +343,7 @@ Return the response as a JSON object with this exact structure:
     }
   ]
 }`;
-      
+
       if (history && history.length > 0 && aiResponse) {
         finalPrompt = `Previous recipe context: "${aiResponse.headline}"
         
@@ -354,7 +352,7 @@ User request: Generate ${numOptions} variations for "${promptText}"
 Please provide ${numOptions} different ways to modify/adapt the previous recipe.
 Return as JSON with the structure above.`;
       }
-      
+
       const response = await apiCall("/api/recipes", {
         method: "POST",
         body: JSON.stringify({
@@ -364,7 +362,7 @@ Return as JSON with the structure above.`;
       });
 
       const recipeResponse = response?.response;
-      
+
       if (recipeResponse?.options && Array.isArray(recipeResponse.options)) {
         const options = recipeResponse.options.map((opt, index) => ({
           id: `option-${index}`,
@@ -378,24 +376,17 @@ Return as JSON with the structure above.`;
           ingredients: Array.isArray(opt.keyIngredients) ? opt.keyIngredients : [],
           instructions: Array.isArray(opt.instructions) ? opt.instructions : [],
         }));
-        
+
         if (options.length > 1) {
           setRecipeOptions(options);
           setShowOptions(true);
         } else if (options.length === 1) {
           setGeneratedRecipe(options[0]);
-          setAiResponse({
-            headline: options[0].title,
-            summary: options[0].description,
-          });
+          setAiResponse({ headline: options[0].title, summary: options[0].description });
         }
       } else if (Array.isArray(recipeResponse?.suggestions) && recipeResponse.suggestions.length > 0) {
         const cards = recipeResponse.suggestions.map((suggestion, index) =>
-          mapSuggestionToCard(
-            suggestion,
-            recipeResponse?.estimatedTime,
-            suggestion?.id ?? `suggestion-${index}`
-          )
+          mapSuggestionToCard(suggestion, recipeResponse?.estimatedTime, suggestion?.id ?? `suggestion-${index}`)
         );
 
         if (cards.length > 1) {
@@ -405,18 +396,12 @@ Return as JSON with the structure above.`;
           setAiResponse(null);
         } else {
           setGeneratedRecipe(cards[0]);
-          setAiResponse({
-            headline: cards[0].title,
-            summary: cards[0].description,
-          });
+          setAiResponse({ headline: cards[0].title, summary: cards[0].description });
         }
       } else {
         throw new Error("No recipe options were returned.");
       }
-      
     } catch (error) {
-      console.error("Recipe generation error:", error);
-      
       if (error.message?.includes("503") || error.message?.includes("high demand") || error.message?.includes("UNAVAILABLE")) {
         setGenerateError("Gemini is currently busy. Please wait a few seconds and try again.");
       } else {
@@ -430,12 +415,11 @@ Return as JSON with the structure above.`;
     }
   };
 
-  const handleSelectOption = (selectedRecipe) => {
-    console.log("User selected option:", selectedRecipe.title);
-    setGeneratedRecipe(selectedRecipe);
+  const handleSelectOption = (selected) => {
+    setGeneratedRecipe(selected);
     setAiResponse({
-      headline: selectedRecipe.title,
-      summary: selectedRecipe.description || "You selected this recipe! Ask a follow-up to refine it further.",
+      headline: selected.title,
+      summary: selected.description || "You selected this recipe! Ask a follow-up to refine it further.",
     });
     setShowOptions(false);
     setRecipeOptions([]);
@@ -446,7 +430,6 @@ Return as JSON with the structure above.`;
   };
 
   const handleResetRecipe = () => {
-    console.log("Resetting recipe conversation");
     setAiResponse(null);
     setGeneratedRecipe(null);
     setGenerateError("");
@@ -460,28 +443,20 @@ Return as JSON with the structure above.`;
         return (
           <>
             <WelcomeBanner activeProfile={activeProfile} />
-            
-            <CreateRecipeSection 
-              onGenerate={handleGenerateRecipe} 
+            <CreateRecipeSection
+              onGenerate={handleGenerateRecipe}
               isLoading={isGenerating}
               aiResponse={aiResponse}
               onReset={handleResetRecipe}
             />
-            
-            {generateError && (
-              <div className="mx-4 md:mx-8 mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {generateError}
-              </div>
-            )}
-            
+            <ErrorBanner message={generateError} onClose={() => setGenerateError("")} />
             {showOptions && recipeOptions.length > 0 && (
-              <RecipeOptionsGrid 
+              <RecipeOptionsGrid
                 options={recipeOptions}
                 onSelectOption={handleSelectOption}
                 isLoading={isGenerating}
               />
             )}
-            
             {!showOptions && (isGenerating || generatedRecipe) && (
               <RecipeCard recipeData={generatedRecipe || {}} isLoading={isGenerating} />
             )}
@@ -490,10 +465,7 @@ Return as JSON with the structure above.`;
       case 'history':
         return <HistoryPage onViewRecipe={setSelectedRecipe} />;
       case 'meal-plan':
-        return <MealPlanPage 
-          onViewRecipe={setSelectedRecipe} 
-          activeProfile={activeProfile}
-        />;
+        return <MealPlanPage onViewRecipe={setSelectedRecipe} activeProfile={activeProfile} />;
       case 'profile':
         return (
           <ProfilePage
@@ -520,15 +492,12 @@ Return as JSON with the structure above.`;
         localStorage.removeItem(MEAL_PLAN_STORAGE_KEY);
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
-      } catch {
-      }
+      } catch {}
       navigate("/", { replace: true });
     }
   };
 
-  if (isChecking) {
-    return <LoadingScreen />;
-  }
+  if (isChecking) return <LoadingScreen />;
 
   return (
     <div className="relative min-h-screen bg-[#B5D098]">
@@ -552,24 +521,18 @@ Return as JSON with the structure above.`;
         </div>
       </main>
 
-      {/* First Time Modal */}
       {showFirstTimeModal && (
         <FirsttimeModal onClose={handleFirstTimeModalClose} />
       )}
 
-      {/* Logout Confirmation Modal */}
       {(showLogoutConfirm || isLoggingOut) && (
         <LogoutConfirmModal
-          onConfirm={() => {
-            setShowLogoutConfirm(false);
-            handleLogout();
-          }}
+          onConfirm={() => { setShowLogoutConfirm(false); handleLogout(); }}
           onCancel={() => setShowLogoutConfirm(false)}
           isLoggingOut={isLoggingOut}
         />
       )}
 
-      {/* Recipe Details Modal */}
       {selectedRecipe && (
         <RecipeDetailsModal
           recipe={selectedRecipe}
