@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Eye, EyeOff, X, Mail, CheckCircle2 } from "lucide-react";
+import { Eye, EyeOff, X, Mail, CheckCircle2, Check } from "lucide-react";
 import API_BASE_URL from "../../api/config.js";
 
 const Signup = ({ isOpen, onClose, onSwitch, onSignupSuccess }) => {
@@ -15,6 +15,18 @@ const Signup = ({ isOpen, onClose, onSwitch, onSignupSuccess }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [userEmail, setUserEmail] = useState("");
+  const [passwordTouched, setPasswordTouched] = useState(false);
+  const [confirmTouched, setConfirmTouched] = useState(false);
+
+  const pwChecks = {
+    length:    password.length >= 6,
+    uppercase: /[A-Z]/.test(password),
+    lowercase: /[a-z]/.test(password),
+    number:    /\d/.test(password),
+    special:   /[!@#$%^&*()\-_=+\[\]{}|;':",.<>?/`~\\]/.test(password),
+  };
+  const passwordValid = Object.values(pwChecks).every(Boolean);
+  const passwordsMatch = confirmPassword.length > 0 && confirmPassword === password;
 
   const resetFormState = () => {
     setEmail("");
@@ -26,6 +38,8 @@ const Signup = ({ isOpen, onClose, onSwitch, onSignupSuccess }) => {
     setError("");
     setShowPassword(false);
     setShowConfirmPassword(false);
+    setPasswordTouched(false);
+    setConfirmTouched(false);
   };
 
   const handleClose = () => {
@@ -48,8 +62,25 @@ const Signup = ({ isOpen, onClose, onSwitch, onSignupSuccess }) => {
       return;
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
+    const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+    if (!usernameRegex.test(username.trim())) {
+      setError("Username must be 3–20 characters and contain only letters, numbers, or underscores.");
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
+      return;
+    }
+
+    if (!passwordValid) {
+      setError("Password does not meet all requirements.");
       return;
     }
 
@@ -95,13 +126,23 @@ const Signup = ({ isOpen, onClose, onSwitch, onSignupSuccess }) => {
 
   if (!isOpen) return null;
 
-  const fieldClassName =
-    "w-full px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300 transition-all";
+  const baseField =
+    "w-full px-4 py-2.5 text-sm bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 transition-all";
+  const fieldOk  = `${baseField} border-gray-200 focus:ring-gray-900/10 focus:border-gray-300`;
+  const fieldErr = `${baseField} border-red-300 focus:ring-red-200 focus:border-red-400`;
+
+  const pwCheckItems = [
+    { key: "length",    label: "At least 6 characters" },
+    { key: "uppercase", label: "One uppercase letter (A–Z)" },
+    { key: "lowercase", label: "One lowercase letter (a–z)" },
+    { key: "number",    label: "One number (0–9)" },
+    { key: "special",   label: "One special character (!@#$…)" },
+  ];
 
   return (
     <>
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm transition-all duration-200">
-        <div className="relative w-full max-w-md p-8 bg-white rounded-2xl shadow-xl mx-4 duration-200">
+        <div className="relative w-full max-w-md p-8 bg-white rounded-2xl shadow-xl mx-4 duration-200 max-h-[95vh] overflow-y-auto">
           <div className="flex justify-between items-center mb-6">
             <div className="font-lemon font-bold text-xl">
               <span className="text-[#1B211A]">Dish</span>
@@ -129,7 +170,7 @@ const Signup = ({ isOpen, onClose, onSwitch, onSignupSuccess }) => {
                 placeholder="First name"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
-                className={fieldClassName}
+                className={fieldOk}
                 autoComplete="given-name"
               />
               <input
@@ -137,61 +178,91 @@ const Signup = ({ isOpen, onClose, onSwitch, onSignupSuccess }) => {
                 placeholder="Last name"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
-                className={fieldClassName}
+                className={fieldOk}
                 autoComplete="family-name"
               />
             </div>
-            <input
-              type="text"
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className={fieldClassName}
-              autoComplete="username"
-            />
+
+            <div>
+              <input
+                type="text"
+                placeholder="Username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className={fieldOk}
+                autoComplete="username"
+              />
+              <p className="mt-1 text-xs text-gray-400 pl-1">Letters, numbers, and underscores only (3–20 chars)</p>
+            </div>
+
             <input
               type="email"
               placeholder="Email address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className={fieldClassName}
+              className={fieldOk}
               autoComplete="email"
             />
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className={`${fieldClassName} pr-10`}
-                autoComplete="new-password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((s) => !s)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-gray-500 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900/20"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
+
+            <div>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); setPasswordTouched(true); }}
+                  className={`${passwordTouched && !passwordValid ? fieldErr : fieldOk} pr-10`}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((s) => !s)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-gray-500 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900/20"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              {passwordTouched && (
+                <ul className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 pl-1">
+                  {pwCheckItems.map(({ key, label }) => (
+                    <li key={key} className={`flex items-center gap-1.5 text-xs ${pwChecks[key] ? "text-green-600" : "text-gray-400"}`}>
+                      <span className={`flex-shrink-0 w-3.5 h-3.5 rounded-full flex items-center justify-center ${pwChecks[key] ? "bg-green-100" : "bg-gray-100"}`}>
+                        {pwChecks[key] ? <Check size={9} strokeWidth={3} /> : <span className="w-1 h-1 rounded-full bg-gray-400 block" />}
+                      </span>
+                      {label}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
-            <div className="relative">
-              <input
-                type={showConfirmPassword ? "text" : "password"}
-                placeholder="Confirm password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className={`${fieldClassName} pr-10`}
-                autoComplete="new-password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword((s) => !s)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-gray-500 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900/20"
-                aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
-              >
-                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
+
+            <div>
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="Confirm password"
+                  value={confirmPassword}
+                  onChange={(e) => { setConfirmPassword(e.target.value); setConfirmTouched(true); }}
+                  className={`${confirmTouched && confirmPassword && !passwordsMatch ? fieldErr : fieldOk} pr-10`}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((s) => !s)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-gray-500 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900/20"
+                  aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                >
+                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              {confirmTouched && confirmPassword && (
+                <p className={`mt-1 text-xs pl-1 flex items-center gap-1 ${passwordsMatch ? "text-green-600" : "text-red-500"}`}>
+                  {passwordsMatch
+                    ? <><Check size={11} strokeWidth={3} /> Passwords match</>
+                    : <><span className="font-bold">✕</span> Passwords do not match</>}
+                </p>
+              )}
             </div>
 
             {error ? <p className="text-sm text-red-600 text-center">{error}</p> : null}
