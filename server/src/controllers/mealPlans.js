@@ -1,6 +1,11 @@
 const { supabaseAdmin } = require('../config/supabase');
 const { searchRecipes } = require('./recipes');
 
+// Schema provided shows the canonical table name is `meal_plan`.
+// Keep `meal_plans` as fallback for older/newer deployments.
+const MEAL_PLAN_TABLE_PRIMARY = 'meal_plan';
+const MEAL_PLAN_TABLE_FALLBACK = 'meal_plans';
+
 function round2(n) {
   if (n == null || !Number.isFinite(n)) return null;
   return Math.round(n * 100) / 100;
@@ -66,6 +71,17 @@ function equipmentToText(equipment) {
 
 function mapBodyToRow(accountId, body) {
   const b = body || {};
+  const rawResponse = b.response ?? b.mealPlanResponse ?? b.meal_plan_response ?? null;
+  const normalizedResponse = (() => {
+    if (rawResponse === undefined || rawResponse === null) return null;
+    if (typeof rawResponse === 'string') return rawResponse;
+    try {
+      return JSON.stringify(rawResponse);
+    } catch {
+      return String(rawResponse);
+    }
+  })();
+
   return {
     account_id: accountId,
     profile_id: strOrNull(b.profileId ?? b.profile_id),
@@ -90,6 +106,7 @@ function mapBodyToRow(accountId, body) {
     schedule: strOrNull(b.schedule ?? b.mealSchedule),
     grocery_list: Boolean(b.grocery_list ?? b.generateGroceryList),
     status: b.status !== undefined ? Boolean(b.status) : true,
+    response: normalizedResponse,
   };
 }
 
@@ -202,8 +219,11 @@ function validateMealPlanBody(body = {}) {
 }
 
 function mealPlanPromptFromBody(body = {}) {
+  // Intentionally plain: the full "chef chatbot + JSON schema" wrapper is handled by `searchRecipes`
+  // so the prompt stays consistent with `recipes.js`.
   return [
-    '[MEAL PLAN] Create a personalized one-day meal plan with exactly 3 meals: breakfast, lunch, and dinner.',
+    'Create a personalized one-day meal plan with exactly 3 meals: breakfast, lunch, and dinner.',
+    'Return 3 recipes in this exact order: Breakfast first, Lunch second, Dinner third.',
     'User preferences:',
     `- Age: ${body.age || 'not specified'}`,
     `- Sex/Gender: ${body.sexGender || 'not specified'}`,
@@ -222,24 +242,26 @@ function mealPlanPromptFromBody(body = {}) {
     `- Medical conditions: ${body.medicalConditions || 'none'}`,
     `- Foods to avoid: ${body.foodsDislike || 'none'}`,
     `- Meal schedule: ${body.mealSchedule || 'not specified'}`,
-    'Return 3 recipes in this order: Breakfast first, Lunch second, Dinner third.',
-    'Keep each meal practical and realistic for this user.',
+    'Keep each meal practical and realistic for a not very proficient cook.',
   ].join('\n');
 }
 
 async function generateAiMealPlan(body = {}, profiles = []) {
   validateMealPlanBody(body);
-  const prompt = mealPlanPromptFromBody(body);
+  const promptText = mealPlanPromptFromBody(body);
   return searchRecipes({
     profiles: Array.isArray(profiles) ? profiles : [],
-    conversation: [{ role: 'user', content: prompt }],
+    promptText,
+    history: [{ role: 'user', content: promptText }],
+    numOptions: 3,
+    avoidTitles: [],
   });
 }
 
 const SELECT_COLUMNS_WITH_PROFILE =
-  'id, account_id, profile_id, age, sex, height_cm, weight_kg, goal, activity_level, budget, cuisine_pref, cooking_time, cooking_skill, available_equipment, allergies, dislikes, medical_condition, carb_goal, fat_goal, hydration_goal, snack_pref, schedule, grocery_list, created_at, status';
+  'id, account_id, profile_id, age, sex, height_cm, weight_kg, goal, activity_level, budget, cuisine_pref, cooking_time, cooking_skill, available_equipment, allergies, dislikes, medical_condition, carb_goal, fat_goal, hydration_goal, snack_pref, schedule, grocery_list, created_at, status, response';
 const SELECT_COLUMNS_NO_PROFILE =
-  'id, account_id, age, sex, height_cm, weight_kg, goal, activity_level, budget, cuisine_pref, cooking_time, cooking_skill, available_equipment, allergies, dislikes, medical_condition, carb_goal, fat_goal, hydration_goal, snack_pref, schedule, grocery_list, created_at, status';
+  'id, account_id, age, sex, height_cm, weight_kg, goal, activity_level, budget, cuisine_pref, cooking_time, cooking_skill, available_equipment, allergies, dislikes, medical_condition, carb_goal, fat_goal, hydration_goal, snack_pref, schedule, grocery_list, created_at, status, response';
 
 function isMissingProfileIdError(error) {
   if (!error) return false;
@@ -259,10 +281,25 @@ function applyMealPlanScope(query, profileId, includeProfileColumn = true) {
   return query.eq('profile_id', profileId);
 }
 
+function isMissingTableError(error) {
+  if (!error) return false;
+  const message = String(error.message || '').toLowerCase();
+  const details = String(error.details || '').toLowerCase();
+  const code = String(error.code || '').toLowerCase();
+  return code === '42p01' || message.includes('does not exist') || details.includes('does not exist');
+}
+
+async function runWithMealPlanTable(op) {
+  const primary = await op(MEAL_PLAN_TABLE_PRIMARY);
+  if (!primary?.error) return primary;
+  if (!isMissingTableError(primary.error)) return primary;
+  return op(MEAL_PLAN_TABLE_FALLBACK);
+}
+
 async function deactivateActiveMealPlans(accountId, profileId = null) {
-  const runDeactivate = async (includeProfileColumn) => {
+  const runDeactivate = async (tableName, includeProfileColumn) => {
     let query = supabaseAdmin
-      .from('meal_plan')
+      .from(tableName)
       .update({ status: false })
       .eq('account_id', accountId)
       .eq('status', true);
@@ -271,10 +308,10 @@ async function deactivateActiveMealPlans(accountId, profileId = null) {
     return query;
   };
 
-  const { error } = await runDeactivate(true);
+  const { error } = await runWithMealPlanTable((tableName) => runDeactivate(tableName, true));
   if (error) {
     if (isMissingProfileIdError(error)) {
-      const fallback = await runDeactivate(false);
+      const fallback = await runWithMealPlanTable((tableName) => runDeactivate(tableName, false));
       if (fallback.error) throw fallback.error;
       return;
     }
@@ -283,10 +320,10 @@ async function deactivateActiveMealPlans(accountId, profileId = null) {
 }
 
 async function getActiveMealPlan(accountId, profileId = null) {
-  const runQuery = async (includeProfileColumn) => {
+  const runQuery = async (tableName, includeProfileColumn) => {
     const selectColumns = includeProfileColumn ? SELECT_COLUMNS_WITH_PROFILE : SELECT_COLUMNS_NO_PROFILE;
     let query = supabaseAdmin
-      .from('meal_plan')
+      .from(tableName)
       .select(selectColumns)
       .eq('account_id', accountId)
       .eq('status', true)
@@ -297,10 +334,10 @@ async function getActiveMealPlan(accountId, profileId = null) {
     return query;
   };
 
-  let { data, error } = await runQuery(true);
+  let { data, error } = await runWithMealPlanTable((tableName) => runQuery(tableName, true));
   if (error) {
     if (isMissingProfileIdError(error)) {
-      const fallback = await runQuery(false);
+      const fallback = await runWithMealPlanTable((tableName) => runQuery(tableName, false));
       if (fallback.error) throw fallback.error;
       data = fallback.data;
       error = null;
@@ -323,16 +360,16 @@ async function createMealPlan(accountId, body, profileId = null) {
     return row;
   };
 
-  const runInsert = async (includeProfileColumn) => {
+  const runInsert = async (tableName, includeProfileColumn) => {
     await deactivateActiveMealPlans(accountId, includeProfileColumn ? profileId : null);
     const selectColumns = includeProfileColumn ? SELECT_COLUMNS_WITH_PROFILE : SELECT_COLUMNS_NO_PROFILE;
     const row = makeInsertRow(includeProfileColumn);
-    return supabaseAdmin.from('meal_plan').insert([row]).select(selectColumns).single();
+    return supabaseAdmin.from(tableName).insert([row]).select(selectColumns).single();
   };
 
-  let { data, error } = await runInsert(true);
+  let { data, error } = await runWithMealPlanTable((tableName) => runInsert(tableName, true));
   if (error && isMissingProfileIdError(error)) {
-    const fallback = await runInsert(false);
+    const fallback = await runWithMealPlanTable((tableName) => runInsert(tableName, false));
     if (fallback.error) throw fallback.error;
     data = fallback.data;
     error = null;
@@ -345,10 +382,10 @@ async function createMealPlan(accountId, body, profileId = null) {
 }
 
 async function listMealPlans(accountId, limit = 20, profileId = null) {
-  const runQuery = async (includeProfileColumn) => {
+  const runQuery = async (tableName, includeProfileColumn) => {
     const selectColumns = includeProfileColumn ? SELECT_COLUMNS_WITH_PROFILE : SELECT_COLUMNS_NO_PROFILE;
     let query = supabaseAdmin
-      .from('meal_plan')
+      .from(tableName)
       .select(selectColumns)
       .eq('account_id', accountId)
       .order('created_at', { ascending: false })
@@ -358,9 +395,9 @@ async function listMealPlans(accountId, limit = 20, profileId = null) {
     return query;
   };
 
-  let { data, error } = await runQuery(true);
+  let { data, error } = await runWithMealPlanTable((tableName) => runQuery(tableName, true));
   if (error && isMissingProfileIdError(error)) {
-    const fallback = await runQuery(false);
+    const fallback = await runWithMealPlanTable((tableName) => runQuery(tableName, false));
     if (fallback.error) throw fallback.error;
     data = fallback.data;
     error = null;

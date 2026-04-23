@@ -160,9 +160,13 @@ const buildAiGeneratedPlan = (fd, aiResponse, createdAtIso) => {
 const fetchAiMealPlan = async (fd, createdAtIso) => {
   const res = await apiCall("/api/meal-plans/generate", {
     method: "POST",
-    body: JSON.stringify(fd),
+    body: JSON.stringify({ ...fd, profileId: fd?.profileId ?? null }),
   });
-  return buildAiGeneratedPlan(fd, res?.response, createdAtIso);
+  return {
+    plan: buildAiGeneratedPlan(fd, res?.response, createdAtIso ?? res?.saved?.created_at),
+    saved: res?.saved ?? null,
+    response: res?.response ?? null,
+  };
 };
 
 const getEmptyMealPlanFormData = () => ({
@@ -271,6 +275,7 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
   const [mealDetailLoading, setMealDetailLoading] = useState(false);
   const [formData, setFormData] = useState(getEmptyMealPlanFormData);
   const [generatedPlan, setGeneratedPlan] = useState(null);
+  const [mealPlanResponse, setMealPlanResponse] = useState(null);
   const [showForm, setShowForm] = useState(true);
   const [mealPlanSaveError, setMealPlanSaveError] = useState(null);
   const [mealPlanSaveOk, setMealPlanSaveOk] = useState(false);
@@ -286,6 +291,7 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
     (async () => {
       setHydrating(true);
       setGeneratedPlan(null);
+      setMealPlanResponse(null);
       setShowForm(true);
       setFormData(getEmptyMealPlanFormData());
       setMealPlanSaveError(null);
@@ -298,6 +304,7 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
         if (!row) {
           setFormData(getEmptyMealPlanFormData());
           setGeneratedPlan(null);
+          setMealPlanResponse(null);
           setShowForm(true);
           return;
         }
@@ -305,7 +312,24 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
         if (form) {
           let gen = null;
           try {
-            gen = await fetchAiMealPlan(form, row.created_at);
+            // If DB already has a stored AI response, prefer it (avoids additional AI calls on hydration).
+            let storedResponse = null;
+            const rawStored = row?.response ?? null;
+            if (rawStored) {
+              try {
+                storedResponse = typeof rawStored === 'string' ? JSON.parse(rawStored) : rawStored;
+              } catch {
+                storedResponse = null;
+              }
+            }
+            if (storedResponse) {
+              setMealPlanResponse(storedResponse);
+              gen = buildAiGeneratedPlan(form, storedResponse, row.created_at);
+            } else {
+              const aiResult = await fetchAiMealPlan({ ...form, profileId: activeProfileId }, row.created_at);
+              setMealPlanResponse(aiResult?.response ?? null);
+              gen = aiResult?.plan ?? null;
+            }
           } catch {
             gen = buildGeneratedPlanFromPreferences(form, row.created_at);
           }
@@ -325,6 +349,15 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
     return () => { cancelled = true; };
   }, [activeProfileId]);
 
+  const getSuggestionForType = (typeLabel) => {
+    const suggestions = Array.isArray(mealPlanResponse?.suggestions) ? mealPlanResponse.suggestions : [];
+    if (suggestions.length < 3) return null;
+    const index = String(typeLabel).toLowerCase() === 'breakfast'
+      ? 0
+      : (String(typeLabel).toLowerCase() === 'lunch' ? 1 : 2);
+    return suggestions[index] ?? null;
+  };
+
   const fetchMealDetail = async (meal, type) => {
     setSelectedMeal({
       type, title: meal.title, calories: meal.calories, protein: meal.protein,
@@ -334,6 +367,57 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
     });
     setMealDetailLoading(true);
     try {
+      // Prefer the stored meal plan response details to avoid extra Gemini calls (quota-safe).
+      const suggestion = getSuggestionForType(type);
+      if (suggestion) {
+        setSelectedMeal(prev => ({
+          ...prev,
+          prepTime: suggestion.prepTimeMin ? `${suggestion.prepTimeMin} min` : "—",
+          cookTime: suggestion.cookTimeMin ? `${suggestion.cookTimeMin} min` : "—",
+          servings: suggestion.servings || "1 serving",
+          difficulty: suggestion.difficulty || "Easy",
+          description: suggestion.description || `A personalized ${type.toLowerCase()} meal tailored to your nutrition goals.`,
+          ingredients: Array.isArray(suggestion.keyIngredients) && suggestion.keyIngredients.length
+            ? suggestion.keyIngredients
+            : (Array.isArray(suggestion.ingredients) && suggestion.ingredients.length ? suggestion.ingredients : ["Ingredients unavailable — please try again."]),
+          instructions: Array.isArray(suggestion.instructions) && suggestion.instructions.length
+            ? suggestion.instructions
+            : ["Instructions unavailable — please try again."],
+          tags: Array.isArray(suggestion.tags) && suggestion.tags.length ? suggestion.tags : [type, "Healthy"],
+        }));
+
+        // Only store clicked meal-plan recipes in history.
+        try {
+          await apiCall("/api/history", {
+            method: "POST",
+            body: JSON.stringify({
+              search_query: meal.title,
+              recipe_id: null,
+              source_api: "gemini-2.5-flash",
+              source: "meal-plan-generation",
+              profile_id: activeProfileId,
+              output_response: {
+                suggestions: [{
+                  title: suggestion.title ?? meal.title,
+                  description: suggestion.description ?? null,
+                  servings: suggestion.servings ?? null,
+                  keyIngredients: suggestion.keyIngredients ?? [],
+                  instructions: suggestion.instructions ?? [],
+                  cookTimeMin: suggestion.cookTimeMin ?? null,
+                  estimatedCostPhp: suggestion.estimatedCostPhp ?? null,
+                  nutritionalInfo: suggestion.nutritionalInfo ?? null,
+                }],
+                estimatedTime: mealPlanResponse?.estimatedTime ?? null,
+              },
+            }),
+          });
+        } catch (err) {
+          console.error("Failed to save meal-plan history:", err);
+        }
+
+        return;
+      }
+
       const res = await apiCall("/api/recipes/meal-detail", {
         method: "POST",
         body: JSON.stringify({ title: meal.title }),
@@ -352,6 +436,28 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
         instructions: Array.isArray(detail.instructions) && detail.instructions.length ? detail.instructions : ["Instructions unavailable — please try again."],
         tags: Array.isArray(detail.tags) && detail.tags.length ? detail.tags : [type, "Healthy"],
       }));
+
+      // Only store clicked meal-plan recipes in history.
+      try {
+        await apiCall("/api/history", {
+          method: "POST",
+          body: JSON.stringify({
+            search_query: meal.title,
+            recipe_id: null,
+            source_api: "gemini-2.5-flash",
+            source: "meal-plan-generation",
+            profile_id: activeProfileId,
+            output_response: {
+              suggestions: [{
+                title: meal.title,
+              }],
+              estimatedTime: `${type} meal`,
+            },
+          }),
+        });
+      } catch (err) {
+        console.error("Failed to save meal-plan history:", err);
+      }
     } catch {
       setSelectedMeal(prev => ({
         ...prev,
@@ -413,16 +519,28 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
     
     try {
       let built = null;
-      try { built = await fetchAiMealPlan(snapshot); }
-      catch { built = buildGeneratedPlanFromPreferences(snapshot); }
+      const snapshotWithProfile = { ...snapshot, profileId: activeProfileId };
+      let savedRow = null;
+      try {
+        const result = await fetchAiMealPlan(snapshotWithProfile);
+        built = result?.plan ?? null;
+        savedRow = result?.saved ?? null;
+        setMealPlanResponse(result?.response ?? null);
+      } catch {
+        built = buildGeneratedPlanFromPreferences(snapshot);
+        setMealPlanResponse(null);
+        try {
+          const res = await apiCall("/api/meal-plans", {
+            method: "POST",
+            body: JSON.stringify({ ...snapshot, profileId: activeProfileId }),
+          });
+          savedRow = res?.data ?? null;
+        } catch {}
+      }
       setGeneratedPlan(built);
-      const res = await apiCall("/api/meal-plans", {
-        method: "POST",
-        body: JSON.stringify({ ...snapshot, profileId: activeProfileId }),
-      });
       setMealPlanSaveOk(true);
-      if (res?.data?.created_at) {
-        setGeneratedPlan((prev) => prev ? { ...prev, createdAt: formatMealPlanCreatedAt(res.data.created_at) } : prev);
+      if (savedRow?.created_at) {
+        setGeneratedPlan((prev) => prev ? { ...prev, createdAt: formatMealPlanCreatedAt(savedRow.created_at) } : prev);
       }
     } catch (err) {
       setMealPlanSaveError(err?.message || "Could not save your meal plan preferences.");

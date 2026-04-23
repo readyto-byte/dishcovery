@@ -4,8 +4,10 @@ const crypto = require('crypto');
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-const GENERATION_MAX_RETRIES = 3;
+const GENERATION_MAX_RETRIES = 2;
 const RETRYABLE_ERROR_PATTERNS = /(unavailable|high demand|try again later|503|429|rate limit|resource exhausted|quota exceeded|too many requests)/i;
+const GEMINI_PRIMARY_MODEL = 'gemini-2.5-flash';
+const GEMINI_FALLBACK_MODEL = 'gemini-2.5-flash-lite';
 
 function buildConversationText(conversation = []) {
   if (!conversation || conversation.length === 0) return '';
@@ -73,6 +75,41 @@ function getRetryDelayMs(error, attempt) {
 function isFreeTierQuotaError(error) {
   const message = String(error?.message || '');
   return /free_tier|quota exceeded.*free tier|generate_content_free_tier_requests/i.test(message);
+}
+
+async function generateContentWithModelFallback({ models, contents, config }) {
+  const modelList = Array.isArray(models) && models.length > 0 ? models : [GEMINI_PRIMARY_MODEL, GEMINI_FALLBACK_MODEL];
+
+  let lastError = null;
+  for (const model of modelList) {
+    let result = null;
+    lastError = null;
+
+    // Retry semantics intentionally match the previous implementation:
+    // - `GENERATION_MAX_RETRIES = 3` means up to 3 retries after the first attempt (4 total tries).
+    for (let attempt = 0; attempt <= GENERATION_MAX_RETRIES; attempt += 1) {
+      try {
+        result = await ai.models.generateContent({ model, contents, config });
+        lastError = null;
+        break;
+      } catch (error) {
+        lastError = error;
+        // Keep retrying (up to max) even for 429/quota errors, because Gemini often returns a Retry-After.
+        if (attempt >= GENERATION_MAX_RETRIES || !isRetryableAiError(error)) {
+          break;
+        }
+        const backoffMs = getRetryDelayMs(error, attempt);
+        await sleep(backoffMs);
+      }
+    }
+
+    if (result) {
+      return { result, modelUsed: model };
+    }
+  }
+
+  const err = lastError || new Error('AI recipe service request failed.');
+  throw err;
 }
 
 async function searchRecipes({ profiles, promptText = '', history = [], numOptions = 3, avoidTitles = [] }) {
@@ -164,39 +201,27 @@ Return ONLY a valid JSON object with this exact structure:
 - Do not include any text outside the JSON object.`;
 
   let result = null;
-  let lastError = null;
-
-  for (let attempt = 0; attempt <= GENERATION_MAX_RETRIES; attempt += 1) {
-    try {
-      result = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: {
-          thinkingConfig: {
-            thinkingBudget: 0,
-          },
+  let modelUsed = null;
+  try {
+    const generated = await generateContentWithModelFallback({
+      models: [GEMINI_PRIMARY_MODEL, GEMINI_FALLBACK_MODEL],
+      contents: prompt,
+      config: {
+        thinkingConfig: {
+          thinkingBudget: 0,
         },
-      });
-      lastError = null;
-      break;
-    } catch (error) {
-      lastError = error;
-      if (attempt >= GENERATION_MAX_RETRIES || !isRetryableAiError(error)) {
-        break;
-      }
-      const backoffMs = getRetryDelayMs(error, attempt);
-      await sleep(backoffMs);
-    }
-  }
-
-  if (!result && lastError) {
-    if (isFreeTierQuotaError(lastError)) {
+      },
+    });
+    result = generated.result;
+    modelUsed = generated.modelUsed;
+  } catch (error) {
+    if (isFreeTierQuotaError(error)) {
       throw new Error(
-        'Gemini free-tier request quota reached for this API key/project. ' +
+        'AI recipe service free-tier request quota reached for this API key/project. ' +
         'If you already have prepaid credits, make sure this key is attached to a billed project/tier (not free-tier only), or wait for quota reset.'
       );
     }
-    throw lastError;
+    throw error;
   }
 
   const usage = result?.usageMetadata || {};
@@ -204,6 +229,7 @@ Return ONLY a valid JSON object with this exact structure:
   console.log('Input tokens:', usage.promptTokenCount ?? null);
   console.log('Output tokens:', usage.candidatesTokenCount ?? null);
   console.log('Total tokens:', usage.totalTokenCount ?? null);
+  console.log('Model used:', modelUsed ?? null);
 
   const text = result.text;
 
@@ -329,39 +355,29 @@ async function generateMealRecipeDetail(title) {
 }`;
 
   let result = null;
-  let lastError = null;
-
-  for (let attempt = 0; attempt <= GENERATION_MAX_RETRIES; attempt += 1) {
-    try {
-      result = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: {
-          thinkingConfig: {
-            thinkingBudget: 0,
-          },
+  let modelUsed = null;
+  try {
+    const generated = await generateContentWithModelFallback({
+      models: [GEMINI_PRIMARY_MODEL, GEMINI_FALLBACK_MODEL],
+      contents: prompt,
+      config: {
+        thinkingConfig: {
+          thinkingBudget: 0,
         },
-      });
-      lastError = null;
-      break;
-    } catch (error) {
-      lastError = error;
-      if (attempt >= GENERATION_MAX_RETRIES || !isRetryableAiError(error)) {
-        break;
-      }
-      const backoffMs = getRetryDelayMs(error, attempt);
-      await sleep(backoffMs);
-    }
-  }
-
-  if (!result && lastError) {
-    if (isFreeTierQuotaError(lastError)) {
-      console.error('[generateMealRecipeDetail] Gemini free-tier quota reached:', lastError.message);
+      },
+    });
+    result = generated.result;
+    modelUsed = generated.modelUsed;
+  } catch (error) {
+    if (isFreeTierQuotaError(error)) {
+      console.error('[generateMealRecipeDetail] Gemini free-tier quota reached:', error.message);
       throw new Error('Recipe service is temporarily unavailable. Please try again later.');
     }
-    console.error('[generateMealRecipeDetail] Gemini API error:', lastError.message);
+    console.error('[generateMealRecipeDetail] Gemini API error:', error.message);
     throw new Error('Could not generate recipe details. Please try again later.');
   }
+
+  console.log('[generateMealRecipeDetail] Model used:', modelUsed ?? null);
 
   const text = result.text;
   try {
