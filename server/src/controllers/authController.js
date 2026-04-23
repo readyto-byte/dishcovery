@@ -18,13 +18,14 @@ function getEmailRedirectToWithName(firstName) {
     redirectUrl.searchParams.set('name', String(firstName).trim());
   }
   return redirectUrl.toString();
+}
+
 function normalizeAccountStatus(status) {
   if (typeof status !== 'string') {
     return ''
   }
 
   return status.trim().replace(/^"+|"+$/g, '').toUpperCase()
-  }
 }
 
 // Sign Up
