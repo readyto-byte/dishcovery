@@ -11,8 +11,8 @@ const {
 router.get('/active', async (req, res) => {
   try {
     const accountId = req.user.id;
-    const profileId = req.query.profileId ?? null;
-    const row = await getActiveMealPlan(accountId, profileId);
+    const profile_id = req.query.profile_id ?? req.query.profileId ?? null;
+    const row = await getActiveMealPlan(accountId, profile_id);
     res.json({ success: true, data: row });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
@@ -22,8 +22,8 @@ router.get('/active', async (req, res) => {
 router.post('/deactivate-active', async (req, res) => {
   try {
     const accountId = req.user.id;
-    const profileId = req.body?.profileId ?? req.body?.profile_id ?? req.query?.profileId ?? null;
-    await deactivateActiveMealPlans(accountId, profileId);
+    const profile_id = req.body?.profile_id ?? req.body?.profileId ?? req.query?.profile_id ?? req.query?.profileId ?? null;
+    await deactivateActiveMealPlans(accountId, profile_id);
     res.json({ success: true });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
@@ -34,8 +34,8 @@ router.get('/', async (req, res) => {
   try {
     const accountId = req.user.id;
     const limit = req.query.limit;
-    const profileId = req.query.profileId ?? null;
-    const rows = await listMealPlans(accountId, limit, profileId);
+    const profile_id = req.query.profile_id ?? req.query.profileId ?? null;
+    const rows = await listMealPlans(accountId, limit, profile_id);
     res.json({ success: true, data: rows });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
@@ -45,8 +45,8 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const accountId = req.user.id;
-    const profileId = req.body?.profileId ?? req.body?.profile_id ?? null;
-    const row = await createMealPlan(accountId, req.body || {}, profileId);
+    const profile_id = req.body?.profile_id ?? req.body?.profileId ?? null;
+    const row = await createMealPlan(accountId, req.body || {}, profile_id);
     res.json({ success: true, data: row });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
