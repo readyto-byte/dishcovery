@@ -22,32 +22,26 @@ function normalizeHistoryOutputResponse(outputResponse) {
 async function addHistoryRecord(accountId, historyData) {
   const {
     search_query,
-    searchQuery,
     recipe_id,
-    recipeId,
     source_api,
-    sourceApi,
     output_response,
-    outputResponse,
     profile_id,
-    profileId,
     profile_name,
-    profileName,
   } = historyData;
 
-  const rawPid = profile_id ?? profileId;
+  const rawPid = profile_id;
   const resolvedProfileId =
     rawPid === undefined || rawPid === null || String(rawPid).trim() === ''
       ? null
       : String(rawPid).trim();
-  const resolvedProfileName = (profile_name ?? profileName ?? '').trim() || null;
+  const resolvedProfileName = (profile_name != null ? String(profile_name) : '').trim() || null;
 
   const payload = {
     account_id: accountId,
-    search_query: search_query ?? searchQuery,
-    recipe_id: recipe_id ?? recipeId ?? null,
-    source_api: source_api ?? sourceApi ?? null,
-    output_response: output_response ?? outputResponse ?? null,
+    search_query: search_query ?? null,
+    recipe_id: recipe_id ?? null,
+    source_api: source_api ?? null,
+    output_response: output_response ?? null,
     searched_date: new Date().toISOString(),
     profile_id: resolvedProfileId,
     profile_name: resolvedProfileName,

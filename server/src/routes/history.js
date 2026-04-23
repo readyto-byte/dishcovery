@@ -7,18 +7,18 @@ router.post('/', async (req, res) => {
   try {
     const accountId = req.user.id;
     const b = req.body ?? {};
-    const query = b.search_query ?? b.searchQuery;
-    if (!query) {
+    const query = b.search_query;
+    if (!query || String(query).trim() === '') {
       return res.status(400).json({ success: false, error: 'search_query is required' });
     }
 
     const history = await addHistoryRecord(accountId, {
-      search_query: query,
-      recipe_id: b.recipe_id ?? b.recipeId,
-      source_api: b.source_api ?? b.sourceApi,
-      output_response: b.output_response ?? b.outputResponse,
-      profile_id: b.profile_id ?? b.profileId,
-      profile_name: b.profile_name ?? b.profileName,
+      search_query: String(query).trim(),
+      recipe_id: b.recipe_id ?? null,
+      source_api: b.source_api ?? null,
+      output_response: b.output_response ?? null,
+      profile_id: b.profile_id ?? null,
+      profile_name: b.profile_name ?? null,
     });
 
     res.json({ success: true, data: history });
