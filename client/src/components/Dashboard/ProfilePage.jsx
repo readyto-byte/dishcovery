@@ -4,6 +4,7 @@ import { apiCall } from "../../api/config";
 
 const DIETARY_OPTIONS = ["Keto", "Gluten-Free", "Vegan", "Vegetarian", "Paleo", "Dairy-Free"];
 const ALLERGY_OPTIONS = ["Nuts", "Shellfish", "Eggs", "Soy", "Wheat", "Fish"];
+const MAX_PROFILES = 5; // Add this constant at the top
 
 const ProfileLoadingSkeleton = () => {
   return (
@@ -428,17 +429,33 @@ const ProfileCard = ({ profile, onEdit, onDelete, onSetActive }) => {
   );
 };
 
-const AddProfileCard = ({ onClick }) => (
-  <button onClick={onClick}
-    className="bg-[#c8dba8]/50 border-2 border-dashed border-[#587A34]/40 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 hover:bg-[#c8dba8] hover:border-[#587A34] transition-all min-h-[180px] group">
-    <div className="w-12 h-12 rounded-full bg-[#587A34]/20 flex items-center justify-center group-hover:bg-[#587A34]/30 transition-colors">
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-[#3a5220]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-      </svg>
-    </div>
-    <span className="text-[#3a5220] font-semibold text-sm">Add Profile</span>
-  </button>
-);
+// Modified AddProfileCard to accept a `disabled` prop
+const AddProfileCard = ({ onClick, disabled }) => {
+  if (disabled) {
+    return (
+      <div className="bg-[#c8dba8]/30 border-2 border-dashed border-[#587A34]/30 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 min-h-[180px] opacity-60 cursor-not-allowed">
+        <div className="w-12 h-12 rounded-full bg-[#587A34]/10 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-[#3a5220]/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+        </div>
+        <span className="text-[#3a5220]/50 font-semibold text-sm">Max Profiles ({MAX_PROFILES})</span>
+      </div>
+    );
+  }
+
+  return (
+    <button onClick={onClick}
+      className="bg-[#c8dba8]/50 border-2 border-dashed border-[#587A34]/40 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 hover:bg-[#c8dba8] hover:border-[#587A34] transition-all min-h-[180px] group">
+      <div className="w-12 h-12 rounded-full bg-[#587A34]/20 flex items-center justify-center group-hover:bg-[#587A34]/30 transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-[#3a5220]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+        </svg>
+      </div>
+      <span className="text-[#3a5220] font-semibold text-sm">Add Profile</span>
+    </button>
+  );
+};
 
 const ProfilePage = ({ activeProfile, onActiveProfileChange }) => {
   const [profiles, setProfiles] = useState([]);
@@ -487,11 +504,28 @@ const ProfilePage = ({ activeProfile, onActiveProfileChange }) => {
   }, []);
 
   const handleEdit = (profile) => setModal({ mode: "edit", profile });
-  const handleAdd = () => setModal({ mode: "add", profile: null });
+  
+  // Modified handleAdd to check profile limit
+  const handleAdd = () => {
+    if (profiles.length >= MAX_PROFILES) {
+      setError(`You've reached the maximum of ${MAX_PROFILES} profiles. Please delete an existing profile to add a new one.`);
+      return;
+    }
+    setModal({ mode: "add", profile: null });
+  };
+  
   const handleClose = () => setModal(null);
 
   const handleSave = async (data) => {
     if (!modal) return;
+    
+    // Check limit again before saving (defensive check)
+    if (modal.mode === "add" && profiles.length >= MAX_PROFILES) {
+      setError(`Cannot add more than ${MAX_PROFILES} profiles.`);
+      setModal(null);
+      return;
+    }
+    
     setIsSaving(true);
     setError("");
     try {
@@ -508,7 +542,8 @@ const ProfilePage = ({ activeProfile, onActiveProfileChange }) => {
           }),
         });
         if (!response?.data) throw new Error("Profile created but no data returned.");
-        setProfiles((prev) => [...prev, mapApiProfileToUi(response.data)]);
+        const newProfile = mapApiProfileToUi(response.data);
+        setProfiles((prev) => [...prev, newProfile]);
       } else {
         const response = await apiCall(`/api/profiles/${data.id}`, {
           method: "PUT",
@@ -547,6 +582,10 @@ const ProfilePage = ({ activeProfile, onActiveProfileChange }) => {
       await apiCall(`/api/profiles/${deleteTarget.id}`, { method: "DELETE" });
       setProfiles((prev) => prev.filter((p) => p.id !== deleteTarget.id));
       setDeleteTarget(null);
+      // Clear the limit error if it was shown
+      if (error?.includes(`maximum of ${MAX_PROFILES}`)) {
+        setError("");
+      }
     } catch (err) {
       setError(err.message || "Failed to delete profile.");
     } finally {
@@ -581,6 +620,8 @@ const ProfilePage = ({ activeProfile, onActiveProfileChange }) => {
     return <ProfileLoadingSkeleton />;
   }
 
+  const hasReachedLimit = profiles.length >= MAX_PROFILES;
+
   return (
     <div className="mx-4 md:mx-8 mt-6">
       <div
@@ -600,6 +641,16 @@ const ProfilePage = ({ activeProfile, onActiveProfileChange }) => {
         <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
       )}
 
+      {/* Show limit warning banner if at max */}
+      {hasReachedLimit && (
+        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          You've reached the maximum of {MAX_PROFILES} profiles. Delete an existing profile to add a new one.
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {profiles.map((profile) => (
           <ProfileCard
@@ -610,7 +661,7 @@ const ProfilePage = ({ activeProfile, onActiveProfileChange }) => {
             onSetActive={handleSetActive}
           />
         ))}
-        <AddProfileCard onClick={handleAdd} />
+        <AddProfileCard onClick={handleAdd} disabled={hasReachedLimit} />
       </div>
 
       {modal && <ProfileModal profile={modal.profile} onSave={handleSave} onClose={handleClose} />}
