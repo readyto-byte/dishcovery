@@ -56,6 +56,8 @@ const FavoritesPage = ({ onViewRecipe, activeProfile }) => {
   const [error, setError] = useState("");
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [recipeToDelete, setRecipeToDelete] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -77,15 +79,15 @@ const FavoritesPage = ({ onViewRecipe, activeProfile }) => {
   }, [activeProfile?.id]);
 
   const removeFromFavorites = async (favoriteId) => {
-    if (confirm('Remove this recipe from your favorites?')) {
-      try {
-        setError("");
-        const profileParam = activeProfile?.id ? `?profile_id=${activeProfile.id}` : "";
-        await apiCall(`/api/favorites/${favoriteId}${profileParam}`, { method: "DELETE" });
-        setFavorites((prev) => prev.filter((recipe) => recipe.id !== favoriteId));
-      } catch (err) {
-        setError(err.message || "Failed to remove favorite.");
-      }
+    try {
+      setError("");
+      const profileParam = activeProfile?.id ? `?profile_id=${activeProfile.id}` : "";
+      await apiCall(`/api/favorites/${favoriteId}${profileParam}`, { method: "DELETE" });
+      setFavorites((prev) => prev.filter((recipe) => recipe.id !== favoriteId));
+      setShowDeleteConfirm(false);
+      setRecipeToDelete(null);
+    } catch (err) {
+      setError(err.message || "Failed to remove favorite.");
     }
   };
 
@@ -102,6 +104,11 @@ const FavoritesPage = ({ onViewRecipe, activeProfile }) => {
     } finally {
       setIsClearing(false);
     }
+  };
+
+  const openDeleteConfirm = (recipe) => {
+    setRecipeToDelete(recipe);
+    setShowDeleteConfirm(true);
   };
 
   if (loading) {
@@ -169,7 +176,7 @@ const FavoritesPage = ({ onViewRecipe, activeProfile }) => {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      removeFromFavorites(recipe.id);
+                      openDeleteConfirm(recipe);
                     }}
                     className="bg-white/20 hover:bg-red-500 rounded-full p-2 text-white transition-all cursor-pointer"
                     title="Remove from favorites"
@@ -180,22 +187,12 @@ const FavoritesPage = ({ onViewRecipe, activeProfile }) => {
                 <div className="p-5">
                   <h3 className="text-xl font-bold text-[#32491B]">{recipe.title}</h3>
                   <p className="text-black/60 text-sm mt-1">
-                    {recipe.type || 'Saved Recipe'} • {recipe.difficulty || 'Medium'}
+                    Saved Recipe
                   </p>
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {recipe.tags && Array.isArray(recipe.tags) && recipe.tags.map((tag, idx) => (
-                      <span
-                        key={idx}
-                        className="bg-[#839705]/20 text-[#32491B] px-2 py-0.5 rounded-full text-xs font-semibold"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
                   <div className="flex justify-between items-center mt-4 pt-3 border-t border-[#B5D098]/30">
                     <div className="flex gap-3 text-sm text-black/60">
-                      <span><i className="far fa-clock"></i> {recipe.time || recipe.prepTime || '15 min'}</span>
-                      <span><i className="fas fa-users"></i> {recipe.servings || 2}</span>
+                      <span><i className="far fa-clock"></i> {recipe.prepTime || '15 min'}</span>
+                      <span><i className="fas fa-users"></i> Serves {recipe.servings || 2}</span>
                     </div>
                     <button
                       onClick={() => onViewRecipe(recipe)}
@@ -211,6 +208,45 @@ const FavoritesPage = ({ onViewRecipe, activeProfile }) => {
         )}
       </div>
 
+      {/* Delete Single Favorite Confirmation Modal */}
+      {showDeleteConfirm && recipeToDelete && (
+        <>
+          <div
+            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
+            onClick={() => setShowDeleteConfirm(false)}
+          />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div
+              className="w-full max-w-md rounded-2xl shadow-2xl overflow-hidden"
+              style={{ background: 'linear-gradient(160deg, #f7f0e3 0%, #ede0c4 100%)' }}
+            >
+              <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg, #32491B, #839705, #B5D098)' }} />
+              <div className="px-6 pt-6 pb-5">
+                <h3 className="text-xl font-bold text-[#1B211A] mb-2">Remove from favorites?</h3>
+                <p className="text-sm text-[#4a5e30] mb-6">
+                  Are you sure you want to remove "{recipeToDelete.title}" from your favorites?
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className="flex-1 py-2.5 rounded-xl border border-[#32491B]/20 bg-white/50 hover:bg-white/80 text-[#32491B] font-semibold text-sm transition-all cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => removeFromFavorites(recipeToDelete.id)}
+                    className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm transition-all cursor-pointer"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Clear All Favorites Confirmation Modal */}
       {showClearConfirm && (
         <>
           <div
