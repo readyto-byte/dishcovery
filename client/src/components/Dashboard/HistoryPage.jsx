@@ -165,6 +165,7 @@ const HistoryPage = ({ onViewRecipe }) => {
       description: hasError ? (parsed?.message || parsed?.error || "") : (firstSuggestion.description || parsed?.message || ""),
       ingredients: Array.isArray(firstSuggestion.keyIngredients) ? firstSuggestion.keyIngredients : [],
       instructions: Array.isArray(firstSuggestion.instructions) ? firstSuggestion.instructions : [],
+      nutritionalInfo: firstSuggestion.nutritionalInfo ?? null,
       hasError,
       errorHeader: hasError ? (parsed?.header || "Invalid request") : null,
       sourceLabel,

@@ -83,6 +83,29 @@ const RecipeDetailsModal = ({ recipe, onClose }) => {
               <span><i className="fas fa-users mr-1"></i>{recipe.servings || "-"}</span>
             </div>
 
+            {recipe.nutritionalInfo && (
+              <div className="rounded-xl p-4 bg-white/60 border border-[#d6e8c0]">
+                <h3 className="font-semibold text-[#32491B] mb-3 flex items-center gap-2">
+                  <i className="fas fa-fire text-[#587A34] text-xs"></i>
+                  Nutritional Info <span className="text-black/40 font-normal text-xs ml-1">(per serving)</span>
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                  {[
+                    { label: 'Calories', value: recipe.nutritionalInfo.calories, color: 'text-amber-700',  bg: 'bg-amber-50',  border: 'border-amber-100' },
+                    { label: 'Protein',  value: recipe.nutritionalInfo.protein,  color: 'text-blue-700',   bg: 'bg-blue-50',   border: 'border-blue-100' },
+                    { label: 'Carbs',    value: recipe.nutritionalInfo.carbs,    color: 'text-green-700',  bg: 'bg-green-50',  border: 'border-green-100' },
+                    { label: 'Fat',      value: recipe.nutritionalInfo.fat,      color: 'text-orange-700', bg: 'bg-orange-50', border: 'border-orange-100' },
+                    { label: 'Fiber',    value: recipe.nutritionalInfo.fiber,    color: 'text-purple-700', bg: 'bg-purple-50', border: 'border-purple-100' },
+                  ].map(({ label, value, color, bg, border }) => value != null && (
+                    <div key={label} className={`flex flex-col items-center justify-center rounded-lg px-2 py-2 border ${bg} ${border}`}>
+                      <span className={`font-extrabold text-sm ${color}`}>{value}</span>
+                      <span className="text-[10px] text-gray-500 font-medium mt-0.5">{label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div>
               <h3 className="font-semibold text-[#32491B] mb-2">Ingredients</h3>
               {Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0 ? (
@@ -327,6 +350,7 @@ const DashboardPage = () => {
               servings: card.servings,
               keyIngredients: card.ingredients,
               instructions: card.instructions,
+              nutritionalInfo: card.nutritionalInfo ?? null,
             }],
             estimatedTime: card.prepTime,
           },
@@ -397,7 +421,7 @@ const DashboardPage = () => {
       }
     } catch (error) {
       if (error.message?.includes("503") || error.message?.includes("high demand") || error.message?.includes("UNAVAILABLE")) {
-        setGenerateError("Gemini is currently busy. Please wait a few seconds and try again.");
+        setGenerateError("Our recipe generator is a little busy right now. Give it a moment and try again!");
       } else {
         setGenerateError(error.message || "Failed to generate recipe.");
       }
