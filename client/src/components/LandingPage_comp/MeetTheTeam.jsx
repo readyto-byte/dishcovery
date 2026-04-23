@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import TyroneImg from '../../assets/Tyrone.jpg';
 import RachelleImg from '../../assets/Rachelle.jpg';
@@ -11,71 +11,93 @@ const ChevronRight = ({ className }) => <svg className={className} xmlns="http:/
 const Github = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>;
 const Linkedin = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>;
 const Mail = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>;
-const Sparkles = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3L14 8L19 10L14 12L12 17L10 12L5 10L10 8L12 3Z"></path><path d="M19 4L20 7L23 8L20 9L19 12L18 9L15 8L18 7L19 4Z"></path></svg>;
 const Copy = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>;
 const Check = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>;
 
 const teamMembers = [
   {
     id: 1,
-    name: "Tyrone Jonel Sangalang",
-    role: "Lead Backend Software Developer",
-    contribution: "Leads the backend development team, designs system architecture, and ensures robust API performance. Oversees database management and server-side logic to deliver scalable solutions.",
+    name: "Tyrone Sangalang",
+    role: "Lead Backend Developer",
+    contribution: "Leads the backend development team, designs system architecture, and ensures robust API performance.",
     image: TyroneImg,
     social: { github: "https://github.com/readyto-byte", linkedin: "https://www.linkedin.com/in/tyrone-sangalang/", email: "sangalang.tyronel@gmail.com" }
   },
   {
     id: 2,
-    name: "Rachelle Joy Quinto",
-    role: "Lead Frontend Developer & UI/UX Designer",
-    contribution: "Leads the frontend team, establishes UI/UX standards, and designs intuitive user interfaces. Ensures seamless user experiences across all devices through thoughtful design and development.",
+    name: "Rachelle Quinto",
+    role: "Lead Frontend Developer & UI/UX",
+    contribution: "Leads the frontend team, establishes UI/UX standards, and designs intuitive user interfaces.",
     image: RachelleImg,
-    social: { github: "https://github.com/r-quinto", linkedin: "https://www.linkedin.com/in/rachelle-quinto-0017433a9?fbclid=IwY2xjawRVZV5leHRuA2FlbQIxMQBzcnRjBmFwcF9pZAEwAAEe0slIEeZWpt1DfY89CLjHi2cb54CKadcG2sfzEaIPBBdNw1nzYAs2dfogTuQ_aem_ZmFrZWR1bW15MTZieXRlcw", email: "rshlquinto@gmail.com" }
+    social: { github: "https://github.com/r-quinto", linkedin: "https://www.linkedin.com/in/rachelle-quinto-0017433a9", email: "rshlquinto@gmail.com" }
   },
   {
     id: 3,
     name: "Gino Ruiz",
-    role: "Backend Software Developer",
-    contribution: "Develops and maintains backend services, optimizes database queries, and implements API endpoints. Focuses on creating efficient and secure server-side functionality.",
+    role: "Backend Developer",
+    contribution: "Develops and maintains backend services, optimizes database queries, and implements API endpoints.",
     image: GinoImg,
-    social: { github: "https://github.com/nogiruiz", linkedin: "https://www.linkedin.com/in/gino-ruiz-880908396?fbclid=IwY2xjawRVZIBleHRuA2FlbQIxMQBzcnRjBmFwcF9pZAEwAAEeT2-llBihUqFIBNeZ1prS8QQXT6hI6vY9iEHvQFXjx_CZGXej785JydeHiBc_aem_2aDQg4s2SgNtsXX5LolMpQ", email: "nogiruiz@gmail.com" }
+    social: { github: "https://github.com/nogiruiz", linkedin: "https://www.linkedin.com/in/gino-ruiz-880908396", email: "nogiruiz@gmail.com" }
   },
   {
     id: 4,
     name: "Mariah Louise Alba",
-    role: "Frontend Developer & UI/UX Designer",
-    contribution: "Builds responsive user interfaces, implements design systems, and creates interactive components. Collaborates on UI/UX decisions to deliver engaging and accessible web experiences.",
+    role: "Frontend Developer & UI/UX",
+    contribution: "Builds responsive user interfaces, implements design systems, and creates interactive components.",
     image: MauiImg,
     social: { github: "https://github.com/mauilouisealba", linkedin: "", email: "marissalba0628@gmail.com" }
   },
   {
     id: 5,
     name: "Josef Karol Buri",
-    role: "Frontend Developer & UI/UX Designer",
-    contribution: "Develops reusable UI components, optimizes frontend performance, and ensures design consistency. Contributes to user research and implements visually appealing interfaces.",
+    role: "Frontend Developer & UI/UX",
+    contribution: "Develops reusable UI components, optimizes frontend performance, and ensures design consistency.",
     image: JosefImg,
-    social: { github: "https://github.com/josefkarollburi", linkedin: "https://www.linkedin.com/in/josef-karol-buri-76a6473ba?fbclid=IwY2xjawRVZXdleHRuA2FlbQIxMQBzcnRjBmFwcF9pZAEwAAEeb2aeNykETvPzu2l78_664oybzWFRhXs7gAN2WLsc3gLBUc18xBIIyHMx734_aem_XsNIZMZcvM7mTJgATIqiow", email: "josefkaroll.buri@gmail.com" }
+    social: { github: "https://github.com/josefkarollburi", linkedin: "https://www.linkedin.com/in/josef-karol-buri-76a6473ba", email: "josefkaroll.buri@gmail.com" }
   }
 ];
 
 const orderedTeam = [teamMembers[2], teamMembers[1], teamMembers[0], teamMembers[3], teamMembers[4]];
 
 const MeetTheTeam = () => {
-  const defaultIndex = orderedTeam.findIndex(member => member.name === "Tyrone Jonel Sangalang");
+  const defaultIndex = orderedTeam.findIndex(member => member.name === "Tyrone Sangalang");
   const [activeIndex, setActiveIndex] = useState(defaultIndex !== -1 ? defaultIndex : 2);
   const [showEmailTooltip, setShowEmailTooltip] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [descriptionAnimation, setDescriptionAnimation] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    setDescriptionAnimation(true);
+    const timer = setTimeout(() => setDescriptionAnimation(false), 500);
+    return () => clearTimeout(timer);
+  }, [activeIndex]);
 
   const handlePrevious = () => {
+    if (isAnimating) return;
+    setIsAnimating(true);
     setActiveIndex((prev) => (prev === 0 ? orderedTeam.length - 1 : prev - 1));
     setShowEmailTooltip(false);
     setCopied(false);
+    setTimeout(() => setIsAnimating(false), 600);
   };
 
   const handleNext = () => {
+    if (isAnimating) return;
+    setIsAnimating(true);
     setActiveIndex((prev) => (prev === orderedTeam.length - 1 ? 0 : prev + 1));
     setShowEmailTooltip(false);
     setCopied(false);
+    setTimeout(() => setIsAnimating(false), 600);
   };
 
   const getVisibleMembers = () => {
@@ -90,75 +112,160 @@ const MeetTheTeam = () => {
 
   const getItemStyle = (position) => {
     const absPosition = Math.abs(position);
-    if (position === 0) return { transform: 'translateX(0px) scale(1) translateY(-8px)', opacity: 1, zIndex: 30 };
-    if (absPosition === 1) {
-      const translateX = position === -1 ? -130 : 130;
-      return { transform: `translateX(${translateX}px) scale(0.85) translateY(8px)`, opacity: 0.85, zIndex: 20 };
+    if (position === 0) {
+      return { 
+        transform: 'translateX(0px) scale(1) translateY(-5px)', 
+        opacity: 1, 
+        zIndex: 30,
+        transition: 'all 0.6s cubic-bezier(0.34, 1.2, 0.64, 1)'
+      };
     }
-    const translateX = position === -2 ? -240 : 240;
-    return { transform: `translateX(${translateX}px) scale(0.7) translateY(20px)`, opacity: 0.4, zIndex: 10 };
+    if (absPosition === 1) {
+      const translateX = position === -1 ? (isMobile ? -70 : -140) : (isMobile ? 70 : 140);
+      const rotate = position === -1 ? '-3deg' : '3deg';
+      return { 
+        transform: `translateX(${translateX}px) scale(${isMobile ? 0.7 : 0.85}) translateY(5px) rotate(${rotate})`, 
+        opacity: isMobile ? 0.5 : 0.8, 
+        zIndex: 20,
+        transition: 'all 0.6s cubic-bezier(0.34, 1.2, 0.64, 1)'
+      };
+    }
+    const translateX = position === -2 ? (isMobile ? -120 : -260) : (isMobile ? 120 : 260);
+    const rotate = position === -2 ? '-8deg' : '8deg';
+    return { 
+      transform: `translateX(${translateX}px) scale(${isMobile ? 0.5 : 0.65}) translateY(12px) rotate(${rotate})`, 
+      opacity: isMobile ? 0.2 : 0.3, 
+      zIndex: 10,
+      transition: 'all 0.6s cubic-bezier(0.34, 1.2, 0.64, 1)'
+    };
   };
 
   const activeMember = orderedTeam[activeIndex];
   const visibleMembers = getVisibleMembers();
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!isAnimating) {
+        handleNext();
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [activeIndex, isAnimating]);
+
   return (
-    <section className="py-16 px-4 bg-gradient-to-b from-[#FDFBF7] to-white relative overflow-hidden">
+    <section className="py-12 md:py-16 px-4 bg-gradient-to-br from-[#0a0f0a] via-[#1a2415] to-[#0d140a] relative overflow-hidden">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-1/4 w-80 h-80 bg-[#839705]/5 rounded-full blur-3xl animate-pulse-slow"></div>
-        <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-[#2D3A18]/5 rounded-full blur-3xl animate-pulse-slow animation-delay-2000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-gradient-radial from-[#839705]/10 via-transparent to-transparent pointer-events-none transition-all duration-500" style={{ opacity: 1, animation: 'spotlightPulse 2s ease-in-out infinite' }}></div>
+        <div className="absolute top-0 left-1/2 w-[400px] md:w-[600px] h-[400px] md:h-[600px] bg-[#8BAE66]/5 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 right-1/2 w-[300px] md:w-[400px] h-[300px] md:h-[400px] bg-[#BBCB2E]/5 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[500px] h-[300px] md:h-[500px] rounded-full bg-gradient-radial from-[#8BAE66]/8 via-transparent to-transparent"></div>
+        
+        {[...Array(isMobile ? 10 : 20)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full bg-[#8BAE66] animate-float"
+            style={{
+              width: Math.random() * 2 + 1 + 'px',
+              height: Math.random() * 2 + 1 + 'px',
+              left: Math.random() * 100 + '%',
+              top: Math.random() * 100 + '%',
+              animationDelay: Math.random() * 5 + 's',
+              animationDuration: Math.random() * 8 + 4 + 's',
+              opacity: Math.random() * 0.3 + 0.1
+            }}
+          />
+        ))}
       </div>
 
       <div className="max-w-6xl mx-auto relative z-10">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#839705]/10 border border-[#839705]/20 mb-3 animate-bounce-subtle">
-            <Sparkles className="w-3.5 h-3.5 text-[#839705] animate-spin-slow" />
-            <span className="text-xs font-semibold text-[#839705] tracking-wide uppercase">The Dream Team</span>
-          </div>
-          <h2 className="text-3xl md:text-4xl font-bold text-[#2D3A18] mb-2">
-            Meet the <span className="text-[#839705] relative inline-block">
-              Creators
-              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#839705] transform scale-x-0 transition-transform duration-500 origin-left" style={{ transform: 'scaleX(1)' }}></span>
+        <div className="text-center mb-8 md:mb-10 animate-fadeIn">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-3 md:mb-4">
+            <span className="text-white">Meet the </span>
+            <span className="relative inline-block">
+              <span className="absolute inset-0 blur-2xl bg-gradient-to-r from-[#8BAE66] to-[#BBCB2E] rounded-full animate-pulse-glow"></span>
+              <span className="relative bg-gradient-to-r from-[#8BAE66] to-[#BBCB2E] bg-clip-text text-transparent animate-gradient-shift">
+                Creators
+              </span>
             </span>
           </h2>
-          <p className="text-gray-500 max-w-2xl mx-auto text-sm">
+          <p className="text-gray-400 max-w-2xl mx-auto text-xs md:text-sm animate-slideUp">
             Five passionate computer engineering students turning cooking and coding into Dishcovery
           </p>
         </div>
 
-        <div className="relative mb-6">
-          <button onClick={handlePrevious} className="absolute left-0 top-1/2 -translate-y-1/2 z-40 p-2.5 rounded-full bg-white shadow-lg border border-gray-200 text-[#2D3A18] hover:bg-[#839705] hover:text-white hover:border-[#839705] hover:scale-110 transition-all duration-300 group" aria-label="Previous">
-            <ChevronLeft className="w-5 h-5 group-hover:animate-pulse" />
+        <div className="relative mb-3 md:mb-4">
+          <button 
+            onClick={handlePrevious} 
+            disabled={isAnimating}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-40 p-1.5 md:p-2.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-[#8BAE66] hover:border-[#8BAE66] hover:scale-110 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Previous"
+          >
+            <ChevronLeft className="w-4 h-4 md:w-5 md:h-5" />
           </button>
-          <button onClick={handleNext} className="absolute right-0 top-1/2 -translate-y-1/2 z-40 p-2.5 rounded-full bg-white shadow-lg border border-gray-200 text-[#2D3A18] hover:bg-[#839705] hover:text-white hover:border-[#839705] hover:scale-110 transition-all duration-300 group" aria-label="Next">
-            <ChevronRight className="w-5 h-5 group-hover:animate-pulse" />
+          <button 
+            onClick={handleNext} 
+            disabled={isAnimating}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-40 p-1.5 md:p-2.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-[#8BAE66] hover:border-[#8BAE66] hover:scale-110 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Next"
+          >
+            <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
           </button>
 
-          <div className="relative flex justify-center items-center min-h-[320px]">
+          <div className="relative flex justify-center items-center min-h-[280px] md:min-h-[400px]">
             {visibleMembers.map((member) => {
               const style = getItemStyle(member.position);
               return (
                 <div
                   key={`${member.id}-${member.position}`}
-                  className="absolute transition-all duration-500 ease-out cursor-pointer group"
-                  style={{ transform: style.transform, opacity: style.opacity, zIndex: style.zIndex, transition: 'all 0.5s cubic-bezier(0.34, 1.2, 0.64, 1)' }}
-                  onClick={() => { setActiveIndex(member.originalIndex); setShowEmailTooltip(false); }}
+                  className="absolute cursor-pointer group"
+                  style={style}
+                  onClick={() => { 
+                    if (!isAnimating && !member.isCenter) {
+                      setIsAnimating(true);
+                      setActiveIndex(member.originalIndex);
+                      setShowEmailTooltip(false);
+                      setTimeout(() => setIsAnimating(false), 600);
+                    }
+                  }}
                 >
                   <div className="flex flex-col items-center">
                     <div className="relative">
+
                       {member.isCenter && (
-                        <div className="absolute inset-0 rounded-full animate-ping-slow opacity-75" style={{ background: 'radial-gradient(circle, rgba(131,151,5,0.3) 0%, rgba(131,151,5,0) 70%)', width: 'calc(100% + 20px)', height: 'calc(100% + 20px)', left: '-10px', top: '-10px' }}></div>
+                        <div className="absolute inset-0 rounded-full animate-pulse-glow-ring" style={{ 
+                          background: 'radial-gradient(circle, rgba(139,174,102,0.4) 0%, rgba(139,174,102,0) 80%)', 
+                          width: 'calc(100% + 30px)', 
+                          height: 'calc(100% + 30px)', 
+                          left: '-15px', 
+                          top: '-15px' 
+                        }} />
                       )}
-                      <div className={`relative rounded-full overflow-hidden transition-all duration-300 ${member.isCenter ? 'ring-4 ring-[#839705] ring-offset-4 ring-offset-white shadow-2xl animate-glow' : 'ring-2 ring-white/60 shadow-lg group-hover:ring-[#839705]/40 group-hover:scale-105'}`}>
-                        <img src={member.image} alt={member.name} className="w-28 h-28 md:w-32 md:h-32 object-cover transition-transform duration-500 group-hover:scale-110" onError={(e) => { e.target.src = 'https://via.placeholder.com/128?text=No+Image'; }} />
-                        {member.isCenter && <div className="absolute inset-0 bg-gradient-to-t from-[#839705]/30 via-transparent to-transparent pointer-events-none"></div>}
+
+                      <div className={`relative rounded-full overflow-hidden transition-all duration-500 ${
+                        member.isCenter 
+                          ? 'ring-3 md:ring-4 ring-[#8BAE66] ring-offset-2 md:ring-offset-4 ring-offset-[#0a0f0a] shadow-2xl shadow-[#8BAE66]/30 animate-glow' 
+                          : 'ring-2 ring-white/20 shadow-lg group-hover:ring-[#8BAE66]/40 group-hover:scale-105'
+                      }`}>
+                        <img 
+                          src={member.image} 
+                          alt={member.name} 
+                          className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 lg:w-36 lg:h-36 object-cover transition-transform duration-500 group-hover:scale-110" 
+                          onError={(e) => { e.target.src = 'https://via.placeholder.com/128?text=No+Image'; }} 
+                        />
                       </div>
                     </div>
+
                     {member.isCenter && (
-                      <div className="text-center mt-2 animate-slideUp">
-                        <p className="font-bold text-[#2D3A18] text-base animate-textShine">{member.name}</p>
-                        <p className="text-[#839705] text-xs font-semibold">{member.role}</p>
+                      <div className="text-center mt-1.5 md:mt-2 animate-slideUp">
+                        <p className="font-bold text-white text-xs sm:text-sm md:text-base lg:text-lg animate-text-shine">{member.name}</p>
+                        <p className="text-[#8BAE66] text-[10px] md:text-xs font-semibold mt-0.5">{member.role}</p>
+                      </div>
+                    )}
+
+                    {!member.isCenter && (
+                      <div className="absolute -bottom-6 md:-bottom-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+                        <div className="bg-[#1a2415]/90 backdrop-blur-sm text-white text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded-full border border-[#8BAE66]/30">
+                          {member.name.split(' ')[0]}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -168,97 +275,159 @@ const MeetTheTeam = () => {
           </div>
         </div>
 
-        <div className="max-w-2xl mx-auto">
-          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 transition-all duration-500 hover:shadow-2xl hover:scale-105 group transform-gpu" style={{ animation: 'slideUpFade 0.4s ease-out forwards' }}>
-            <div className="flex items-start gap-4">
-              <div className="hidden md:block flex-shrink-0">
-                <div className="w-14 h-14 rounded-full overflow-hidden ring-2 ring-[#839705]/20 shadow-md transition-transform duration-300 group-hover:scale-110">
-                  <img src={activeMember?.image} alt={activeMember?.name} className="w-full h-full object-cover" onError={(e) => { e.target.src = 'https://via.placeholder.com/56?text=No+Image'; }} />
-                </div>
-              </div>
-
-              <div className="flex-1">
-                <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
-                  <div>
-                    <h3 className="text-lg font-bold text-[#2D3A18] transition-colors duration-300 group-hover:text-[#839705]">{activeMember?.name}</h3>
-                    <p className="text-[#839705] text-xs font-semibold">{activeMember?.role}</p>
+        <div className="max-w-2xl mx-auto mt-0">
+          <div className="relative group">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-[#8BAE66] to-[#BBCB2E] rounded-xl md:rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-500 animate-gradient"></div>
+            <div className="relative bg-white/5 backdrop-blur-xl rounded-xl md:rounded-2xl border border-white/10 p-3 md:p-5 transition-all duration-300 hover:bg-white/10 hover:scale-[1.01] md:hover:scale-[1.02]">
+              <div className="flex items-start gap-3 md:gap-4">
+                <div className="hidden md:block flex-shrink-0">
+                  <div className="w-10 h-10 md:w-14 md:h-14 rounded-full overflow-hidden ring-2 ring-[#8BAE66]/50 shadow-xl transition-all duration-300 group-hover:scale-110 group-hover:ring-[#8BAE66]">
+                    <img src={activeMember?.image} alt={activeMember?.name} className="w-full h-full object-cover" onError={(e) => { e.target.src = 'https://via.placeholder.com/56?text=No+Image'; }} />
                   </div>
-                  <div className="flex gap-3 items-center">
-                    <a href={activeMember?.social?.github} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-[#2D3A18] transition-all duration-300 hover:scale-125 transform inline-block">
-                      <Github className="w-4 h-4" />
-                    </a>
-                    {activeMember?.social?.linkedin && (
-                      <a href={activeMember.social.linkedin} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-[#2D3A18] transition-all duration-300 hover:scale-125 transform inline-block">
-                        <Linkedin className="w-4 h-4" />
+                </div>
+
+                <div className="flex-1">
+                  <div className="flex items-center justify-between flex-wrap gap-1 md:gap-2 mb-1 md:mb-2">
+                    <div>
+                      <h3 className="text-sm md:text-lg font-bold text-white transition-all duration-300 group-hover:text-[#8BAE66]">
+                        {activeMember?.name}
+                      </h3>
+                      <p className="text-[#8BAE66] text-[10px] md:text-xs font-semibold mt-0.5">{activeMember?.role}</p>
+                    </div>
+                    <div className="flex gap-1.5 md:gap-2 items-center">
+                      <a href={activeMember?.social?.github} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-all duration-300 hover:scale-110 hover:rotate-12 transform">
+                        <Github className="w-3 h-3 md:w-3.5 md:h-3.5" />
                       </a>
-                    )}
-                    <div className="relative">
-                      <button
-                        onClick={() => setShowEmailTooltip((prev) => !prev)}
-                        className="text-gray-400 hover:text-[#2D3A18] transition-all duration-300 hover:scale-125 transform inline-block cursor-pointer"
-                        aria-label="Show email"
-                      >
-                        <Mail className="w-4 h-4" />
-                      </button>
-                      {showEmailTooltip && (
-                        <div className="absolute bottom-full right-0 mb-2 z-50 animate-slideUp">
-                          <div className="bg-[#2D3A18] text-white text-xs rounded-lg px-1 py-1 whitespace-nowrap shadow-xl flex items-center gap-1">
-                            <button
-                              onClick={() => {
-                                navigator.clipboard.writeText(activeMember?.social?.email || '');
-                                setCopied(true);
-                                setTimeout(() => setCopied(false), 2000);
-                              }}
-                              className="flex items-center justify-center w-6 h-6 rounded-md hover:bg-white/10 transition-colors cursor-pointer shrink-0"
-                              aria-label="Copy email"
-                              title="Copy email"
-                            >
-                              {copied
-                                ? <Check className="w-3 h-3 text-[#B5D098]" />
-                                : <Copy className="w-3 h-3 text-[#839705]" />
-                              }
-                            </button>
-                            <span className="px-2 py-1">{activeMember?.social?.email}</span>
-                          </div>
-                          <div className="absolute top-full right-3 w-0 h-0" style={{ borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '5px solid #2D3A18' }} />
-                        </div>
+                      {activeMember?.social?.linkedin && (
+                        <a href={activeMember.social.linkedin} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-all duration-300 hover:scale-110 hover:-rotate-12 transform">
+                          <Linkedin className="w-3 h-3 md:w-3.5 md:h-3.5" />
+                        </a>
                       )}
+                      <div className="relative">
+                        <button
+                          onClick={() => setShowEmailTooltip((prev) => !prev)}
+                          className="text-gray-400 hover:text-white transition-all duration-300 hover:scale-110 transform"
+                          aria-label="Show email"
+                        >
+                          <Mail className="w-3 h-3 md:w-3.5 md:h-3.5" />
+                        </button>
+                        {showEmailTooltip && (
+                          <div className="absolute bottom-full right-0 mb-2 z-50 animate-slideUp">
+                            <div className="bg-[#1a2415] border border-[#8BAE66]/30 text-white text-[10px] md:text-xs rounded-lg px-1.5 md:px-2 py-1 md:py-1.5 whitespace-nowrap shadow-xl flex items-center gap-1 md:gap-2 backdrop-blur-sm">
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(activeMember?.social?.email || '');
+                                  setCopied(true);
+                                  setTimeout(() => setCopied(false), 2000);
+                                }}
+                                className="flex items-center justify-center w-4 h-4 md:w-5 md:h-5 rounded-md hover:bg-white/10 transition-colors"
+                                aria-label="Copy email"
+                              >
+                                {copied ? <Check className="w-2 h-2 md:w-2.5 md:h-2.5 text-[#8BAE66]" /> : <Copy className="w-2 h-2 md:w-2.5 md:h-2.5 text-[#8BAE66]" />}
+                              </button>
+                              <span className="pr-1 md:pr-2">{activeMember?.social?.email}</span>
+                            </div>
+                            <div className="absolute top-full right-3 w-0 h-0" style={{ borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '5px solid #1a2415' }} />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="pt-2 border-t border-gray-100">
-                  <p className="text-gray-600 text-sm leading-relaxed transition-all duration-300 group-hover:text-gray-700">{activeMember?.contribution}</p>
+                  <div className="pt-1 md:pt-2 border-t border-white/10">
+                    <p className={`text-gray-300 text-[10px] md:text-xs leading-relaxed transition-all duration-500 ${
+                      descriptionAnimation 
+                        ? 'animate-description-fade-in' 
+                        : ''
+                    }`}>
+                      {activeMember?.contribution}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="flex justify-center gap-1.5 mt-5">
+        <div className="flex justify-center gap-1.5 md:gap-2 mt-4 md:mt-6">
           {orderedTeam.map((_, idx) => (
-            <button key={idx} onClick={() => { setActiveIndex(idx); setShowEmailTooltip(false); }} className={`transition-all duration-300 rounded-full ${idx === activeIndex ? 'w-6 h-1.5 bg-[#839705] animate-pulse' : 'w-1.5 h-1.5 bg-gray-300 hover:bg-gray-400 hover:scale-125 transform'}`} aria-label={`Go to member ${idx + 1}`} />
+            <button
+              key={idx}
+              onClick={() => { 
+                if (!isAnimating) {
+                  setIsAnimating(true);
+                  setActiveIndex(idx); 
+                  setShowEmailTooltip(false);
+                  setTimeout(() => setIsAnimating(false), 600);
+                }
+              }}
+              className={`transition-all duration-300 ${
+                idx === activeIndex 
+                  ? 'w-4 md:w-6 h-1 md:h-1.5 bg-gradient-to-r from-[#8BAE66] to-[#BBCB2E] rounded-full animate-pulse' 
+                  : 'w-1 md:w-1.5 h-1 md:h-1.5 bg-white/30 rounded-full hover:bg-white/50 hover:scale-125'
+              }`}
+              aria-label={`Go to member ${idx + 1}`}
+            />
           ))}
         </div>
       </div>
 
       <style>{`
-        @keyframes slideUpFade { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes spotlightPulse { 0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); } 50% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.1); } }
-        @keyframes pulse-slow { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.05); } }
-        @keyframes glow { 0%, 100% { box-shadow: 0 0 5px rgba(131,151,5,0.3), 0 0 10px rgba(131,151,5,0.2); } 50% { box-shadow: 0 0 20px rgba(131,151,5,0.6), 0 0 30px rgba(131,151,5,0.3); } }
-        @keyframes textShine { 0% { background-position: -100% 0; } 100% { background-position: 200% 0; } }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        @keyframes ping { 0% { transform: scale(1); opacity: 0.8; } 75%, 100% { transform: scale(1.3); opacity: 0; } }
-        .animate-pulse-slow { animation: pulse-slow 4s ease-in-out infinite; }
-        .animation-delay-2000 { animation-delay: 2s; }
-        .animate-spin-slow { animation: spin 3s linear infinite; }
-        .animate-ping-slow { animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite; }
-        .animate-glow { animation: glow 2s ease-in-out infinite; }
-        .animate-textShine { background: linear-gradient(120deg, #2D3A18 0%, #839705 50%, #2D3A18 100%); background-size: 200% auto; background-clip: text; -webkit-background-clip: text; color: transparent; animation: textShine 3s linear infinite; }
+        @keyframes pulse-glow {
+          0%, 100% { opacity: 0.3; transform: scale(1); }
+          50% { opacity: 0.8; transform: scale(1.1); }
+        }
+        @keyframes pulse-glow-ring {
+          0%, 100% { opacity: 0.4; transform: scale(1); }
+          50% { opacity: 0.8; transform: scale(1.2); }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) translateX(0px); opacity: 0; }
+          50% { transform: translateY(-20px) translateX(10px); opacity: 0.3; }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes descriptionFadeIn {
+          0% { opacity: 0; transform: translateX(-8px); }
+          100% { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes gradient-shift {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+        @keyframes text-shine {
+          0% { background-position: -100% 0; }
+          100% { background-position: 200% 0; }
+        }
+        @keyframes glow {
+          0%, 100% { box-shadow: 0 0 5px rgba(139,174,102,0.3), 0 0 10px rgba(139,174,102,0.2); }
+          50% { box-shadow: 0 0 15px rgba(139,174,102,0.5), 0 0 20px rgba(139,174,102,0.3); }
+        }
+        @keyframes gradient {
+          0% { opacity: 0.3; }
+          50% { opacity: 0.6; }
+          100% { opacity: 0.3; }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 0.5; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.05); }
+        }
+        .animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+        .animate-pulse-glow-ring { animation: pulse-glow-ring 2s ease-in-out infinite; }
+        .animate-float { animation: float 8s ease-in-out infinite; }
+        .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
         .animate-slideUp { animation: slideUp 0.4s ease-out; }
-        .animate-bounce-subtle { animation: bounce 2s ease-in-out infinite; }
+        .animate-description-fade-in { animation: descriptionFadeIn 0.4s ease-out; }
+        .animate-gradient-shift { background-size: 200% auto; animation: gradient-shift 3s ease infinite; }
+        .animate-text-shine { background: linear-gradient(120deg, #fff 0%, #8BAE66 50%, #fff 100%); background-size: 200% auto; background-clip: text; -webkit-background-clip: text; color: transparent; animation: text-shine 3s linear infinite; }
+        .animate-glow { animation: glow 2s ease-in-out infinite; }
+        .animate-gradient { animation: gradient 3s ease-in-out infinite; }
+        .animate-pulse { animation: pulse 2s ease-in-out infinite; }
         .bg-gradient-radial { background-image: radial-gradient(circle, var(--tw-gradient-stops)); }
       `}</style>
     </section>
