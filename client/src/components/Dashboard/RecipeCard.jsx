@@ -106,6 +106,32 @@ const RecipeCard = ({ recipeData, isLoading }) => {
             ))}
           </div>
 
+                    {recipeData.nutritionalInfo && (
+            <div className="rounded-xl p-4 bg-white/60 border border-[#d6e8c0]">
+              <h4 className="text-[#2d3f1a] font-bold text-sm mb-3 flex items-center gap-2">
+                <span className="w-6 h-6 rounded-md bg-[#587A34]/15 flex items-center justify-center">
+                  <i className="fas fa-fire text-[#587A34] text-[10px]"></i>
+                </span>
+                Nutritional Info <span className="text-[#3a5220]/50 font-normal text-xs">(per serving)</span>
+              </h4>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                {[
+                  { label: 'Calories', value: recipeData.nutritionalInfo.calories, color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-100' },
+                  { label: 'Protein',  value: recipeData.nutritionalInfo.protein,  color: 'text-blue-700',  bg: 'bg-blue-50',  border: 'border-blue-100' },
+                  { label: 'Carbs',    value: recipeData.nutritionalInfo.carbs,    color: 'text-green-700', bg: 'bg-green-50', border: 'border-green-100' },
+                  { label: 'Fat',      value: recipeData.nutritionalInfo.fat,      color: 'text-orange-700',bg: 'bg-orange-50',border: 'border-orange-100' },
+                  { label: 'Fiber',    value: recipeData.nutritionalInfo.fiber,    color: 'text-purple-700',bg: 'bg-purple-50',border: 'border-purple-100' },
+                ].map(({ label, value, color, bg, border }) => value != null && (
+                  <div key={label} className={`flex flex-col items-center justify-center rounded-lg px-2 py-2 border ${bg} ${border}`}>
+                    <span className={`font-extrabold text-sm ${color}`}>{value}</span>
+                    <span className="text-[10px] text-gray-500 font-medium mt-0.5">{label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+
           <div className="h-px bg-gradient-to-r from-transparent via-[#587A34]/20 to-transparent" />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
