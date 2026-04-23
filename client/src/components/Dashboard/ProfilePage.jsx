@@ -4,7 +4,37 @@ import { apiCall } from "../../api/config";
 
 const DIETARY_OPTIONS = ["Keto", "Gluten-Free", "Vegan", "Vegetarian", "Paleo", "Dairy-Free"];
 const ALLERGY_OPTIONS = ["Nuts", "Shellfish", "Eggs", "Soy", "Wheat", "Fish"];
-const MAX_PROFILES = 5; // Add this constant at the top
+const MAX_PROFILES = 5;
+
+const compressImage = (base64String, maxWidth = 150, maxHeight = 150, quality = 0.5) => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.src = base64String;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+      
+      if (width > height) {
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxHeight) {
+          width = (width * maxHeight) / height;
+          height = maxHeight;
+        }
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+  });
+};
 
 const ProfileLoadingSkeleton = () => {
   return (
@@ -14,7 +44,6 @@ const ProfileLoadingSkeleton = () => {
         .skeleton { background: linear-gradient(90deg, #e8f2dc 25%, #d4e9c0 50%, #e8f2dc 75%); background-size: 600px 100%; animation: shimmer 1.6s infinite linear; border-radius: 8px; }
       `}</style>
       
-      {/* Hero skeleton */}
       <div className="relative rounded-2xl shadow-xl overflow-hidden px-8 py-7 mb-6 bg-[#1e3a0f]/80">
         <div className="space-y-2">
           <div className="skeleton h-8 w-48 opacity-30" />
@@ -22,7 +51,6 @@ const ProfileLoadingSkeleton = () => {
         </div>
       </div>
 
-      {/* Profile cards skeleton */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="bg-[#c8dba8] rounded-2xl p-5 flex flex-col items-center gap-3 shadow-md">
@@ -57,10 +85,12 @@ const Avatar = ({ name, avatar, size = "lg" }) => {
     .slice(0, 2);
 
   const sizeClass = size === "lg" ? "w-16 h-16 text-xl" : "w-10 h-10 text-sm";
+  const avatarKey = avatar || name;
 
   if (avatar) {
     return (
       <img
+        key={avatarKey}
         src={avatar}
         alt={name}
         className={`${sizeClass} rounded-full object-cover shadow-inner border-2 border-[#3a5220]`}
@@ -70,6 +100,7 @@ const Avatar = ({ name, avatar, size = "lg" }) => {
 
   return (
     <div
+      key={avatarKey}
       className={`${sizeClass} rounded-full bg-[#3a5220] flex items-center justify-center text-[#F0E6D1] font-bold shadow-inner`}
     >
       {initials}
@@ -79,12 +110,32 @@ const Avatar = ({ name, avatar, size = "lg" }) => {
 
 const AvatarUpload = ({ name, avatar, onAvatarChange }) => {
   const fileInputRef = useRef(null);
+  const [isCompressing, setIsCompressing] = useState(false);
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Image is too large. Please select an image under 2MB.");
+      return;
+    }
+    
+    setIsCompressing(true);
+    
     const reader = new FileReader();
-    reader.onload = (ev) => onAvatarChange(ev.target.result);
+    reader.onload = async (ev) => {
+      try {
+        // Compress the image to reduce size
+        const compressed = await compressImage(ev.target.result, 150, 150, 0.5);
+        onAvatarChange(compressed);
+      } catch (error) {
+        console.error("Failed to compress image:", error);
+        alert("Failed to process image. Please try a different image.");
+      } finally {
+        setIsCompressing(false);
+      }
+    };
     reader.readAsDataURL(file);
   };
 
@@ -99,22 +150,30 @@ const AvatarUpload = ({ name, avatar, onAvatarChange }) => {
         <Avatar name={name || "?"} avatar={avatar} size="lg" />
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-          title="Change photo"
+          className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
+          disabled={isCompressing}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
+          {isCompressing ? (
+            <svg className="animate-spin w-5 h-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+            </svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          )}
         </button>
       </div>
 
       <div className="flex gap-2">
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="px-3 py-1 rounded-full bg-[#587A34] text-white text-xs font-semibold hover:bg-[#3a5220] transition-colors"
+          disabled={isCompressing}
+          className="px-3 py-1 rounded-full bg-[#587A34] text-white text-xs font-semibold hover:bg-[#3a5220] transition-colors disabled:opacity-50"
         >
-          {avatar ? "Change Photo" : "Upload Photo"}
+          {isCompressing ? "Processing..." : (avatar ? "Change Photo" : "Upload Photo")}
         </button>
         {avatar && (
           <button
@@ -129,7 +188,7 @@ const AvatarUpload = ({ name, avatar, onAvatarChange }) => {
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg, image/png, image/webp"
         onChange={handleFileChange}
         className="hidden"
       />
@@ -258,9 +317,9 @@ const ProfileModal = ({ profile, onSave, onClose }) => {
     if (!name.trim()) { setFormError("Name is required."); return; }
     if (!dateOfBirth) { setFormError("Date of birth is required."); return; }
     if (dateOfBirth > new Date().toISOString().split("T")[0]) {
-    setFormError("Date of birth cannot be in the future.");
-    return;
-  }
+      setFormError("Date of birth cannot be in the future.");
+      return;
+    }
     setFormError("");
     onSave({ ...(profile || {}), name: name.trim(), dateOfBirth, avatar, dietaryRestrictions: dietary, allergies });
   };
@@ -288,7 +347,7 @@ const ProfileModal = ({ profile, onSave, onClose }) => {
             <label className="block text-[#3a5220] text-xs font-semibold uppercase tracking-wider mb-1">Date of Birth</label>
             <input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} max={new Date().toISOString().split("T")[0]}
               className="w-full bg-white border border-[#587A34]/30 rounded-lg px-3 py-2 text-[#3a5220] text-sm focus:outline-none focus:ring-2 focus:ring-[#587A34]/50" />
-              {formError && <p className="mt-1.5 text-xs text-red-600">{formError}</p>}
+            {formError && <p className="mt-1.5 text-xs text-red-600">{formError}</p>}
           </div>
 
           <div>
@@ -432,7 +491,6 @@ const ProfileCard = ({ profile, onEdit, onDelete, onSetActive }) => {
   );
 };
 
-// Modified AddProfileCard to accept a `disabled` prop
 const AddProfileCard = ({ onClick, disabled }) => {
   if (disabled) {
     return (
@@ -488,13 +546,23 @@ const ProfilePage = ({ activeProfile, onActiveProfileChange }) => {
         const rows = Array.isArray(response?.data) ? response.data : [];
         const mapped = rows.map(mapApiProfileToUi);
 
-        const activeId = activeProfile?.id ?? mapped.find((p) => p.isDefault)?.id ?? null;
-        const normalized = mapped.map((p) => ({ ...p, isDefault: p.id === activeId }));
+        let activeId = activeProfile?.id ?? null;
+        if (!activeId) {
+          const defaultProfile = mapped.find((p) => p.isDefault);
+          activeId = defaultProfile?.id ?? mapped[0]?.id ?? null;
+        }
+        
+        const normalized = mapped.map((p) => ({ 
+          ...p, 
+          isDefault: p.id === activeId 
+        }));
         setProfiles(normalized);
 
         if (!activeProfile?.id && activeId) {
-          const active = mapped.find((p) => p.id === activeId);
-          if (active) onActiveProfileChange?.({ id: active.id, name: active.name, avatar: active.avatar });
+          const active = normalized.find((p) => p.id === activeId);
+          if (active && onActiveProfileChange) {
+            onActiveProfileChange({ id: active.id, name: active.name, avatar: active.avatar });
+          }
         }
       } catch (err) {
         setError(err.message || "Failed to load profiles.");
@@ -503,12 +571,10 @@ const ProfilePage = ({ activeProfile, onActiveProfileChange }) => {
       }
     };
     loadProfiles();
-
   }, []);
 
   const handleEdit = (profile) => setModal({ mode: "edit", profile });
   
-  // Modified handleAdd to check profile limit
   const handleAdd = () => {
     if (profiles.length >= MAX_PROFILES) {
       setError(`You've reached the maximum of ${MAX_PROFILES} profiles. Please delete an existing profile to add a new one.`);
@@ -522,7 +588,6 @@ const ProfilePage = ({ activeProfile, onActiveProfileChange }) => {
   const handleSave = async (data) => {
     if (!modal) return;
     
-    // Check limit again before saving (defensive check)
     if (modal.mode === "add" && profiles.length >= MAX_PROFILES) {
       setError(`Cannot add more than ${MAX_PROFILES} profiles.`);
       setModal(null);
@@ -561,6 +626,11 @@ const ProfilePage = ({ activeProfile, onActiveProfileChange }) => {
         if (!response?.data) throw new Error("Profile updated but no data returned.");
         const updated = mapApiProfileToUi(response.data);
         setProfiles((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+        
+        const currentActive = profiles.find(p => p.isDefault);
+        if (currentActive?.id === updated.id && onActiveProfileChange) {
+          onActiveProfileChange({ id: updated.id, name: updated.name, avatar: updated.avatar });
+        }
       }
       setModal(null);
     } catch (err) {
@@ -583,11 +653,18 @@ const ProfilePage = ({ activeProfile, onActiveProfileChange }) => {
     setError("");
     try {
       await apiCall(`/api/profiles/${deleteTarget.id}`, { method: "DELETE" });
-      setProfiles((prev) => prev.filter((p) => p.id !== deleteTarget.id));
+      const newProfiles = profiles.filter((p) => p.id !== deleteTarget.id);
+      setProfiles(newProfiles);
       setDeleteTarget(null);
-      // Clear the limit error if it was shown
+      
       if (error?.includes(`maximum of ${MAX_PROFILES}`)) {
         setError("");
+      }
+      
+      const deletedWasActive = profiles.find(p => p.id === deleteTarget.id)?.isDefault;
+      if (deletedWasActive && newProfiles.length > 0 && onActiveProfileChange) {
+        const newActive = newProfiles[0];
+        onActiveProfileChange({ id: newActive.id, name: newActive.name, avatar: newActive.avatar });
       }
     } catch (err) {
       setError(err.message || "Failed to delete profile.");
@@ -609,13 +686,27 @@ const ProfilePage = ({ activeProfile, onActiveProfileChange }) => {
     }
 
     try {
+      const profileToUpdate = previous.find(p => p.id === id);
+
       await apiCall(`/api/profiles/${id}`, {
         method: "PUT",
-        body: JSON.stringify({ isDefault: true, is_default: true }),
+        body: JSON.stringify({
+          name: profileToUpdate.name,
+          date_of_birth: profileToUpdate.dateOfBirth,
+          dietaryRestrictions: profileToUpdate.dietaryRestrictions,
+          allergies: profileToUpdate.allergies,
+          isDefault: true,
+          is_default: true
+        }),
       });
     } catch (err) {
       setProfiles(previous);
       setError(err.message || "Failed to update active profile.");
+      
+      const previousActive = previous.find(p => p.isDefault);
+      if (previousActive && onActiveProfileChange) {
+        onActiveProfileChange({ id: previousActive.id, name: previousActive.name, avatar: previousActive.avatar });
+      }
     }
   };
 
@@ -644,7 +735,6 @@ const ProfilePage = ({ activeProfile, onActiveProfileChange }) => {
         <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
       )}
 
-      {/* Show limit warning banner if at max */}
       {hasReachedLimit && (
         <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 flex items-center gap-2">
           <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -657,7 +747,7 @@ const ProfilePage = ({ activeProfile, onActiveProfileChange }) => {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {profiles.map((profile) => (
           <ProfileCard
-            key={profile.id}
+            key={`${profile.id}-${profile.avatar}-${profile.isDefault}`}
             profile={profile}
             onEdit={handleEdit}
             onDelete={handleDelete}
