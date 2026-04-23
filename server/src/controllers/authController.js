@@ -24,6 +24,7 @@ function normalizeAccountStatus(status) {
   }
 
   return status.trim().replace(/^"+|"+$/g, '').toUpperCase()
+  }
 }
 
 // Sign Up
