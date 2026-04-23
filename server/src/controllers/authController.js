@@ -1,6 +1,23 @@
 const { supabase, supabaseAdmin } = require('../config/supabase');
 const { rollbackAccountCreation } = require('./accountDelete');
 
+function getEmailRedirectTo() {
+  const baseUrl = (
+    process.env.EMAIL_REDIRECT_TO
+    || process.env.CLIENT_URL
+    || process.env.FRONTEND_URL
+    || 'http://localhost:5173'
+  );
+
+  return `${baseUrl.replace(/\/+$/, '')}/email-confirmed`;
+}
+
+function getEmailRedirectToWithName(firstName) {
+  const redirectUrl = new URL(getEmailRedirectTo());
+  if (firstName && String(firstName).trim()) {
+    redirectUrl.searchParams.set('name', String(firstName).trim());
+  }
+  return redirectUrl.toString();
 function normalizeAccountStatus(status) {
   if (typeof status !== 'string') {
     return ''
@@ -13,8 +30,15 @@ function normalizeAccountStatus(status) {
 async function signUp({ email, password, firstName, lastName, username }) {
   const normalizedEmail = email.trim().toLowerCase()
   const normalizedUsername = username.trim()
+  const emailRedirectTo = getEmailRedirectToWithName(firstName)
 
-  const { data: authData, error: authError } = await supabase.auth.signUp({ email: normalizedEmail, password })
+  const { data: authData, error: authError } = await supabase.auth.signUp({
+    email: normalizedEmail,
+    password,
+    options: {
+      emailRedirectTo,
+    },
+  })
 
   if (authError) throw authError
 
@@ -89,9 +113,15 @@ async function logIn(loginInfo, password) {
   if (authError) throw authError
 
   // Checks if user's email is confirmed in the Auth Database
-  if (!authData.user.email_confirmed_at) {
+  const isAuthVerified = Boolean(authData?.user?.email_confirmed_at)
+  if (!isAuthVerified) {
     await supabase.auth.signOut()
     throw new Error('Email not verified. Please check your inbox for the verification email.')  
+  }
+
+  if (!authData?.user?.id) {
+    await supabase.auth.signOut()
+    throw new Error('Unable to verify account.')
   }
 
   let accountData = null
@@ -115,9 +145,11 @@ async function logIn(loginInfo, password) {
       .eq('id', authData.user.id)
       .select()
       .single()
-    if (!updateError && updated) {
-      accountData = updated
+    if (updateError) {
+      await supabase.auth.signOut()
+      throw updateError
     }
+    accountData = updated
   }
 
   const normalizedStatus = normalizeAccountStatus(accountData?.status)
@@ -144,9 +176,13 @@ async function logIn(loginInfo, password) {
 
 // Resend Email Verification
 async function resendEmailVerification(email) {
+  const emailRedirectTo = getEmailRedirectTo()
   const {error} = await supabase.auth.resend({ 
     type: 'signup',
-    email: email
+    email,
+    options: {
+      emailRedirectTo,
+    },
   })
 
   if (error) throw error
