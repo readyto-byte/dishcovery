@@ -150,8 +150,8 @@ function validateMealPlanBody(body = {}) {
     const parsedAge = parseAge(body.age);
     if (parsedAge == null) {
       errors.push('Age must be a valid whole number.');
-    } else if (parsedAge < 10 || parsedAge > 120) {
-      errors.push('Age must be between 10 and 120.');
+    } else if (parsedAge < 0 || parsedAge > 100) {
+      errors.push('Age is invalid.');
     }
   }
 
@@ -159,8 +159,8 @@ function validateMealPlanBody(body = {}) {
     const parsedHeight = parseHeightCm(body.height);
     if (parsedHeight == null) {
       errors.push('Height must be valid (example: "170 cm" or "5\'7").');
-    } else if (parsedHeight < 90 || parsedHeight > 260) {
-      errors.push('Height must be between 90 cm and 260 cm.');
+    } else if (parsedHeight < 50 || parsedHeight > 260) {
+      errors.push('Height is invalid.');
     }
   }
 
