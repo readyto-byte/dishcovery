@@ -73,3 +73,12 @@
   background: #587A34;
   border-radius: 10px;
 }
+
+
+@keyframes gentleScale {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+.gentle-scale {
+  animation: gentleScale 2s ease-in-out infinite;
+}
