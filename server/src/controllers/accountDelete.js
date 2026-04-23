@@ -71,4 +71,4 @@ async function deleteAccount(userId) {
   }
 }
 
-module.exports = { rollbackAccountCreation, deleteAccount }
+module.exports = { rollbackAccountCreation, deleteAccount };
