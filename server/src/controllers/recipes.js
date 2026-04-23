@@ -340,11 +340,11 @@ async function generateMealRecipeDetail(title) {
 
   if (!result && lastError) {
     if (isFreeTierQuotaError(lastError)) {
-      throw new Error(
-        'Gemini free-tier request quota reached. Please wait for quota reset or upgrade your plan.'
-      );
+      console.error('[generateMealRecipeDetail] Gemini free-tier quota reached:', lastError.message);
+      throw new Error('Recipe service is temporarily unavailable. Please try again later.');
     }
-    throw lastError;
+    console.error('[generateMealRecipeDetail] Gemini API error:', lastError.message);
+    throw new Error('Could not generate recipe details. Please try again later.');
   }
 
   const text = result.text;
@@ -352,7 +352,8 @@ async function generateMealRecipeDetail(title) {
     const cleaned = extractJsonObject(text);
     return JSON.parse(cleaned);
   } catch {
-    throw new Error('Failed to parse meal recipe detail from AI: ' + text);
+    console.error('[generateMealRecipeDetail] Failed to parse AI response:', text);
+    throw new Error('Could not process recipe details. Please try again.');
   }
 }
 
