@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
+import { RotateCcw } from "lucide-react";
 import heroBg from "../../assets/hero-bg.jpg";
 import { apiCall } from "../../api/config";
 
 const RECIPES_PER_PAGE = 9;
 
-// Consistent Loading Skeleton for History
 const HistoryLoadingSkeleton = () => {
   return (
     <div className="pb-12">
@@ -227,10 +227,10 @@ const HistoryPage = ({ onViewRecipe }) => {
           <button
             onClick={() => setShowClearConfirm(true)}
             disabled={isClearing || isLoading || historyRecipes.length === 0}
-            className="shrink-0 bg-[#587A34] hover:bg-[#32491B] transition-all px-5 py-2 rounded-lg text-white font-semibold text-sm shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="shrink-0 bg-[#587A34] hover:bg-[#32491B] transition-all px-5 py-2 rounded-lg text-white font-semibold text-sm shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
-            <i className="fas fa-trash-alt mr-2"></i>
-            {isClearing ? "Clearing..." : "Clear History"}
+            <RotateCcw className="w-4 h-4" />
+            {isClearing ? "Clearing..." : "Clear All"}
           </button>
         </div>
       </div>
@@ -395,7 +395,7 @@ const HistoryPage = ({ onViewRecipe }) => {
                     disabled={isClearing}
                     className="flex-1 py-2.5 rounded-xl bg-[#32491B] hover:bg-[#253813] text-[#F0E6D1] font-semibold text-sm transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    {isClearing ? 'Clearing...' : 'Yes, Clear'}
+                    {isClearing ? 'Clearing...' : 'Yes, Clear All'}
                   </button>
                 </div>
               </div>

@@ -744,11 +744,6 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
             </h1>
             <p className="text-[#B5D098] text-sm mt-1">Make your meal plans more personalized.</p>
           </div>
-          {showForm && (
-            <button onClick={() => setPlan(defaultPlan())} className="shrink-0 bg-[#587A34] hover:bg-[#32491B] transition-all px-5 py-2 rounded-lg text-white font-semibold text-sm shadow-md cursor-pointer flex items-center gap-2">
-              <RotateCcw className="w-4 h-4" /> Clear All
-            </button>
-          )}
         </div>
       </div>
 
