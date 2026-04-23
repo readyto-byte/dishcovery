@@ -11,7 +11,8 @@ const {
 router.get('/', async (req, res) => {
   try {
     const accountId = req.user.id;
-    const favorites = await getFavoritesByAccount(accountId);
+    const profileId = req.query.profile_id ?? null;
+    const favorites = await getFavoritesByAccount(accountId, profileId);
     res.json({ success: true, data: favorites });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -45,7 +46,8 @@ router.delete('/:favoriteId', async (req, res) => {
 router.delete('/', async (req, res) => {
   try {
     const accountId = req.user.id;
-    await clearFavoritesByAccount(accountId);
+    const profileId = req.query.profile_id ?? null;
+    await clearFavoritesByAccount(accountId, profileId);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

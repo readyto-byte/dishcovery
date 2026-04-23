@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { apiCall } from '../../api/config';
 
-const RecipeCard = ({ recipeData, isLoading }) => {
+const RecipeCard = ({ recipeData, isLoading, activeProfile }) => {
 
   const [favAdded, setFavAdded] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -15,7 +15,7 @@ const RecipeCard = ({ recipeData, isLoading }) => {
     try {
       await apiCall('/api/favorites', {
         method: 'POST',
-        body: JSON.stringify({ recipe_id: recipeData.id }),
+        body: JSON.stringify({ recipe_id: recipeData.id, profile_id: activeProfile?.id ?? null }),
       });
       setFavAdded(true);
       setTimeout(() => setFavAdded(false), 2000);

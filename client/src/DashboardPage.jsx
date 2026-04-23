@@ -56,6 +56,16 @@ const ErrorBanner = ({ message, detail, isRefusal, onClose }) => {
 const RecipeDetailsModal = ({ recipe, onClose }) => {
   if (!recipe) return null;
 
+  const nutritionalInfo = recipe.nutritionalInfo ?? null;
+
+  const nutriStats = nutritionalInfo ? [
+    { label: 'Calories', value: nutritionalInfo.calories != null ? `${nutritionalInfo.calories} kcal` : null, color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-100', icon: 'fa-fire' },
+    { label: 'Protein',  value: nutritionalInfo.protein  ?? null, color: 'text-blue-700',   bg: 'bg-blue-50',   border: 'border-blue-100',   icon: 'fa-drumstick-bite' },
+    { label: 'Carbs',    value: nutritionalInfo.carbs    ?? null, color: 'text-green-700',  bg: 'bg-green-50',  border: 'border-green-100',  icon: 'fa-bread-slice' },
+    { label: 'Fat',      value: nutritionalInfo.fat      ?? null, color: 'text-orange-700', bg: 'bg-orange-50', border: 'border-orange-100', icon: 'fa-droplet' },
+    { label: 'Fiber',    value: nutritionalInfo.fiber    ?? null, color: 'text-purple-700', bg: 'bg-purple-50', border: 'border-purple-100', icon: 'fa-seedling' },
+  ].filter(s => s.value != null) : [];
+
   return (
     <>
       <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" onClick={onClose} />
@@ -64,6 +74,7 @@ const RecipeDetailsModal = ({ recipe, onClose }) => {
           className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl bg-[#F0E6D1]"
           onClick={(e) => e.stopPropagation()}
         >
+          {/* Header */}
           <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-[#32491B] text-[#F0E6D1]">
             <h2 className="text-xl font-bold">{recipe.title || "Recipe Details"}</h2>
             <button
@@ -76,36 +87,44 @@ const RecipeDetailsModal = ({ recipe, onClose }) => {
           </div>
 
           <div className="p-6 space-y-5 text-[#1B211A]">
+            {/* Description */}
             <p className="text-sm text-black/70">{recipe.description || "No description available."}</p>
 
+            {/* Meta row */}
             <div className="flex gap-4 text-sm text-black/70">
               <span><i className="far fa-clock mr-1"></i>{recipe.time || recipe.prepTime || "N/A"}</span>
               <span><i className="fas fa-users mr-1"></i>{recipe.servings || "-"}</span>
             </div>
 
-            {recipe.nutritionalInfo && (
-              <div className="rounded-xl p-4 bg-white/60 border border-[#d6e8c0]">
-                <h3 className="font-semibold text-[#32491B] mb-3 flex items-center gap-2">
-                  <i className="fas fa-fire text-[#587A34] text-xs"></i>
-                  Nutritional Info <span className="text-black/40 font-normal text-xs ml-1">(per serving)</span>
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                  {[
-                    { label: 'Calories', value: recipe.nutritionalInfo.calories, color: 'text-amber-700',  bg: 'bg-amber-50',  border: 'border-amber-100' },
-                    { label: 'Protein',  value: recipe.nutritionalInfo.protein,  color: 'text-blue-700',   bg: 'bg-blue-50',   border: 'border-blue-100' },
-                    { label: 'Carbs',    value: recipe.nutritionalInfo.carbs,    color: 'text-green-700',  bg: 'bg-green-50',  border: 'border-green-100' },
-                    { label: 'Fat',      value: recipe.nutritionalInfo.fat,      color: 'text-orange-700', bg: 'bg-orange-50', border: 'border-orange-100' },
-                    { label: 'Fiber',    value: recipe.nutritionalInfo.fiber,    color: 'text-purple-700', bg: 'bg-purple-50', border: 'border-purple-100' },
-                  ].map(({ label, value, color, bg, border }) => value != null && (
-                    <div key={label} className={`flex flex-col items-center justify-center rounded-lg px-2 py-2 border ${bg} ${border}`}>
-                      <span className={`font-extrabold text-sm ${color}`}>{value}</span>
-                      <span className="text-[10px] text-gray-500 font-medium mt-0.5">{label}</span>
+            {/* ── Nutritional Info ── */}
+            {nutriStats.length > 0 && (
+              <div className="rounded-xl overflow-hidden border border-[#d6e8c0]">
+                {/* section header bar */}
+                <div className="px-4 py-2.5 flex items-center gap-2" style={{ background: 'linear-gradient(135deg, #587A34 0%, #3a5220 100%)' }}>
+                  <span className="w-5 h-5 rounded-md bg-white/15 flex items-center justify-center">
+                    <i className="fas fa-fire text-[#B5D098] text-[10px]"></i>
+                  </span>
+                  <h3 className="text-[#F0E6D1] font-bold text-sm">Nutritional Info</h3>
+                  <span className="text-[#B5D098]/70 text-xs font-normal ml-1">(per serving)</span>
+                </div>
+
+                {/* stat tiles */}
+                <div className="p-4 bg-white/60 grid grid-cols-5 gap-2">
+                  {nutriStats.map(({ label, value, color, bg, border, icon }) => (
+                    <div
+                      key={label}
+                      className={`flex flex-col items-center justify-center rounded-xl px-2 py-3 border ${bg} ${border} gap-1`}
+                    >
+                      <i className={`fas ${icon} text-xs ${color}`}></i>
+                      <span className={`font-extrabold text-sm leading-tight ${color}`}>{value}</span>
+                      <span className="text-[10px] text-gray-400 font-medium">{label}</span>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
+            {/* Ingredients */}
             <div>
               <h3 className="font-semibold text-[#32491B] mb-2">Ingredients</h3>
               {Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0 ? (
@@ -119,6 +138,7 @@ const RecipeDetailsModal = ({ recipe, onClose }) => {
               )}
             </div>
 
+            {/* Instructions */}
             <div>
               <h3 className="font-semibold text-[#32491B] mb-2">Instructions</h3>
               {Array.isArray(recipe.instructions) && recipe.instructions.length > 0 ? (
@@ -350,7 +370,7 @@ const DashboardPage = () => {
               servings: card.servings,
               keyIngredients: card.ingredients,
               instructions: card.instructions,
-              nutritionalInfo: card.nutritionalInfo ?? null,
+              nutritionalInfo: card.nutritionalInfo ?? null, // ← now persisted
             }],
             estimatedTime: card.prepTime,
           },
@@ -481,12 +501,12 @@ const DashboardPage = () => {
               />
             )}
             {!showOptions && (isGenerating || generatedRecipe) && (
-              <RecipeCard recipeData={generatedRecipe || {}} isLoading={isGenerating} />
+              <RecipeCard recipeData={generatedRecipe || {}} isLoading={isGenerating} activeProfile={activeProfile} />
             )}
           </>
         );
       case 'history':
-        return <HistoryPage onViewRecipe={setSelectedRecipe} />;
+        return <HistoryPage onViewRecipe={setSelectedRecipe} activeProfile={activeProfile} />;
       case 'meal-plan':
         return <MealPlanPage onViewRecipe={setSelectedRecipe} activeProfile={activeProfile} />;
       case 'profile':
@@ -500,7 +520,7 @@ const DashboardPage = () => {
       case 'settings':
         return <SettingsPage />;
       case 'favorites':
-        return <FavoritesPage onViewRecipe={setSelectedRecipe} />;
+        return <FavoritesPage onViewRecipe={setSelectedRecipe} activeProfile={activeProfile} />;
       default:
         return null;
     }
@@ -531,7 +551,7 @@ const DashboardPage = () => {
         setSidebarOpen={setSidebarOpen}
         onLogout={() => setShowLogoutConfirm(true)}
       />
-      <main style={{ marginLeft: sidebarOpen ? '18rem' : '0' }} className="flex-1 h-screen overflow-y-auto transition-all duration-300">
+      <main className="flex-1 h-screen overflow-y-auto transition-all duration-300 lg:ml-[272px]">
         <DashboardNavbar
           setCurrentPage={setCurrentPage}
           sidebarOpen={sidebarOpen}

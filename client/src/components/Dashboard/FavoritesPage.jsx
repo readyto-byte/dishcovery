@@ -50,7 +50,7 @@ const FavoritesLoadingSkeleton = () => {
   );
 };
 
-const FavoritesPage = ({ onViewRecipe }) => {
+const FavoritesPage = ({ onViewRecipe, activeProfile }) => {
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -58,10 +58,12 @@ const FavoritesPage = ({ onViewRecipe }) => {
   const [isClearing, setIsClearing] = useState(false);
 
   useEffect(() => {
+    setLoading(true);
     const loadFavorites = async () => {
       try {
         setError("");
-        const response = await apiCall("/api/favorites");
+        const profileParam = activeProfile?.id ? `?profile_id=${activeProfile.id}` : "";
+        const response = await apiCall(`/api/favorites${profileParam}`);
         const rows = Array.isArray(response?.data) ? response.data : [];
         setFavorites(rows);
       } catch (error) {
@@ -72,13 +74,14 @@ const FavoritesPage = ({ onViewRecipe }) => {
       }
     };
     loadFavorites();
-  }, []);
+  }, [activeProfile?.id]);
 
   const removeFromFavorites = async (favoriteId) => {
     if (confirm('Remove this recipe from your favorites?')) {
       try {
         setError("");
-        await apiCall(`/api/favorites/${favoriteId}`, { method: "DELETE" });
+        const profileParam = activeProfile?.id ? `?profile_id=${activeProfile.id}` : "";
+        await apiCall(`/api/favorites/${favoriteId}${profileParam}`, { method: "DELETE" });
         setFavorites((prev) => prev.filter((recipe) => recipe.id !== favoriteId));
       } catch (err) {
         setError(err.message || "Failed to remove favorite.");
@@ -90,7 +93,8 @@ const FavoritesPage = ({ onViewRecipe }) => {
     try {
       setIsClearing(true);
       setError("");
-      await apiCall("/api/favorites", { method: "DELETE" });
+      const profileParam = activeProfile?.id ? `?profile_id=${activeProfile.id}` : "";
+      await apiCall(`/api/favorites${profileParam}`, { method: "DELETE" });
       setFavorites([]);
       setShowClearConfirm(false);
     } catch (err) {
