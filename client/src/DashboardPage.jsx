@@ -441,7 +441,7 @@ const DashboardPage = () => {
       }
     } catch (error) {
       if (error.message?.includes("503") || error.message?.includes("high demand") || error.message?.includes("UNAVAILABLE")) {
-        setGenerateError("Gemini is currently busy. Please wait a few seconds and try again.");
+        setGenerateError("Our recipe generator is a little busy right now. Give it a moment and try again!");
       } else {
         setGenerateError(error.message || "Failed to generate recipe.");
       }
