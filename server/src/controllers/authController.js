@@ -108,7 +108,7 @@ async function logIn(loginInfo, password) {
   }
 
   // Keep account.is_verified aligned with Supabase Auth (email confirmed).
-  if (accountData && authData.user.email_confirmed_at && !accountData.is_verified) {
+  if (accountData && authData.user.email_confirmed_at && !accountData.is_verified && normalizeAccountStatus(accountData?.status) !== 'INACTIVE') {
     const { data: updated, error: updateError } = await supabaseAdmin
       .from('account')
       .update({ is_verified: true })
@@ -123,6 +123,11 @@ async function logIn(loginInfo, password) {
   const normalizedStatus = normalizeAccountStatus(accountData?.status)
   const isRestricted = normalizedStatus === 'RESTRICTED'
   const isActive = normalizedStatus === 'ACTIVE'
+
+  if (normalizedStatus === 'INACTIVE') {
+    await supabase.auth.signOut()
+    throw new Error('Account is deleted.')
+  }
 
   if (!accountData?.is_verified) {
     await supabase.auth.signOut()
