@@ -398,7 +398,7 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
       const res = await apiCall("/api/recipes", {
         method: "POST",
         body: JSON.stringify({
-          profiles: [],
+          profiles: activeProfile ? [activeProfile] : [],
           search_query: meal.title,
           conversation: [{ role: "user", content: prompt }],
         }),

@@ -1,6 +1,7 @@
 const { GoogleGenAI } = require("@google/genai");
 const { supabaseAdmin } = require('../config/supabase');
 const crypto = require('crypto');
+const { parseMinutes, estimatedTimeLabelFromSuggestions } = require('../utils/recipeTime');
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -15,13 +16,6 @@ function buildConversationText(conversation = []) {
 function buildCacheKey(searchQuery) {
   const normalized = (searchQuery || '').trim().toLowerCase();
   return crypto.createHash('sha256').update(normalized).digest('hex');
-}
-
-function parseMinutes(value) {
-  if (value == null) return null;
-  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
-  const match = String(value).match(/\d+/);
-  return match ? Number(match[0]) : null;
 }
 
 function asArray(value) {
@@ -252,11 +246,12 @@ async function getCachedRecipeResponse(searchQuery) {
   });
 
   const headerFromInstructions = suggestions.find((item) => typeof item.header === 'string' && item.header.trim())?.header;
+  const estimatedTime = estimatedTimeLabelFromSuggestions(suggestions) ?? 'N/A';
 
   return {
     header: headerFromInstructions ?? 'Great choice!',
     message: 'Cached recipe response',
-    estimatedTime: 'Cached',
+    estimatedTime,
     suggestions,
   };
 }

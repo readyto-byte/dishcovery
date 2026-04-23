@@ -41,6 +41,15 @@ const RecipeDetailsModal = ({ recipe, onClose }) => {
           <div className="p-6 space-y-5 text-[#1B211A]">
             <p className="text-sm text-black/70">{recipe.description || "No description available."}</p>
 
+            {recipe.profileName && (
+              <p className="text-xs text-black/60 flex items-center gap-1.5">
+                <i className="fas fa-user-circle text-[#32491B]/80" aria-hidden />
+                <span>
+                  Generated for <span className="font-semibold text-[#32491B]">{recipe.profileName}</span>
+                </span>
+              </p>
+            )}
+
             <div className="flex gap-4 text-sm text-black/70">
               <span><i className="far fa-clock mr-1"></i>{recipe.time || recipe.prepTime || "N/A"}</span>
               <span><i className="fas fa-users mr-1"></i>{recipe.servings || "-"}</span>

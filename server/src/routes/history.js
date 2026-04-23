@@ -6,7 +6,20 @@ const { addHistoryRecord, getHistoryByAccount, clearHistoryByAccount } = require
 router.post('/', async (req, res) => {
   try {
     const accountId = req.user.id;
-    const { search_query, searchQuery, recipe_id, recipeId, source_api, sourceApi, output_response, outputResponse } = req.body;
+    const {
+      search_query,
+      searchQuery,
+      recipe_id,
+      recipeId,
+      source_api,
+      sourceApi,
+      output_response,
+      outputResponse,
+      profile_id,
+      profileId,
+      profile_name,
+      profileName,
+    } = req.body;
 
     const query = search_query ?? searchQuery;
     if (!query) {
@@ -21,6 +34,10 @@ router.post('/', async (req, res) => {
       sourceApi,
       output_response,
       outputResponse,
+      profile_id,
+      profileId,
+      profile_name,
+      profileName,
     });
 
     res.json({ success: true, data: history });

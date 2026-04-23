@@ -149,6 +149,11 @@ const HistoryPage = ({ onViewRecipe }) => {
     const firstSuggestion = parsed?.suggestions?.[0] || {};
     const estimatedTime = parsed?.estimatedTime || "N/A";
 
+    const profileName =
+      typeof item.profile_name === "string" && item.profile_name.trim()
+        ? item.profile_name.trim()
+        : null;
+
     return {
       id: item.id,
       recipeId: item.recipe_id ?? null,
@@ -157,6 +162,7 @@ const HistoryPage = ({ onViewRecipe }) => {
       difficulty: "Medium",
       time: estimatedTime,
       servings: firstSuggestion.servings || "-",
+      profileName,
       viewed: getRelativeViewedTime(item.searched_date),
       tags: ["history", "dishcovery", item.source_api || "recipe"],
       description: firstSuggestion.description || parsed?.message || "",
@@ -301,6 +307,15 @@ const HistoryPage = ({ onViewRecipe }) => {
                 <div className="p-5">
                   <h3 className="text-xl font-bold text-[#32491B]">{recipe.title}</h3>
                   <p className="text-black/60 text-sm mt-1">{recipe.type} • {recipe.difficulty}</p>
+                  {recipe.profileName && (
+                    <p className="text-black/55 text-xs mt-2 flex items-center gap-1.5">
+                      <i className="fas fa-user-circle text-[#587A34]" aria-hidden />
+                      <span>
+                        Generated for{" "}
+                        <span className="font-semibold text-[#32491B]">{recipe.profileName}</span>
+                      </span>
+                    </p>
+                  )}
                   <div className="flex flex-wrap gap-2 mt-3">
                     {recipe.tags.map((tag, idx) => (
                       <span

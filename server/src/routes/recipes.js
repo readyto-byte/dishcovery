@@ -23,10 +23,23 @@ function normalizeProfileForCache(profile = {}) {
   };
 }
 
+function primaryProfileContext(profiles) {
+  if (!Array.isArray(profiles) || profiles.length === 0) return { profileId: null, profileName: null };
+  const p = profiles[0];
+  const rawId = p?.id ?? p?.profile_id;
+  const idStr = rawId === undefined || rawId === null || String(rawId).trim() === '' ? null : String(rawId).trim();
+  const name = typeof p?.name === 'string' ? p.name.trim() : '';
+  return {
+    profileId: idStr,
+    profileName: name || null,
+  };
+}
+
 router.post('/', async (req, res) => {
   try {
     const accountId = req.user?.id;
     const { profiles, conversation, search_query, searchQuery, bypass_cache, bypassCache, avoid_titles, avoidTitles } = req.body;
+    const { profileId, profileName } = primaryProfileContext(profiles);
 
     if (!accountId) {
       return res.status(401).json({ success: false, error: 'Authentication required' });
@@ -48,6 +61,8 @@ router.post('/', async (req, res) => {
         recipe_id: cachedResponse.suggestions[0]?.id ?? null,
         source_api: 'cache',
         output_response: cachedResponse,
+        profile_id: profileId,
+        profile_name: profileName,
       });
 
       return res.json({ success: true, response: cachedResponse });
@@ -74,6 +89,8 @@ router.post('/', async (req, res) => {
       recipe_id: cachedRows?.[0]?.id ?? null,
       source_api: 'gemini-2.5-flash',
       output_response: responseWithIds,
+      profile_id: profileId,
+      profile_name: profileName,
     });
 
     res.json({ success: true, response: responseWithIds });
