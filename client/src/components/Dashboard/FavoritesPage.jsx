@@ -235,7 +235,7 @@ const FavoritesPage = ({ onViewRecipe, activeProfile }) => {
                   </button>
                   <button
                     onClick={() => removeFromFavorites(recipeToDelete.id)}
-                    className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm transition-all cursor-pointer"
+                    className="flex-1 py-2.5 rounded-xl bg-[#587A34] hover:bg-[#32491B] text-white font-semibold text-sm transition-all cursor-pointer"
                   >
                     Remove
                   </button>
