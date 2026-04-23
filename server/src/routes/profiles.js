@@ -78,7 +78,7 @@ router.put('/:profileId', async (req, res) => {
     if (body.gender !== undefined) updates.gender = body.gender;
 
     if (body.avatar_url !== undefined || body.avatarUrl !== undefined) {
-      updates.avatar_url = body.avatar_url ?? body.avatarUrl;
+      updates.avatar_url = body.avatar_url !== undefined ? body.avatar_url : body.avatarUrl;
     }
 
     if (body.date_of_birth !== undefined || body.dateOfBirth !== undefined) {
