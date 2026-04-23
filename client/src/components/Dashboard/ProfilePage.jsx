@@ -282,7 +282,7 @@ const ProfileModal = ({ profile, onSave, onClose }) => {
 
           <div>
             <label className="block text-[#3a5220] text-xs font-semibold uppercase tracking-wider mb-1">Date of Birth</label>
-            <input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)}
+            <input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} max={new Date().toISOString().split("T")[0]}
               className="w-full bg-white border border-[#587A34]/30 rounded-lg px-3 py-2 text-[#3a5220] text-sm focus:outline-none focus:ring-2 focus:ring-[#587A34]/50" />
           </div>
 
