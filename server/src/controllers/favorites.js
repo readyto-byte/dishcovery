@@ -53,12 +53,38 @@ async function getFavoritesByAccount(accountId, profileId) {
 }
 
 async function addFavorite(accountId, favoriteData) {
-  const recipeId = favoriteData.recipe_id ?? favoriteData.recipeId ?? null;
-  if (!recipeId) {
-    throw new Error('recipe_id is required to save a favorite.');
-  }
-
+  let recipeId = favoriteData.recipe_id ?? favoriteData.recipeId ?? null;
   const profileId = favoriteData.profile_id ?? favoriteData.profileId ?? null;
+
+  if (!recipeId) {
+    if (!favoriteData.recipeData) {
+      throw new Error('recipe_id is required to save a favorite.');
+    }
+    const rd = favoriteData.recipeData;
+    const parseTimeToMin = (val) => { const m = String(val || '').match(/\d+/); return m ? Number(m[0]) : null; };
+    const recipePayload = {
+      title: rd.title,
+      source_api: 'gemini-2.5-flash',
+      prep_time_min: parseTimeToMin(rd.prepTime),
+      cook_time_min: parseTimeToMin(rd.cookTime),
+      servings: rd.servings ?? null,
+      instructions: JSON.stringify({
+        title: rd.title,
+        description: rd.description ?? '',
+        keyIngredients: rd.ingredients ?? [],
+        instructions: rd.instructions ?? [],
+        nutritionalInfo: rd.nutritionalInfo ?? null,
+      }),
+      nutritional_info: rd.nutritionalInfo ? JSON.stringify(rd.nutritionalInfo) : null,
+      cached_date: new Date().toISOString(),
+    };
+    const { data: savedRecipes, error: saveError } = await supabaseAdmin
+      .from('recipes')
+      .insert([recipePayload])
+      .select('id');
+    if (saveError) throw saveError;
+    recipeId = savedRecipes[0].id;
+  }
 
   let existingQuery = supabaseAdmin
     .from('favorites')

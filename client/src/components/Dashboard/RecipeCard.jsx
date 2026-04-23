@@ -7,15 +7,32 @@ const RecipeCard = ({ recipeData, isLoading, activeProfile }) => {
   const [copied, setCopied] = useState(false);
 
   const addToFavorites = async () => {
-    if (!recipeData?.id) {
-      console.error('Cannot favorite recipe without recipe id');
+    if (!recipeData?.title) {
+      console.error('Cannot favorite recipe without recipe data');
       return;
     }
+
+    const isPersistedRecipe = typeof recipeData.id === 'number';
 
     try {
       await apiCall('/api/favorites', {
         method: 'POST',
-        body: JSON.stringify({ recipe_id: recipeData.id, profile_id: activeProfile?.id ?? null }),
+        body: JSON.stringify({
+          recipe_id: isPersistedRecipe ? recipeData.id : null,
+          profile_id: activeProfile?.id ?? null,
+          ...(!isPersistedRecipe && {
+            recipeData: {
+              title: recipeData.title,
+              description: recipeData.description,
+              ingredients: recipeData.ingredients,
+              instructions: recipeData.instructions,
+              prepTime: recipeData.prepTime,
+              cookTime: recipeData.cookTime,
+              servings: recipeData.servings,
+              nutritionalInfo: recipeData.nutritionalInfo ?? null,
+            },
+          }),
+        }),
       });
       setFavAdded(true);
       setTimeout(() => setFavAdded(false), 2000);
