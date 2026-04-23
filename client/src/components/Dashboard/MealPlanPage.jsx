@@ -678,8 +678,7 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
         </div>
       </div>
 
-      {showForm && (
-      {isGeneratingPlan && <MealPlanLoadingCard />}
+      {showForm && isGeneratingPlan && <MealPlanLoadingCard />}
 
       {showForm && !isGeneratingPlan && (
         <div className="mx-4 md:mx-8 mb-8">
@@ -866,8 +865,6 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
         </div>
       )}
 
-      {!showForm && generatedPlan && (
-      {/* Generated Meal Plan Card */}
       {!showForm && generatedPlan && !isGeneratingPlan && (
         <div className="mx-4 md:mx-8 mb-8">
           <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
