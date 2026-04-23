@@ -27,35 +27,20 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const accountId = req.user.id; // Adjust based on your auth setup
-    const {
-      name,
-      date_of_birth,
-      dateOfBirth,
-      gender,
-      avatar_url,
-      avatarUrl,
-      is_active,
-      isActive,
-      isDefault,
-      allergies,
-      dietaryRestrictions,
-      dietaryPreferences,
-      dietary_restrictions,
-      dietary_preferences,
-      is_default
-    } = req.body;
+    const body = req.body;
+    const { name, gender } = body;
 
     if (!name) {
       return res.status(400).json({ success: false, error: 'Profile name is required' });
     }
 
-    const resolvedDateOfBirth = date_of_birth ?? dateOfBirth;
+    const resolvedDateOfBirth = body.date_of_birth ?? body.dateOfBirth;
     if (!resolvedDateOfBirth) {
       return res.status(400).json({ success: false, error: "Date of birth is required." });
     }
-    const resolvedDietaryRestrictions = dietary_restrictions ?? dietaryRestrictions ?? [];
-    const resolvedDietaryPreferences = dietary_preferences ?? dietaryPreferences ?? allergies ?? [];
-    const requestedDefault = is_default ?? isDefault ?? false;
+    const resolvedDietaryRestrictions = body.dietary_restrictions ?? body.dietaryRestrictions ?? [];
+    const resolvedDietaryPreferences = body.dietary_preferences ?? body.dietaryPreferences ?? body.allergies ?? [];
+    const requestedDefault = body.is_default ?? body.isDefault ?? false;
     const defaultExists = await hasDefaultProfile(accountId);
     const shouldBeDefault = Boolean(requestedDefault) || !defaultExists;
 
@@ -63,8 +48,8 @@ router.post('/', async (req, res) => {
       name,
       dateOfBirth: resolvedDateOfBirth,
       gender: gender ?? null,
-      avatarUrl: avatar_url ?? avatarUrl ?? null,
-      isActive: is_active ?? isActive ?? true,
+      avatarUrl: body.avatar_url ?? body.avatarUrl ?? null,
+      isActive: body.is_active ?? body.isActive ?? true,
       isDefault: shouldBeDefault,
       dietaryRestrictions: resolvedDietaryRestrictions,
       dietaryPreferences: resolvedDietaryPreferences
@@ -86,36 +71,38 @@ router.put('/:profileId', async (req, res) => {
   try {
     const accountId = req.user.id;
     const { profileId } = req.params;
-    const {
-      allergies,
-      dietaryPreferences,
-      dietaryRestrictions,
-      is_default,
-      isDefault,
-      isActive,
-      ...restUpdates
-    } = req.body;
-    const updates = { ...restUpdates };
+    const body = req.body;
+    const updates = {};
 
-    if (allergies !== undefined) {
-      updates.dietary_preferences = allergies;
+    if (body.name !== undefined) updates.name = body.name;
+    if (body.gender !== undefined) updates.gender = body.gender;
+
+    if (body.avatar_url !== undefined || body.avatarUrl !== undefined) {
+      updates.avatar_url = body.avatar_url !== undefined ? body.avatar_url : body.avatarUrl;
     }
 
-    if (dietaryRestrictions !== undefined) {
-      updates.dietary_restrictions = dietaryRestrictions;
+    if (body.date_of_birth !== undefined || body.dateOfBirth !== undefined) {
+      updates.date_of_birth = body.date_of_birth ?? body.dateOfBirth;
     }
 
-    if (dietaryPreferences !== undefined) {
-      updates.dietary_preferences = dietaryPreferences;
+    const resolvedDietaryRestrictions = body.dietary_restrictions ?? body.dietaryRestrictions;
+    if (resolvedDietaryRestrictions !== undefined) {
+      updates.dietary_restrictions = resolvedDietaryRestrictions;
     }
 
-    if (isDefault !== undefined) {
-      updates.is_default = isDefault;
+    const resolvedDietaryPreferences = body.dietary_preferences ?? body.dietaryPreferences ?? body.allergies;
+    if (resolvedDietaryPreferences !== undefined) {
+      updates.dietary_preferences = resolvedDietaryPreferences;
     }
-    if (is_default !== undefined) {
-      updates.is_default = is_default;
-    } else if (isActive !== undefined) {
-      updates.is_active = isActive;
+
+    const resolvedIsDefault = body.is_default ?? body.isDefault;
+    if (resolvedIsDefault !== undefined) {
+      updates.is_default = resolvedIsDefault;
+    }
+
+    const resolvedIsActive = body.is_active ?? body.isActive;
+    if (resolvedIsActive !== undefined) {
+      updates.is_active = resolvedIsActive;
     }
 
     const wantsDefault = updates.is_default === true;

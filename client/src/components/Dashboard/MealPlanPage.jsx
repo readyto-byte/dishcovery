@@ -334,32 +334,13 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
     });
     setMealDetailLoading(true);
     try {
-      const prompt = `Give me a detailed recipe for "${meal.title}". Return ONLY a raw JSON object with no markdown, no backticks, no explanation. Use exactly these fields:
-{
-  "prepTime": "X min",
-  "cookTime": "X min",
-  "servings": "X serving(s)",
-  "difficulty": "Easy",
-  "description": "one sentence description",
-  "ingredients": ["ingredient 1", "ingredient 2"],
-  "instructions": ["step 1", "step 2"],
-  "tags": ["tag1", "tag2"]
-}`;
-      const res = await apiCall("/api/recipes", {
+      const res = await apiCall("/api/recipes/meal-detail", {
         method: "POST",
-        body: JSON.stringify({
-          profiles: [],
-          search_query: meal.title,
-          conversation: [{ role: "user", content: prompt }],
-        }),
+        body: JSON.stringify({ title: meal.title }),
       });
-      let detail = {};
-      try {
-        const raw = res?.response;
-        let text = typeof raw === "string" ? raw : raw?.text || raw?.content || raw?.message || JSON.stringify(raw);
-        const match = text.match(/\{[\s\S]*\}/);
-        if (match) detail = JSON.parse(match[0]);
-      } catch { detail = {}; }
+
+      const detail = res?.detail || {};
+
       setSelectedMeal(prev => ({
         ...prev,
         prepTime: detail.prepTime || "10 min",
@@ -670,11 +651,6 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
             </h1>
             <p className="text-[#B5D098] text-sm mt-1">Make your meal plans more personalized.</p>
           </div>
-          {showForm && (
-            <button onClick={() => setPlan(defaultPlan())} className="shrink-0 bg-[#587A34] hover:bg-[#32491B] transition-all px-5 py-2 rounded-lg text-white font-semibold text-sm shadow-md cursor-pointer flex items-center gap-2">
-              <RotateCcw className="w-4 h-4" /> Clear All
-            </button>
-          )}
         </div>
       </div>
 

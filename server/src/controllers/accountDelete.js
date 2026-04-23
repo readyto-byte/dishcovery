@@ -1,4 +1,12 @@
-const {supabase, supabaseAdmin} = require('../config/supabase')
+const { supabaseAdmin } = require('../config/supabase')
+
+function normalizeAccountStatus(status) {
+  if (typeof status !== 'string') {
+    return ''
+  }
+
+  return status.trim().replace(/^"+|"+$/g, '').toUpperCase()
+}
 
 async function rollbackAccountCreation(userId) {
     // Deletes the user from the Auth Database
@@ -15,7 +23,36 @@ async function rollbackAccountCreation(userId) {
 }
 
 async function deleteAccount(userId) {
+  if (!userId) {
+    throw new Error('User ID is required')
+  }
 
+  const { data: account, error: accountError } = await supabaseAdmin
+    .from('account')
+    .select('id, is_verified, status')
+    .eq('id', userId)
+    .single()
+
+  if (accountError) {
+    throw accountError
+  }
+
+  const normalizedStatus = normalizeAccountStatus(account?.status)
+  const isRestricted = normalizedStatus === 'RESTRICTED'
+  const isActive = normalizedStatus === 'ACTIVE'
+
+  if (!account?.is_verified || !isActive || isRestricted) {
+    throw new Error('Account is not eligible for deletion.')
+  }
+
+  const { error: statusError } = await supabaseAdmin
+    .from('account')
+    .update({ status: 'INACTIVE', is_verified: false })
+    .eq('id', userId)
+
+  if (statusError) {
+    throw statusError
+  }
 }
 
-module.exports = { rollbackAccountCreation, deleteAccount }
+module.exports = { rollbackAccountCreation, deleteAccount };

@@ -1,50 +1,35 @@
 import { useState, useRef, useEffect } from 'react';
+import { Drumstick, Clock, DollarSign, Leaf, Sparkles, ArrowRight } from 'lucide-react';
 
 const INITIAL_CHIPS = [
   {
     label: 'High protein dinner',
     fill: 'High protein dinner',
-    icon: (
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="w-3.5 h-3.5 shrink-0">
-        <path d="M8 2v12M5 5.5C5 4 6 3 8 3s3 1 3 2.5-1.5 3-3 3c-2 0-3 1-3 2.5S6 13 8 13s3-1 3-2.5" />
-      </svg>
-    ),
+    icon: <Drumstick className="w-3.5 h-3.5 shrink-0" strokeWidth={1.5} />,
   },
   {
     label: 'Quick lunch',
     fill: 'Quick lunch under 20 minutes',
-    icon: (
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="w-3.5 h-3.5 shrink-0">
-        <circle cx="8" cy="8" r="5.5" /><path d="M8 5.5V8l2 1.5" />
-      </svg>
-    ),
+    icon: <Clock className="w-3.5 h-3.5 shrink-0" strokeWidth={1.5} />,
   },
   {
     label: 'Budget meal',
     fill: 'Budget meal under $10',
-    icon: (
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="w-3.5 h-3.5 shrink-0">
-        <circle cx="8" cy="8" r="5.5" /><path d="M8 5v6M6.5 6.5h2a1 1 0 010 2h-1a1 1 0 000 2H10" />
-      </svg>
-    ),
+    icon: <DollarSign className="w-3.5 h-3.5 shrink-0" strokeWidth={1.5} />,
   },
   {
     label: 'Vegetarian',
     fill: 'Vegetarian dish',
-    icon: (
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="w-3.5 h-3.5 shrink-0">
-        <path d="M4 13c0-4 2-7 4-9M12 4c-2 1-4 3-5 5M8 5c1 2 2 5 2 8" />
-      </svg>
-    ),
+    icon: <Leaf className="w-3.5 h-3.5 shrink-0" strokeWidth={1.5} />,
   },
 ];
 
 const FOLLOW_UP_CHIPS = [
-  { label: 'Make it spicier',        fill: 'Make it spicier' },
-  { label: 'Reduce calories',        fill: 'Reduce the calories' },
-  { label: 'Add more protein',       fill: 'Add more protein' },
-  { label: 'Make it vegan',          fill: 'Make it vegan' },
-  { label: 'Shorter cook time',      fill: 'Shorten the cook time' },
+  { label: 'Make it spicier', fill: 'Make it spicier' },
+  { label: 'Reduce calories', fill: 'Reduce the calories' },
+  { label: 'Add more protein', fill: 'Add more protein' },
+  { label: 'Make it vegan', fill: 'Make it vegan' },
+  { label: 'Shorter cook time', fill: 'Shorten the cook time' },
   { label: 'Substitute ingredients', fill: 'Suggest ingredient substitutions' },
 ];
 
@@ -55,13 +40,11 @@ const CreateRecipeSection = ({ onGenerate, isLoading, aiResponse, onReset }) => 
 
   useEffect(() => {
     if (aiResponse && history.length > 0 && history[history.length - 1]?.role === 'user') {
-
       setHistory(prev => {
         const newHistory = [
           ...prev,
           { role: 'assistant', content: `${aiResponse.headline}. ${aiResponse.summary}` },
         ];
-
         return newHistory.slice(-4);
       });
     }
@@ -84,7 +67,6 @@ const CreateRecipeSection = ({ onGenerate, isLoading, aiResponse, onReset }) => 
     if (!prompt || isLoading) return;
 
     const newUserMessage = { role: 'user', content: prompt };
-
     const updatedHistory = [...history, newUserMessage].slice(-4);
 
     setHistory(updatedHistory);
@@ -118,7 +100,7 @@ const CreateRecipeSection = ({ onGenerate, isLoading, aiResponse, onReset }) => 
           <p className="text-2xl md:text-3xl font-bold leading-snug mb-2" style={{ color: '#F0E6D1' }}>
             {aiResponse.headline}
           </p>
-          <p className="text-sm leading-relaxed font-light max-w-lg" style={{ color: 'rgba(240,230,209,0.75)' }}>
+          <p className="text-sm leading-relaxed font-light" style={{ color: 'rgba(240,230,209,0.75)' }}>
             {aiResponse.summary}
           </p>
         </>
@@ -130,7 +112,7 @@ const CreateRecipeSection = ({ onGenerate, isLoading, aiResponse, onReset }) => 
         <h2 className="text-2xl md:text-3xl font-bold leading-snug mb-2" style={{ color: '#F0E6D1' }}>
           What do you want to cook today?
         </h2>
-        <p className="text-sm leading-relaxed font-light max-w-lg" style={{ color: 'rgba(240,230,209,0.7)' }}>
+        <p className="text-sm leading-relaxed font-light" style={{ color: 'rgba(240,230,209,0.7)' }}>
           Share an idea, ingredients, or a cooking goal — Dishcovery will turn it into a recipe you can actually make.
         </p>
       </>
@@ -139,16 +121,13 @@ const CreateRecipeSection = ({ onGenerate, isLoading, aiResponse, onReset }) => 
 
   return (
     <div className="mx-4 md:mx-8 mb-8">
-
       <div
         className="rounded-t-2xl px-6 md:px-8 pt-6 pb-7"
         style={{ background: 'linear-gradient(135deg, #587A34 0%, #3a5220 100%)' }}
       >
         <div className="flex items-center gap-2 mb-4">
           <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: 'rgba(181,208,152,0.2)' }}>
-            <svg viewBox="0 0 16 16" fill="none" stroke="#B5D098" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
-              <path d="M11 2l3 3-8 8H3v-3l8-8z" />
-            </svg>
+            <Sparkles className="w-3.5 h-3.5" stroke="#B5D098" strokeWidth={1.5} />
           </div>
           <span className="text-[11px] font-semibold tracking-[0.16em] uppercase" style={{ color: '#B5D098' }}>
             {isAnswered && isFollowUp ? 'Follow-up' : 'Create a Recipe'}
@@ -162,7 +141,6 @@ const CreateRecipeSection = ({ onGenerate, isLoading, aiResponse, onReset }) => 
         className="rounded-b-2xl px-6 md:px-8 pt-6 pb-6 shadow-lg"
         style={{ background: 'linear-gradient(160deg, #f7f0e3 0%, #ede0c4 100%)', border: '1px solid #d6e8c0', borderTop: 'none' }}
       >
-
         {isAnswered && (
           <div className="flex items-center gap-3 mb-4">
             <button
@@ -172,9 +150,7 @@ const CreateRecipeSection = ({ onGenerate, isLoading, aiResponse, onReset }) => 
               onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(88,122,52,0.08)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
             >
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="w-3 h-3">
-                <path d="M3 8h10M8 3l5 5-5 5" />
-              </svg>
+              <ArrowRight className="w-3 h-3" strokeWidth={1.5} />
               New recipe
             </button>
             <span className="text-[11px] font-medium" style={{ color: '#587A34' }}>
@@ -235,9 +211,7 @@ const CreateRecipeSection = ({ onGenerate, isLoading, aiResponse, onReset }) => 
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <p className="text-[11px] flex items-start gap-1.5 leading-relaxed" style={{ color: '#587A34' }}>
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="w-3 h-3 mt-0.5 shrink-0">
-              <circle cx="8" cy="8" r="5.5" /><path d="M8 7.5v3M8 5.5v.5" />
-            </svg>
+            <Sparkles className="w-3 h-3 mt-0.5 shrink-0" strokeWidth={1.5} />
             {isAnswered
               ? 'Got a follow-up? Refine the recipe or start fresh with a new one.'
               : 'Use ingredients, constraints, servings, or tap a chip. Press Create Recipe to generate.'}
@@ -265,15 +239,12 @@ const CreateRecipeSection = ({ onGenerate, isLoading, aiResponse, onReset }) => 
               </>
             ) : (
               <>
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-                  <path d="M2 8h9M8 5l3 3-3 3" />
-                </svg>
+                <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
                 {isAnswered ? 'Ask Follow-up' : 'Create Recipe'}
               </>
             )}
           </button>
         </div>
-
       </div>
     </div>
   );

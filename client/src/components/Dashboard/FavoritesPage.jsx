@@ -1,11 +1,61 @@
 import { useState, useEffect } from 'react';
+import { RotateCcw } from "lucide-react";
 import heroBg from "../../assets/hero-bg.jpg";
 import { apiCall } from "../../api/config";
+
+const FavoritesLoadingSkeleton = () => {
+  return (
+    <div className="pb-12">
+      <style>{`
+        @keyframes shimmer { 0% { background-position: -600px 0; } 100% { background-position: 600px 0; } }
+        .skeleton { background: linear-gradient(90deg, #e8f2dc 25%, #d4e9c0 50%, #e8f2dc 75%); background-size: 600px 100%; animation: shimmer 1.6s infinite linear; border-radius: 8px; }
+      `}</style>
+      
+      {/* Hero skeleton */}
+      <div className="relative mx-4 md:mx-8 mt-6 mb-8 overflow-hidden rounded-2xl shadow-xl bg-[#1e3a0f]/80 px-8 py-7">
+        <div className="space-y-2">
+          <div className="skeleton h-8 w-40 opacity-30" />
+          <div className="skeleton h-4 w-56 opacity-20" />
+        </div>
+      </div>
+
+      {/* Cards skeleton */}
+      <div className="mx-4 md:mx-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="bg-[#F0E6D1] rounded-2xl shadow-lg overflow-hidden border border-gray-100">
+              <div className="h-12 bg-[#587A34] flex items-center justify-end px-4">
+                <div className="skeleton h-6 w-6 rounded-full opacity-30" />
+              </div>
+              <div className="p-5 space-y-3">
+                <div className="skeleton h-6 w-3/4 opacity-30" />
+                <div className="skeleton h-4 w-1/2 opacity-20" />
+                <div className="flex gap-2">
+                  <div className="skeleton h-6 w-16 opacity-20" />
+                  <div className="skeleton h-6 w-20 opacity-20" />
+                </div>
+                <div className="flex justify-between items-center pt-3 border-t border-[#B5D098]/30">
+                  <div className="flex gap-3">
+                    <div className="skeleton h-4 w-16 opacity-20" />
+                    <div className="skeleton h-4 w-16 opacity-20" />
+                  </div>
+                  <div className="skeleton h-4 w-24 opacity-20" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const FavoritesPage = ({ onViewRecipe }) => {
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
 
   useEffect(() => {
     const loadFavorites = async () => {
@@ -37,23 +87,21 @@ const FavoritesPage = ({ onViewRecipe }) => {
   };
 
   const handleClearAllFavorites = async () => {
-    if (confirm('Are you sure you want to remove ALL recipes from your favorites?')) {
-      try {
-        setError("");
-        await apiCall("/api/favorites", { method: "DELETE" });
-        setFavorites([]);
-      } catch (err) {
-        setError(err.message || "Failed to clear favorites.");
-      }
+    try {
+      setIsClearing(true);
+      setError("");
+      await apiCall("/api/favorites", { method: "DELETE" });
+      setFavorites([]);
+      setShowClearConfirm(false);
+    } catch (err) {
+      setError(err.message || "Failed to clear favorites.");
+    } finally {
+      setIsClearing(false);
     }
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#32491B]"></div>
-      </div>
-    );
+    return <FavoritesLoadingSkeleton />;
   }
 
   return (
@@ -69,9 +117,6 @@ const FavoritesPage = ({ onViewRecipe }) => {
               My <span className="text-[#B5D098]">Favorites</span>
             </h1>
             <div className="flex items-center mt-1">
-              <div className="w-6 h-6 bg-[#B5D098]/30 rounded-full flex items-center justify-center mr-2">
-                <i className="fas fa-heart text-[#B5D098] text-[10px]"></i>
-              </div>
               <p className="text-[#B5D098] text-sm">
                 {favorites.length} saved {favorites.length === 1 ? 'recipe' : 'recipes'}
               </p>
@@ -79,10 +124,12 @@ const FavoritesPage = ({ onViewRecipe }) => {
           </div>
           {favorites.length > 0 && (
             <button
-              onClick={handleClearAllFavorites}
-              className="shrink-0 bg-red-600/80 hover:bg-red-700 transition-all px-5 py-2 rounded-lg text-white font-semibold text-sm shadow-md cursor-pointer"
+              onClick={() => setShowClearConfirm(true)}
+              disabled={isClearing}
+              className="shrink-0 bg-[#587A34] hover:bg-[#32491B] transition-all px-5 py-2 rounded-lg text-white font-semibold text-sm shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
-              <i className="fas fa-heart-broken mr-2"></i> Clear All
+              <RotateCcw className="w-4 h-4" />
+              {isClearing ? "Clearing..." : "Clear All"}
             </button>
           )}
         </div>
@@ -114,18 +161,16 @@ const FavoritesPage = ({ onViewRecipe }) => {
                 key={recipe.id}
                 className="bg-[#F0E6D1] rounded-2xl shadow-lg overflow-hidden hover:scale-105 transition-all duration-300"
               >
-                <div className="relative h-12 bg-[#587A34] flex items-center justify-between px-4">
-                  <div className="bg-red-500 rounded-full px-3 py-1 text-xs font-bold text-white">
-                    <i className="fas fa-heart mr-1"></i> Favorite
-                  </div>
+                <div className="relative h-12 bg-[#587A34] flex items-center justify-end px-4">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       removeFromFavorites(recipe.id);
                     }}
-                    className="bg-white/20 hover:bg-red-500 rounded-full px-3 py-1 text-xs font-bold text-white transition-all cursor-pointer"
+                    className="bg-white/20 hover:bg-red-500 rounded-full p-2 text-white transition-all cursor-pointer"
+                    title="Remove from favorites"
                   >
-                    <i className="fas fa-trash-alt mr-1"></i> Remove
+                    <i className="fas fa-trash-alt"></i>
                   </button>
                 </div>
                 <div className="p-5">
@@ -161,6 +206,45 @@ const FavoritesPage = ({ onViewRecipe }) => {
           </div>
         )}
       </div>
+
+      {showClearConfirm && (
+        <>
+          <div
+            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
+            onClick={!isClearing ? () => setShowClearConfirm(false) : undefined}
+          />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div
+              className="w-full max-w-md rounded-2xl shadow-2xl overflow-hidden"
+              style={{ background: 'linear-gradient(160deg, #f7f0e3 0%, #ede0c4 100%)' }}
+            >
+              <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg, #32491B, #839705, #B5D098)' }} />
+              <div className="px-6 pt-6 pb-5">
+                <h3 className="text-xl font-bold text-[#1B211A] mb-2">Clear all favorites?</h3>
+                <p className="text-sm text-[#4a5e30] mb-6">
+                  This will permanently remove all recipes from your favorites.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowClearConfirm(false)}
+                    disabled={isClearing}
+                    className="flex-1 py-2.5 rounded-xl border border-[#32491B]/20 bg-white/50 hover:bg-white/80 text-[#32491B] font-semibold text-sm transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleClearAllFavorites}
+                    disabled={isClearing}
+                    className="flex-1 py-2.5 rounded-xl bg-[#587A34] hover:bg-[#32491B] text-white font-semibold text-sm transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {isClearing ? 'Clearing...' : 'Yes, Clear All'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

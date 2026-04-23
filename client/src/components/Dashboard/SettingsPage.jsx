@@ -166,7 +166,6 @@ const ConfirmDeleteModal = ({ onConfirm, onCancel, isLoading, deletePassword, se
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-
 const SettingsPage = () => {
   const [activeSection, setActiveSection] = useState(null);
   const [formData, setFormData] = useState({
@@ -322,21 +321,23 @@ const SettingsPage = () => {
       setErrors({ delete: "Please enter your password to confirm." });
       return;
     }
-    
-    setIsLoading(true);
 
-    setTimeout(() => {
+    setIsLoading(true);
+    try {
+      await apiCall("/api/account/me", { method: "DELETE" });
 
       setShowDeleteConfirm(false);
       setShowDeleteSuccessModal(true);
       setDeletePassword("");
-      
+
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('dishcovery_first_time_modal_seen');
-      
+    } catch (error) {
+      setErrors({ delete: error.message || "Failed to delete account." });
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const handleSuccessModalClose = () => {
