@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import heroBg from "../../assets/hero-bg.jpg";
 import pic1 from "../../assets/placeholder1.jpg";
 import pic2 from "../../assets/placeholder2.jpg";
-import { ArrowRight, ChefHat, Heart } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 const HeroSection = () => {
   return (
@@ -38,9 +38,6 @@ const HeroSection = () => {
               alt="Delicious pasta dish"
               className="relative w-48 sm:w-56 lg:w-64 rounded-xl object-cover shadow-lg group-hover:scale-105 transition-all duration-300 cursor-pointer"
             />
-            <div className="absolute inset-0 bg-black/40 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-              <ChefHat className="w-8 h-8 text-white" />
-            </div>
           </div>
           
           <div className="group relative">
@@ -49,9 +46,6 @@ const HeroSection = () => {
               alt="Delicious dessert"
               className="relative w-48 sm:w-56 lg:w-64 rounded-xl object-cover shadow-lg group-hover:scale-105 transition-all duration-300 cursor-pointer"
             />
-            <div className="absolute inset-0 bg-black/40 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-              <Heart className="w-8 h-8 text-white" />
-            </div>
           </div>
         </div>
 
@@ -72,6 +66,16 @@ const HeroSection = () => {
           <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform duration-300" />
         </Link>
       </div>
+
+      <style>{`
+        @keyframes gentleScale {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+        }
+        .gentle-scale {
+          animation: gentleScale 2s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 };
