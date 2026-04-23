@@ -65,28 +65,13 @@ const validateMealPlanForm = (fd) => {
   const errors = [];
 
   const hasAnyInput =
-    hasValue(fd.age) ||
-    hasValue(fd.height) ||
-    hasValue(fd.weight) ||
-    hasValue(fd.goal) ||
-    hasValue(fd.foodBudget) ||
-    hasValue(fd.maxCookingTime) ||
-    hasValue(fd.carbPreference) ||
-    hasValue(fd.sexGender) ||
-    hasValue(fd.activityLevel) ||
-    hasValue(fd.preferredCuisine) ||
-    hasValue(fd.cookingSkillLevel) ||
-    hasValue(fd.fatPreference) ||
-    hasValue(fd.allergies) ||
-    hasValue(fd.medicalConditions) ||
-    hasValue(fd.foodsDislike) ||
-    hasValue(fd.mealSchedule) ||
-    Boolean(fd.includeWaterGoal) ||
-    Boolean(fd.includeSnacks) ||
-    Boolean(fd.generateGroceryList) ||
-    Boolean(fd.kitchenEquipment?.stove) ||
-    Boolean(fd.kitchenEquipment?.microwave) ||
-    Boolean(fd.kitchenEquipment?.airFryer);
+    hasValue(fd.age) || hasValue(fd.height) || hasValue(fd.weight) || hasValue(fd.goal) ||
+    hasValue(fd.foodBudget) || hasValue(fd.maxCookingTime) || hasValue(fd.carbPreference) ||
+    hasValue(fd.sexGender) || hasValue(fd.activityLevel) || hasValue(fd.preferredCuisine) ||
+    hasValue(fd.cookingSkillLevel) || hasValue(fd.fatPreference) || hasValue(fd.allergies) ||
+    hasValue(fd.medicalConditions) || hasValue(fd.foodsDislike) || hasValue(fd.mealSchedule) ||
+    Boolean(fd.includeWaterGoal) || Boolean(fd.includeSnacks) || Boolean(fd.generateGroceryList) ||
+    Boolean(fd.kitchenEquipment?.stove) || Boolean(fd.kitchenEquipment?.microwave) || Boolean(fd.kitchenEquipment?.airFryer);
 
   if (!hasAnyInput) {
     errors.push("Please enter at least one preference before generating a meal plan.");
@@ -104,45 +89,33 @@ const validateMealPlanForm = (fd) => {
 
   if (hasValue(fd.height)) {
     const s = String(fd.height).trim();
-    if (!/\d/.test(s)) {
-      errors.push('Height must include numbers (e.g., "170 cm" or "5\'7").');
-    }
+    if (!/\d/.test(s)) errors.push('Height must include numbers (e.g., "170 cm" or "5\'7").');
   }
 
   if (hasValue(fd.weight)) {
     const s = String(fd.weight).trim();
-    if (!/\d/.test(s)) {
-      errors.push('Weight must include numbers (e.g., "70 kg" or "154 lbs").');
-    }
+    if (!/\d/.test(s)) errors.push('Weight must include numbers (e.g., "70 kg" or "154 lbs").');
   }
 
-  if (hasValue(fd.allergies) && hasLikelyJumbledText(fd.allergies)) {
+  if (hasValue(fd.allergies) && hasLikelyJumbledText(fd.allergies))
     errors.push('Allergies looks invalid. Use clear words (e.g., "Nuts, Dairy").');
-  }
-  if (hasValue(fd.allergies) && !isFoodLikeFreeText(fd.allergies)) {
+  if (hasValue(fd.allergies) && !isFoodLikeFreeText(fd.allergies))
     errors.push('Allergies must be real words only (letters/commas). Example: "Nuts, Dairy".');
-  }
-  if (hasValue(fd.medicalConditions) && hasLikelyJumbledText(fd.medicalConditions)) {
+  if (hasValue(fd.medicalConditions) && hasLikelyJumbledText(fd.medicalConditions))
     errors.push('Medical conditions looks invalid. Use clear words (e.g., "Diabetes").');
-  }
-  if (hasValue(fd.medicalConditions) && !isFoodLikeFreeText(fd.medicalConditions)) {
+  if (hasValue(fd.medicalConditions) && !isFoodLikeFreeText(fd.medicalConditions))
     errors.push('Medical conditions must be real words only (letters/commas). Example: "Diabetes".');
-  }
-  if (hasValue(fd.foodsDislike) && hasLikelyJumbledText(fd.foodsDislike)) {
+  if (hasValue(fd.foodsDislike) && hasLikelyJumbledText(fd.foodsDislike))
     errors.push('Foods to avoid looks invalid. Use clear words (e.g., "Onion, Ampalaya").');
-  }
-  if (hasValue(fd.foodsDislike) && !isFoodLikeFreeText(fd.foodsDislike)) {
+  if (hasValue(fd.foodsDislike) && !isFoodLikeFreeText(fd.foodsDislike))
     errors.push('Foods to avoid must be food words only (letters/commas). Example: "Onion, Ampalaya".');
-  }
 
   return { ok: errors.length === 0, errors };
 };
 
 const buildAiGeneratedPlan = (fd, aiResponse, createdAtIso) => {
   const suggestions = Array.isArray(aiResponse?.suggestions) ? aiResponse.suggestions : [];
-  if (suggestions.length < 3) {
-    throw new Error("AI returned fewer than 3 meal suggestions.");
-  }
+  if (suggestions.length < 3) throw new Error("AI returned fewer than 3 meal suggestions.");
 
   const breakfastSource = suggestions[0] || {};
   const lunchSource = suggestions[1] || {};
@@ -171,19 +144,14 @@ const buildAiGeneratedPlan = (fd, aiResponse, createdAtIso) => {
   };
 
   const base = buildGeneratedPlanFromPreferences(fd, createdAtIso);
-  const totalCalories = breakfast.calories + lunch.calories + dinner.calories;
-  const totalProtein = breakfast.protein + lunch.protein + dinner.protein;
-  const totalCarbs = breakfast.carbs + lunch.carbs + dinner.carbs;
-  const totalFats = breakfast.fats + lunch.fats + dinner.fats;
-
   return {
     ...base,
     meals: { breakfast, lunch, dinner },
     totalNutrition: {
-      calories: totalCalories,
-      protein: totalProtein,
-      carbs: totalCarbs,
-      fats: totalFats,
+      calories: breakfast.calories + lunch.calories + dinner.calories,
+      protein: breakfast.protein + lunch.protein + dinner.protein,
+      carbs: breakfast.carbs + lunch.carbs + dinner.carbs,
+      fats: breakfast.fats + lunch.fats + dinner.fats,
     },
     createdAt: formatMealPlanCreatedAt(createdAtIso),
   };
@@ -204,12 +172,7 @@ const getEmptyMealPlanFormData = () => ({
   foodBudget: "",
   maxCookingTime: "",
   carbPreference: "",
-  kitchenEquipment: {
-    stove: false,
-    microwave: false,
-    airFryer: false,
-    oven: false,
-  },
+  kitchenEquipment: { stove: false, microwave: false, airFryer: false, oven: false },
   allergies: "",
   medicalConditions: "",
   sexGender: "",
@@ -225,6 +188,9 @@ const getEmptyMealPlanFormData = () => ({
   generateGroceryList: false,
 });
 
+const inputClass = "w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:border-[#587A34] focus:ring-1 focus:ring-[#587A34] focus:outline-none transition";
+const selectClass = "w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:border-[#587A34] focus:ring-1 focus:ring-[#587A34] focus:outline-none transition bg-white";
+const labelClass = "block text-sm font-semibold text-gray-700 mb-1";
 // Loading Animation Component inside Meal Plan Section
 const MealPlanLoadingCard = ({ message }) => {
   const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
@@ -303,9 +269,7 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
   const [inputValue, setInputValue] = useState("");
   const [selectedMeal, setSelectedMeal] = useState(null);
   const [mealDetailLoading, setMealDetailLoading] = useState(false);
-
   const [formData, setFormData] = useState(getEmptyMealPlanFormData);
-
   const [generatedPlan, setGeneratedPlan] = useState(null);
   const [showForm, setShowForm] = useState(true);
   const [mealPlanSaveError, setMealPlanSaveError] = useState(null);
@@ -337,19 +301,17 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
           setShowForm(true);
           return;
         }
-        if (row) {
-          const form = mapDbRowToFormData(row);
-          if (form) {
-            let gen = null;
-            try {
-              gen = await fetchAiMealPlan(form, row.created_at);
-            } catch {
-              gen = buildGeneratedPlanFromPreferences(form, row.created_at);
-            }
-            setFormData(form);
-            setGeneratedPlan(gen);
-            setShowForm(false);
+        const form = mapDbRowToFormData(row);
+        if (form) {
+          let gen = null;
+          try {
+            gen = await fetchAiMealPlan(form, row.created_at);
+          } catch {
+            gen = buildGeneratedPlanFromPreferences(form, row.created_at);
           }
+          setFormData(form);
+          setGeneratedPlan(gen);
+          setShowForm(false);
         }
       } catch (err) {
         if (!cancelled) {
@@ -365,23 +327,12 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
 
   const fetchMealDetail = async (meal, type) => {
     setSelectedMeal({
-      type,
-      title: meal.title,
-      calories: meal.calories,
-      protein: meal.protein,
-      carbs: meal.carbs,
-      fats: meal.fats,
-      prepTime: null,
-      cookTime: null,
-      servings: null,
-      difficulty: null,
-      description: null,
-      ingredients: null,
-      instructions: null,
-      tags: null,
+      type, title: meal.title, calories: meal.calories, protein: meal.protein,
+      carbs: meal.carbs, fats: meal.fats, prepTime: null, cookTime: null,
+      servings: null, difficulty: null, description: null, ingredients: null,
+      instructions: null, tags: null,
     });
     setMealDetailLoading(true);
-
     try {
       const res = await apiCall("/api/recipes/meal-detail", {
         method: "POST",
@@ -397,23 +348,14 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
         servings: detail.servings || "1 serving",
         difficulty: detail.difficulty || "Easy",
         description: detail.description || `A personalized ${type.toLowerCase()} meal tailored to your nutrition goals.`,
-        ingredients: Array.isArray(detail.ingredients) && detail.ingredients.length
-          ? detail.ingredients
-          : ["Ingredients unavailable — please try again."],
-        instructions: Array.isArray(detail.instructions) && detail.instructions.length
-          ? detail.instructions
-          : ["Instructions unavailable — please try again."],
-        tags: Array.isArray(detail.tags) && detail.tags.length
-          ? detail.tags
-          : [type, "Healthy"],
+        ingredients: Array.isArray(detail.ingredients) && detail.ingredients.length ? detail.ingredients : ["Ingredients unavailable — please try again."],
+        instructions: Array.isArray(detail.instructions) && detail.instructions.length ? detail.instructions : ["Instructions unavailable — please try again."],
+        tags: Array.isArray(detail.tags) && detail.tags.length ? detail.tags : [type, "Healthy"],
       }));
     } catch {
       setSelectedMeal(prev => ({
         ...prev,
-        prepTime: "—",
-        cookTime: "—",
-        servings: "1 serving",
-        difficulty: "Easy",
+        prepTime: "—", cookTime: "—", servings: "1 serving", difficulty: "Easy",
         description: `A personalized ${type.toLowerCase()} meal tailored to your nutrition goals.`,
         ingredients: ["Could not load ingredients. Please try again."],
         instructions: ["Could not load instructions. Please try again."],
@@ -424,20 +366,12 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
     }
   };
 
-  const handleSlotClick = (day, meal) => {
-    setActiveSlot({ day, meal });
-    setInputValue(plan[day][meal]?.title || "");
-  };
-
   const handleSave = () => {
     if (!activeSlot) return;
     const { day, meal } = activeSlot;
     setPlan((prev) => ({
       ...prev,
-      [day]: {
-        ...prev[day],
-        [meal]: inputValue.trim() ? { title: inputValue.trim() } : null,
-      },
+      [day]: { ...prev[day], [meal]: inputValue.trim() ? { title: inputValue.trim() } : null },
     }));
     setActiveSlot(null);
     setInputValue("");
@@ -445,33 +379,19 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
 
   const handleClear = (day, meal, e) => {
     e.stopPropagation();
-    setPlan((prev) => ({
-      ...prev,
-      [day]: { ...prev[day], [meal]: null },
-    }));
+    setPlan((prev) => ({ ...prev, [day]: { ...prev[day], [meal]: null } }));
   };
 
   const handleFormChange = (e) => {
     const { name, value, type, checked } = e.target;
-    if (type === "checkbox") {
-      setFormData(prev => ({ ...prev, [name]: checked }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
+    setFormData(prev => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
   };
 
   const handleKitchenEquipmentChange = (equipment) => {
     setFormData(prev => ({
       ...prev,
-      kitchenEquipment: {
-        ...prev.kitchenEquipment,
-        [equipment]: !prev.kitchenEquipment[equipment],
-      },
+      kitchenEquipment: { ...prev.kitchenEquipment, [equipment]: !prev.kitchenEquipment[equipment] },
     }));
-  };
-
-  const resetForm = () => {
-    setFormData(getEmptyMealPlanFormData());
   };
 
   const generateMealPlan = async () => {
@@ -493,22 +413,16 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
     
     try {
       let built = null;
-      try {
-        built = await fetchAiMealPlan(snapshot);
-      } catch {
-        built = buildGeneratedPlanFromPreferences(snapshot);
-      }
+      try { built = await fetchAiMealPlan(snapshot); }
+      catch { built = buildGeneratedPlanFromPreferences(snapshot); }
       setGeneratedPlan(built);
-
       const res = await apiCall("/api/meal-plans", {
         method: "POST",
         body: JSON.stringify({ ...snapshot, profileId: activeProfileId }),
       });
       setMealPlanSaveOk(true);
       if (res?.data?.created_at) {
-        setGeneratedPlan((prev) =>
-          prev ? { ...prev, createdAt: formatMealPlanCreatedAt(res.data.created_at) } : prev
-        );
+        setGeneratedPlan((prev) => prev ? { ...prev, createdAt: formatMealPlanCreatedAt(res.data.created_at) } : prev);
       }
     } catch (err) {
       setMealPlanSaveError(err?.message || "Could not save your meal plan preferences.");
@@ -525,7 +439,7 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
         body: JSON.stringify({ profileId: activeProfileId }),
       });
     } catch {}
-    resetForm();
+    setFormData(getEmptyMealPlanFormData());
     setGeneratedPlan(null);
     setShowForm(true);
     setMealPlanSaveError(null);
@@ -542,10 +456,7 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
       const pageWidth = 210;
       const contentWidth = pageWidth - margin * 2;
       let y = 20;
-
-      const checkPageBreak = (needed = 10) => {
-        if (y + needed > 280) { pdf.addPage(); y = 20; }
-      };
+      const checkPageBreak = (needed = 10) => { if (y + needed > 280) { pdf.addPage(); y = 20; } };
 
       pdf.setFontSize(22); pdf.setTextColor(30, 58, 15);
       pdf.text("Your Personalized Meal Plan", margin, y); y += 8;
@@ -554,10 +465,8 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
       pdf.setDrawColor(181, 208, 152); pdf.setLineWidth(0.5);
       pdf.line(margin, y, pageWidth - margin, y); y += 10;
 
-      pdf.setFontSize(14); pdf.setTextColor(30, 58, 15);
-      pdf.text("Profile Summary", margin, y); y += 7;
+      pdf.setFontSize(14); pdf.setTextColor(30, 58, 15); pdf.text("Profile Summary", margin, y); y += 7;
       pdf.setFontSize(10); pdf.setTextColor(60, 60, 60);
-
       const profileRows = [
         [`Age: ${generatedPlan.age || "—"}`, `Height: ${generatedPlan.height || "—"}`, `Weight: ${generatedPlan.weight || "—"}`],
         [`Goal: ${generatedPlan.goal || "Not specified"}`, `Activity: ${generatedPlan.activityLevel || "Not specified"}`],
@@ -651,7 +560,6 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
 
       pdf.save(`meal-plan-${generatedPlan.createdAt || 'my-plan'}.pdf`);
     } catch (error) {
-      console.error('Error downloading PDF:', error);
       alert('Failed to download PDF. Please try again. Error: ' + error.message);
     } finally {
       setDownloading(false);
@@ -733,7 +641,6 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
 
   return (
     <div className="pb-12">
-      {/* Hero Section */}
       <div className="relative mx-4 md:mx-8 mt-6 mb-8 overflow-hidden rounded-2xl shadow-xl">
         <div className="absolute inset-0 bg-cover bg-center rounded-2xl" style={{ backgroundImage: `url(${heroBg})`, filter: "brightness(0.7)" }} />
         <div className="absolute inset-0 bg-[#1e3a0f]/70 rounded-2xl" />
@@ -747,7 +654,7 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
         </div>
       </div>
 
-      {isGeneratingPlan && <MealPlanLoadingCard />}
+      {showForm && isGeneratingPlan && <MealPlanLoadingCard />}
 
       {showForm && !isGeneratingPlan && (
         <div className="mx-4 md:mx-8 mb-8">
@@ -756,19 +663,19 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
               <h2 className="text-white font-bold text-xl">Personalized Meal Planner</h2>
               <p className="text-[#B5D098] text-sm">Tell us about yourself and we'll create a custom meal plan</p>
             </div>
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="p-4 sm:p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Age</label>
-                  <input type="number" name="age" value={formData.age} onChange={handleFormChange} placeholder="e.g., 25" className="w-full border border-gray-200 rounded-lg px-4 py-2.5 focus:border-[#587A34] focus:ring-1 focus:ring-[#587A34] transition" />
+                  <label className={labelClass}>Age</label>
+                  <input type="number" name="age" value={formData.age} onChange={handleFormChange} placeholder="e.g., 25" className={inputClass} />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Height</label>
-                  <input type="text" name="height" value={formData.height} onChange={handleFormChange} placeholder="e.g., 170 cm or 5'7 in" className="w-full border border-gray-200 rounded-lg px-4 py-2.5 focus:border-[#587A34] focus:ring-1 focus:ring-[#587A34] transition" />
+                  <label className={labelClass}>Height</label>
+                  <input type="text" name="height" value={formData.height} onChange={handleFormChange} placeholder="e.g., 170 cm or 5'7 in" className={inputClass} />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Goal</label>
-                  <select name="goal" value={formData.goal} onChange={handleFormChange} className="w-full border border-gray-200 rounded-lg px-4 py-2.5 focus:border-[#587A34] focus:ring-1 focus:ring-[#587A34] transition">
+                  <label className={labelClass}>Goal</label>
+                  <select name="goal" value={formData.goal} onChange={handleFormChange} className={selectClass}>
                     <option value="">Select...</option>
                     <option value="Weight loss">Weight loss</option>
                     <option value="Muscle gain">Muscle gain</option>
@@ -778,8 +685,8 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Food Budget</label>
-                  <select name="foodBudget" value={formData.foodBudget} onChange={handleFormChange} className="w-full border border-gray-200 rounded-lg px-4 py-2.5 focus:border-[#587A34] focus:ring-1 focus:ring-[#587A34] transition">
+                  <label className={labelClass}>Food Budget</label>
+                  <select name="foodBudget" value={formData.foodBudget} onChange={handleFormChange} className={selectClass}>
                     <option value="">Select...</option>
                     <option value="Low ($ - under $50/week)">Low ($ - under $50/week)</option>
                     <option value="Medium ($$ - $50-$100/week)">Medium ($$ - $50-$100/week)</option>
@@ -787,8 +694,8 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Max Cooking Time</label>
-                  <select name="maxCookingTime" value={formData.maxCookingTime} onChange={handleFormChange} className="w-full border border-gray-200 rounded-lg px-4 py-2.5 focus:border-[#587A34] focus:ring-1 focus:ring-[#587A34] transition">
+                  <label className={labelClass}>Max Cooking Time</label>
+                  <select name="maxCookingTime" value={formData.maxCookingTime} onChange={handleFormChange} className={selectClass}>
                     <option value="">Select...</option>
                     <option value="15 minutes">15 minutes</option>
                     <option value="30 minutes">30 minutes</option>
@@ -797,8 +704,8 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Carb Preference</label>
-                  <select name="carbPreference" value={formData.carbPreference} onChange={handleFormChange} className="w-full border border-gray-200 rounded-lg px-4 py-2.5 focus:border-[#587A34] focus:ring-1 focus:ring-[#587A34] transition">
+                  <label className={labelClass}>Carb Preference</label>
+                  <select name="carbPreference" value={formData.carbPreference} onChange={handleFormChange} className={selectClass}>
                     <option value="">Select...</option>
                     <option value="Low Carb">Low Carb</option>
                     <option value="Moderate Carb">Moderate Carb</option>
@@ -806,28 +713,9 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
                     <option value="Keto friendly">Keto friendly</option>
                   </select>
                 </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Kitchen Equipment Available</label>
-                  <div className="flex gap-6">
-                    {[["stove", "Stove"], ["microwave", "Microwave"], ["airFryer", "Air fryer"], ["oven", "Oven"]].map(([key, label]) => (  
-                      <label key={key} className="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" checked={formData.kitchenEquipment[key]} onChange={() => handleKitchenEquipmentChange(key)} className="w-4 h-4 rounded border-gray-300 text-[#587A34] focus:ring-[#587A34]" />
-                        <span className="text-gray-700">{label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Allergies (if any)</label>
-                  <input type="text" name="allergies" value={formData.allergies} onChange={handleFormChange} placeholder="e.g., Nuts, Dairy, Seafood" className="w-full border border-gray-200 rounded-lg px-4 py-2.5 focus:border-[#587A34] focus:ring-1 focus:ring-[#587A34] transition" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Medical Conditions (if any)</label>
-                  <input type="text" name="medicalConditions" value={formData.medicalConditions} onChange={handleFormChange} placeholder="e.g., Diabetes, Hypertension" className="w-full border border-gray-200 rounded-lg px-4 py-2.5 focus:border-[#587A34] focus:ring-1 focus:ring-[#587A34] transition" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Sex/Gender</label>
-                  <select name="sexGender" value={formData.sexGender} onChange={handleFormChange} className="w-full border border-gray-200 rounded-lg px-4 py-2.5 focus:border-[#587A34] focus:ring-1 focus:ring-[#587A34] transition">
+                  <label className={labelClass}>Sex/Gender</label>
+                  <select name="sexGender" value={formData.sexGender} onChange={handleFormChange} className={selectClass}>
                     <option value="">Select...</option>
                     <option value="Female">Female</option>
                     <option value="Male">Male</option>
@@ -836,12 +724,12 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Weight</label>
-                  <input type="text" name="weight" value={formData.weight} onChange={handleFormChange} placeholder="e.g., 70 kg or 154 lbs" className="w-full border border-gray-200 rounded-lg px-4 py-2.5 focus:border-[#587A34] focus:ring-1 focus:ring-[#587A34] transition" />
+                  <label className={labelClass}>Weight</label>
+                  <input type="text" name="weight" value={formData.weight} onChange={handleFormChange} placeholder="e.g., 70 kg or 154 lbs" className={inputClass} />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Activity Level</label>
-                  <select name="activityLevel" value={formData.activityLevel} onChange={handleFormChange} className="w-full border border-gray-200 rounded-lg px-4 py-2.5 focus:border-[#587A34] focus:ring-1 focus:ring-[#587A34] transition">
+                  <label className={labelClass}>Activity Level</label>
+                  <select name="activityLevel" value={formData.activityLevel} onChange={handleFormChange} className={selectClass}>
                     <option value="">Select...</option>
                     <option value="Sedentary">Sedentary (little or no exercise)</option>
                     <option value="Lightly active">Lightly active (1-3 days/week)</option>
@@ -851,8 +739,8 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Preferred Cuisine</label>
-                  <select name="preferredCuisine" value={formData.preferredCuisine} onChange={handleFormChange} className="w-full border border-gray-200 rounded-lg px-4 py-2.5 focus:border-[#587A34] focus:ring-1 focus:ring-[#587A34] transition">
+                  <label className={labelClass}>Preferred Cuisine</label>
+                  <select name="preferredCuisine" value={formData.preferredCuisine} onChange={handleFormChange} className={selectClass}>
                     <option value="">Select...</option>
                     <option value="Italian">Italian</option>
                     <option value="Mexican">Mexican</option>
@@ -863,8 +751,8 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Cooking Skill Level</label>
-                  <select name="cookingSkillLevel" value={formData.cookingSkillLevel} onChange={handleFormChange} className="w-full border border-gray-200 rounded-lg px-4 py-2.5 focus:border-[#587A34] focus:ring-1 focus:ring-[#587A34] transition">
+                  <label className={labelClass}>Cooking Skill Level</label>
+                  <select name="cookingSkillLevel" value={formData.cookingSkillLevel} onChange={handleFormChange} className={selectClass}>
                     <option value="">Select...</option>
                     <option value="Beginner">Beginner (minimal experience)</option>
                     <option value="Intermediate">Intermediate (comfortable with recipes)</option>
@@ -872,8 +760,8 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Fat Preference</label>
-                  <select name="fatPreference" value={formData.fatPreference} onChange={handleFormChange} className="w-full border border-gray-200 rounded-lg px-4 py-2.5 focus:border-[#587A34] focus:ring-1 focus:ring-[#587A34] transition">
+                  <label className={labelClass}>Fat Preference</label>
+                  <select name="fatPreference" value={formData.fatPreference} onChange={handleFormChange} className={selectClass}>
                     <option value="">Select...</option>
                     <option value="Low Fat">Low Fat</option>
                     <option value="Moderate Healthy Fats">Moderate Healthy Fats</option>
@@ -881,64 +769,100 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Foods You Dislike</label>
-                  <input type="text" name="foodsDislike" value={formData.foodsDislike} onChange={handleFormChange} placeholder="e.g., Ampalaya, Onion" className="w-full border border-gray-200 rounded-lg px-4 py-2.5 focus:border-[#587A34] focus:ring-1 focus:ring-[#587A34] transition" />
+                  <label className={labelClass}>Allergies (if any)</label>
+                  <input type="text" name="allergies" value={formData.allergies} onChange={handleFormChange} placeholder="e.g., Nuts, Dairy, Seafood" className={inputClass} />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Meal Schedule</label>
-                  <input type="text" name="mealSchedule" value={formData.mealSchedule} onChange={handleFormChange} placeholder="e.g., 7AM, 12PM, 7PM" className="w-full border border-gray-200 rounded-lg px-4 py-2.5 focus:border-[#587A34] focus:ring-1 focus:ring-[#587A34] transition" />
+                  <label className={labelClass}>Medical Conditions (if any)</label>
+                  <input type="text" name="medicalConditions" value={formData.medicalConditions} onChange={handleFormChange} placeholder="e.g., Diabetes, Hypertension" className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass}>Foods You Dislike</label>
+                  <input type="text" name="foodsDislike" value={formData.foodsDislike} onChange={handleFormChange} placeholder="e.g., Ampalaya, Onion" className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass}>Meal Schedule</label>
+                  <input type="text" name="mealSchedule" value={formData.mealSchedule} onChange={handleFormChange} placeholder="e.g., 7AM, 12PM, 7PM" className={inputClass} />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">Kitchen Equipment Available</label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {[["stove", "Stove"], ["microwave", "Microwave"], ["airFryer", "Air Fryer"], ["oven", "Oven"]].map(([key, label]) => (
+                      <label key={key} className="flex items-center gap-2 cursor-pointer bg-gray-50 hover:bg-[#f0f7e8] border border-gray-200 hover:border-[#B5D098] rounded-lg px-3 py-2.5 transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={formData.kitchenEquipment[key]}
+                          onChange={() => handleKitchenEquipmentChange(key)}
+                          className="w-4 h-4 rounded border-gray-300 text-[#587A34] focus:ring-[#587A34] shrink-0"
+                        />
+                        <span className="text-sm text-gray-700 font-medium">{label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">Additional Options</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {[["includeWaterGoal", "Include water goal"], ["includeSnacks", "Include snacks"], ["generateGroceryList", "Generate grocery list"]].map(([name, label]) => (
+                      <label key={name} className="flex items-center gap-2 cursor-pointer bg-gray-50 hover:bg-[#f0f7e8] border border-gray-200 hover:border-[#B5D098] rounded-lg px-3 py-2.5 transition-colors">
+                        <input
+                          type="checkbox"
+                          name={name}
+                          checked={formData[name]}
+                          onChange={handleFormChange}
+                          className="w-4 h-4 rounded border-gray-300 text-[#587A34] focus:ring-[#587A34] shrink-0"
+                        />
+                        <span className="text-sm text-gray-700 font-medium">{label}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              <div className="mt-6 flex flex-wrap gap-6">
-                {[["includeWaterGoal", "Include water goal"], ["includeSnacks", "Include snacks"], ["generateGroceryList", "Generate grocery list"]].map(([name, label]) => (
-                  <label key={name} className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" name={name} checked={formData[name]} onChange={handleFormChange} className="w-4 h-4 rounded border-gray-300 text-[#587A34] focus:ring-[#587A34]" />
-                    <span className="text-gray-700 font-medium">{label}</span>
-                  </label>
-                ))}
-              </div>
-
-              <div className="mt-8 flex justify-center">
+              <div className="mt-8 flex flex-col items-center gap-3">
                 <button
                   onClick={generateMealPlan}
                   disabled={mealPlanSaving || !formValidation.ok}
-                  className="bg-[#587A34] hover:bg-[#3c5a23] text-white font-bold py-3.5 px-10 rounded-xl shadow-md transition-all text-lg flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full sm:w-auto bg-[#587A34] hover:bg-[#3c5a23] text-white font-bold py-3.5 px-10 rounded-xl shadow-md transition-all text-base flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  <Utensils className="w-5 h-5" /> {mealPlanSaving ? "Generating..." : "Generate My Meal Plan"}
+                  <Utensils className="w-5 h-5" />
+                  {mealPlanSaving ? "Generating..." : "Generate My Meal Plan"}
                 </button>
+                {!formValidation.ok && (
+                  <p className="text-xs text-red-700 text-center">
+                    {formValidation.errors?.[0] || "Please fix the highlighted inputs to generate your meal plan."}
+                  </p>
+                )}
               </div>
-
-              {!formValidation.ok && (
-                <p className="mt-3 text-xs text-red-700 text-center">
-                  {formValidation.errors?.[0] || "Please fix the highlighted inputs to generate your meal plan."}
-                </p>
-              )}
             </div>
           </div>
         </div>
       )}
 
-      {/* Generated Meal Plan Card */}
       {!showForm && generatedPlan && !isGeneratingPlan && (
         <div className="mx-4 md:mx-8 mb-8">
           <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
-            {/* Card Header */}
-            <div className="px-6 py-5 bg-gradient-to-r from-[#1e3a0f] to-[#2b4b1a]">
-              <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="px-4 sm:px-6 py-5 bg-gradient-to-r from-[#1e3a0f] to-[#2b4b1a]">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
-                  <h2 className="text-white font-bold text-2xl flex items-center gap-2">
+                  <h2 className="text-white font-bold text-xl flex items-center gap-2">
                     <Apple className="w-6 h-6 text-[#B5D098]" /> Your Personalized Meal Plan
                   </h2>
                   <p className="text-[#B5D098] text-sm mt-1">Generated on {generatedPlan.createdAt}</p>
                 </div>
-                <button onClick={downloadMealPlan} disabled={downloading} className="bg-white/20 hover:bg-white/30 transition-all px-4 py-2 rounded-lg text-white font-semibold text-sm shadow-md cursor-pointer flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                <button
+                  onClick={downloadMealPlan}
+                  disabled={downloading}
+                  className="self-start sm:self-auto bg-white/20 hover:bg-white/30 transition-all px-4 py-2 rounded-lg text-white font-semibold text-sm shadow-md cursor-pointer flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   <Download className="w-4 h-4" /> {downloading ? "Downloading..." : "Download PDF"}
                 </button>
               </div>
             </div>
 
-            <div className="p-6 space-y-6">
+            <div className="p-4 sm:p-6 space-y-6">
               {mealPlanSaving && <p className="text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">Saving your preferences…</p>}
               {mealPlanSaveOk && !mealPlanSaving && (
                 <p className="text-sm text-[#32491B] bg-[#e8f2dc] border border-[#B5D098]/50 rounded-lg px-4 py-3 flex items-center gap-2">
@@ -951,15 +875,14 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
                 </p>
               )}
 
-              {/* Profile Summary */}
-              <div className="bg-[#f5f9ef] rounded-xl p-5 border border-[#B5D098]/30">
+              <div className="bg-[#f5f9ef] rounded-xl p-4 sm:p-5 border border-[#B5D098]/30">
                 <div className="flex items-center gap-2 mb-4">
                   <div className="w-8 h-8 bg-[#587A34]/10 rounded-full flex items-center justify-center">
                     <Heart className="w-4 h-4 text-[#587A34]" />
                   </div>
                   <h3 className="font-bold text-gray-800 text-lg">Your Profile Summary</h3>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                   {[
                     [Calendar, "Age", generatedPlan.age],
                     [Ruler, "Height", generatedPlan.height],
@@ -971,8 +894,8 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
                     [Utensils, "Skill Level", generatedPlan.cookingSkillLevel],
                   ].map(([Icon, label, value]) => (
                     <div key={label} className="flex items-center gap-2">
-                      <Icon className="w-4 h-4 text-[#587A34]" />
-                      <span className="text-sm text-gray-600">{label}: <span className="font-semibold">{value || "—"}</span></span>
+                      <Icon className="w-4 h-4 text-[#587A34] shrink-0" />
+                      <span className="text-sm text-gray-600 min-w-0">{label}: <span className="font-semibold">{value || "—"}</span></span>
                     </div>
                   ))}
                 </div>
@@ -982,28 +905,25 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
                       <AlertCircle className="w-4 h-4 text-amber-600" />
                       <span className="font-semibold text-gray-700 text-sm">Health Notes</span>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
-                      {generatedPlan.allergies && <div className="flex items-center gap-1"><span className="text-gray-500">Allergies:</span><span className="text-red-600 font-medium">{generatedPlan.allergies}</span></div>}
-                      {generatedPlan.medicalConditions && <div className="flex items-center gap-1"><span className="text-gray-500">Medical:</span><span className="text-amber-600 font-medium">{generatedPlan.medicalConditions}</span></div>}
-                      {generatedPlan.foodsDislike && <div className="flex items-center gap-1"><span className="text-gray-500">Avoid:</span><span className="text-red-600 font-medium">{generatedPlan.foodsDislike}</span></div>}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
+                      {generatedPlan.allergies && <div className="flex items-center gap-1 flex-wrap"><span className="text-gray-500">Allergies:</span><span className="text-red-600 font-medium">{generatedPlan.allergies}</span></div>}
+                      {generatedPlan.medicalConditions && <div className="flex items-center gap-1 flex-wrap"><span className="text-gray-500">Medical:</span><span className="text-amber-600 font-medium">{generatedPlan.medicalConditions}</span></div>}
+                      {generatedPlan.foodsDislike && <div className="flex items-center gap-1 flex-wrap"><span className="text-gray-500">Avoid:</span><span className="text-red-600 font-medium">{generatedPlan.foodsDislike}</span></div>}
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* Daily Meal Plan — clickable cards */}
               <div>
-                <div className="flex items-center gap-2 mb-4">
+                <div className="flex items-center gap-2 mb-2">
                   <div className="w-8 h-8 bg-[#587A34]/10 rounded-full flex items-center justify-center">
                     <Sun className="w-4 h-4 text-[#587A34]" />
                   </div>
                   <h3 className="font-bold text-gray-800 text-lg">Daily Meal Plan</h3>
-                  {generatedPlan.mealSchedule && <span className="text-sm text-gray-500 ml-2">({generatedPlan.mealSchedule})</span>}
+                  {generatedPlan.mealSchedule && <span className="text-sm text-gray-500">({generatedPlan.mealSchedule})</span>}
                 </div>
-
                 <p className="text-xs text-gray-400 mb-3 italic">Tap a meal card to view full recipe details.</p>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {[
                     { type: "Breakfast", data: generatedPlan.meals.breakfast, icon: <Coffee className="w-5 h-5 text-amber-600" />, bg: "bg-amber-50", border: "border-amber-100", hover: "hover:border-amber-300" },
                     { type: "Lunch", data: generatedPlan.meals.lunch, icon: <Sun className="w-5 h-5 text-green-600" />, bg: "bg-green-50", border: "border-green-100", hover: "hover:border-green-300" },
@@ -1032,14 +952,13 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
                   ))}
                 </div>
 
-                {/* Daily Total */}
                 <div className="mt-4 bg-gray-50 rounded-xl p-4 border border-gray-200">
-                  <div className="flex items-center justify-between flex-wrap gap-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div className="flex items-center gap-2">
                       <Flame className="w-5 h-5 text-orange-500" />
                       <span className="font-semibold text-gray-700">Daily Total:</span>
                     </div>
-                    <div className="flex flex-wrap gap-4 text-sm">
+                    <div className="flex flex-wrap gap-3 text-sm">
                       <span className="font-medium text-amber-700">{generatedPlan.totalNutrition.calories} calories</span>
                       <span className="font-medium text-blue-700">{generatedPlan.totalNutrition.protein}g protein</span>
                       <span className="font-medium text-green-700">{generatedPlan.totalNutrition.carbs}g carbs</span>
@@ -1049,28 +968,26 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
                 </div>
               </div>
 
-              {/* Nutrition Preferences */}
               <div className="bg-white border rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <ChefHat className="w-4 h-4 text-[#587A34]" />
                   <h3 className="font-semibold text-gray-800">Personalized Nutrition Settings</h3>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                  <div className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5 text-green-600" /><span className="text-gray-600">Carbs: <span className="font-medium">{generatedPlan.carbPreference || "Moderate"}</span></span></div>
-                  <div className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5 text-green-600" /><span className="text-gray-600">Fats: <span className="font-medium">{generatedPlan.fatPreference || "Moderate"}</span></span></div>
-                  <div className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5 text-green-600" /><span className="text-gray-600">Budget: <span className="font-medium">{generatedPlan.foodBudget || "Not specified"}</span></span></div>
-                  <div className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5 text-green-600" /><span className="text-gray-600">Equipment: <span className="font-medium">{Object.entries(generatedPlan.kitchenEquipment).filter(([, v]) => v).map(([k]) => k).join(", ") || "None specified"}</span></span></div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                  <div className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5 text-green-600 shrink-0" /><span className="text-gray-600">Carbs: <span className="font-medium">{generatedPlan.carbPreference || "Moderate"}</span></span></div>
+                  <div className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5 text-green-600 shrink-0" /><span className="text-gray-600">Fats: <span className="font-medium">{generatedPlan.fatPreference || "Moderate"}</span></span></div>
+                  <div className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5 text-green-600 shrink-0" /><span className="text-gray-600">Budget: <span className="font-medium">{generatedPlan.foodBudget || "Not specified"}</span></span></div>
+                  <div className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5 text-green-600 shrink-0" /><span className="text-gray-600 min-w-0 truncate">Equipment: <span className="font-medium">{Object.entries(generatedPlan.kitchenEquipment).filter(([, v]) => v).map(([k]) => k).join(", ") || "None"}</span></span></div>
                 </div>
               </div>
 
-              {/* Snacks */}
               {generatedPlan.includeSnacks && generatedPlan.snacks?.length > 0 && (
                 <div className="border-l-4 border-[#B5D098] pl-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Apple className="w-4 h-4 text-[#587A34]" />
                     <p className="font-semibold text-gray-700">Snack Recommendations</p>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
                     {generatedPlan.snacks.map((snack, idx) => (
                       <div key={idx} className="bg-gray-50 rounded-lg p-2 text-sm">
                         <span className="font-medium">{snack.name}</span>
@@ -1081,7 +998,6 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
                 </div>
               )}
 
-              {/* Water Goal */}
               {generatedPlan.includeWaterGoal && generatedPlan.waterGoal && (
                 <div className="border-l-4 border-[#587A34] pl-4">
                   <div className="flex items-center gap-2">
@@ -1092,21 +1008,20 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
                 </div>
               )}
 
-              {/* Grocery List */}
               {generatedPlan.generateGroceryList && generatedPlan.groceryList?.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-dashed border-gray-200">
                   <div className="flex items-center gap-2 mb-3">
                     <ShoppingBag className="w-5 h-5 text-[#587A34]" />
                     <p className="font-bold text-gray-800">Smart Grocery List</p>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {generatedPlan.groceryList.map((category, idx) => (
                       <div key={idx} className="bg-gray-50 rounded-lg p-3">
                         <h4 className="font-semibold text-[#587A34] text-sm mb-2">{category.category}</h4>
                         <ul className="space-y-1">
                           {category.items.map((item, itemIdx) => (
                             <li key={itemIdx} className="text-gray-600 text-sm flex items-center gap-2">
-                              <CheckCircle2 className="w-3 h-3 text-green-500" /> {item}
+                              <CheckCircle2 className="w-3 h-3 text-green-500 shrink-0" /> {item}
                             </li>
                           ))}
                         </ul>
@@ -1122,8 +1037,8 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
               </div>
             </div>
 
-            <div className="flex justify-center pt-4 pb-6 px-6">
-              <button onClick={handleNewMealPlan} className="bg-[#587A34] hover:bg-[#3c5a23] text-white font-semibold py-3 px-8 rounded-xl shadow-md transition-all flex items-center gap-2">
+            <div className="flex justify-center pt-4 pb-6 px-4 sm:px-6">
+              <button onClick={handleNewMealPlan} className="w-full sm:w-auto bg-[#587A34] hover:bg-[#3c5a23] text-white font-semibold py-3 px-8 rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
                 <PlusCircle className="w-5 h-5" /> Generate New Meal Plan
               </button>
             </div>
@@ -1195,11 +1110,8 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
                       {selectedMeal.description}
                     </p>
                   )}
-
                   <div className="h-px bg-gradient-to-r from-transparent via-[#587A34]/20 to-transparent" />
-
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Ingredients */}
                     <div className="rounded-xl p-4 bg-white/60 border border-[#d6e8c0]">
                       <h4 className="text-[#2d3f1a] font-bold text-sm mb-3 flex items-center gap-2">
                         <span className="w-6 h-6 rounded-md bg-[#587A34]/15 flex items-center justify-center">
@@ -1216,8 +1128,6 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
                         ))}
                       </ul>
                     </div>
-
-                    {/* Instructions */}
                     <div className="rounded-xl p-4 bg-white/60 border border-[#d6e8c0]">
                       <h4 className="text-[#2d3f1a] font-bold text-sm mb-3 flex items-center gap-2">
                         <span className="w-6 h-6 rounded-md bg-[#587A34]/15 flex items-center justify-center">
@@ -1235,7 +1145,6 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
                       </ol>
                     </div>
                   </div>
-
                   {selectedMeal.tags?.length > 0 && (
                     <div className="flex flex-wrap gap-1.5">
                       {selectedMeal.tags.map((tag, i) => (
