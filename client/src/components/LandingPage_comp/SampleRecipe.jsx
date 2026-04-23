@@ -1,11 +1,9 @@
 import { useState } from "react";
 import { X, Clock, Users, Flame } from "lucide-react";
 
-// Import local adobo image from assets
 import adoboImg from "/src/assets/adobo.jpg";
 import bibimbapImg from "/src/assets/bibimbap.jpg";
 
-// Unsplash images for other cuisines (will change these later)
 const recipeImages = {
   japanese: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=500&h=400&fit=crop",
   filipino: adoboImg,
@@ -226,11 +224,10 @@ const RecipeModal = ({ recipe, onClose }) => {
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl"
+        className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-hidden shadow-2xl flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Image */}
-        <div className="relative w-full h-56 sm:h-64 sticky top-0 z-10">
+        <div className="relative w-full h-56 sm:h-64 flex-shrink-0">
           <img src={recipe.image} alt={recipe.title} className="w-full h-full object-cover rounded-t-2xl" />
           <button
             onClick={onClose}
@@ -240,11 +237,9 @@ const RecipeModal = ({ recipe, onClose }) => {
           </button>
         </div>
 
-        {/* Body - Scrollable */}
-        <div className="p-6">
+        <div className="p-6 overflow-y-auto flex-1">
           <h2 className="text-2xl font-bold font-roboto text-[#1B211A] mb-2">{recipe.title}</h2>
 
-          {/* Tags - Now showing multiple tags */}
           <div className="flex flex-wrap gap-2 mb-4">
             <span className="text-xs font-freeman px-2.5 py-1 rounded-full border border-gray-300 text-gray-600">{recipe.cuisine}</span>
             <span className="text-xs font-freeman px-2.5 py-1 rounded-full border border-gray-300 text-gray-600">{recipe.difficulty}</span>
@@ -255,14 +250,12 @@ const RecipeModal = ({ recipe, onClose }) => {
             ))}
           </div>
 
-          {/* Stats */}
           <div className="flex items-center gap-5 text-sm text-gray-500 font-freeman mb-6 pb-4 border-b border-gray-100">
             <span className="flex items-center gap-1"><Clock size={14} /> {recipe.time}</span>
             <span className="flex items-center gap-1"><Users size={14} /> {recipe.servings}</span>
             <span className="flex items-center gap-1"><Flame size={14} /> {recipe.calories} cal</span>
           </div>
 
-          {/* Toggle Buttons */}
           <div className="flex gap-3 mb-5">
             <button
               onClick={() => setShowIngredients(true)}
@@ -286,8 +279,7 @@ const RecipeModal = ({ recipe, onClose }) => {
             </button>
           </div>
 
-          {/* Content Area */}
-          <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scroll">
+          <div>
             {showIngredients ? (
               <div>
                 <h3 className="font-bold font-roboto text-[#1B211A] mb-3 text-lg">Ingredients</h3>
@@ -316,24 +308,6 @@ const RecipeModal = ({ recipe, onClose }) => {
           </div>
         </div>
       </div>
-
-      {/* Custom Scrollbar Styles */}
-      <style>{`
-        .custom-scroll::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scroll::-webkit-scrollbar-track {
-          background: #f1f1f1;
-          border-radius: 10px;
-        }
-        .custom-scroll::-webkit-scrollbar-thumb {
-          background: #8BAE66;
-          border-radius: 10px;
-        }
-        .custom-scroll::-webkit-scrollbar-thumb:hover {
-          background: #6d8f4a;
-        }
-      `}</style>
     </div>
   );
 };
@@ -343,10 +317,21 @@ const RecipesSection = () => {
 
   return (
     <div className="w-full bg-[#F0F5E8] py-14 px-6 sm:py-20 lg:py-24 lg:px-16">
-
-      <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-roboto text-[#1B211A] mb-10 text-center">
-        Here are some recipes you can try right now.
-      </h2>
+      
+      <div className="text-center mb-12">
+        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[#1B211A] mb-3">
+          Try These{" "}
+          <span className="relative inline-block">
+            <span className="absolute inset-0 blur-lg bg-[#8BAE66]/30 rounded-full"></span>
+            <span className="relative text-transparent bg-clip-text bg-gradient-to-r from-[#6B8F4A] to-[#8BAE66]">
+              Amazing Dishes
+            </span>
+          </span>
+        </h2>
+        <p className="text-gray-600 max-w-2xl mx-auto text-sm sm:text-base">
+          Explore our hand-picked collection of delicious recipes from around the world
+        </p>
+      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
         {recipes.map((recipe) => (

@@ -83,10 +83,9 @@ const HowItWorks = () => {
 
       <div className="relative mx-auto flex max-w-3xl flex-col items-center">
 
-
-        <div className="mb-12 text-center">
+        <div className="mb-4 text-center">
           <h2
-            className="mb-3 text-4xl font-bold sm:text-5xl lg:text-6xl"
+            className="text-4xl font-bold sm:text-5xl lg:text-6xl"
             style={{ color: "#F5F0E8", letterSpacing: "-0.02em", lineHeight: 1.1 }}
           >
             How It{" "}
@@ -95,14 +94,6 @@ const HowItWorks = () => {
               <span style={{ color: "#D4E67B" }}>Works</span>
             </span>
           </h2>
-          <div
-            className="mx-auto rounded-full"
-            style={{
-              width: 60,
-              height: 3,
-              background: "linear-gradient(to right, #D4E67B, #839705, transparent)",
-            }}
-          />
         </div>
 
         <p
@@ -115,7 +106,6 @@ const HowItWorks = () => {
           </span>{" "}
           in just a few seconds.
         </p>
-
 
         <div className="w-full max-w-2xl mx-auto">
           {steps.map((step, i) => {
