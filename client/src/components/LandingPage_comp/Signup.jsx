@@ -31,7 +31,7 @@ const Signup = ({ isOpen, onClose, onSwitch, onSignupSuccess }) => {
     uppercase: /[A-Z]/.test(password),
     lowercase: /[a-z]/.test(password),
     number:    /\d/.test(password),
-    special:   /[!@#$%^&*()\-_=+\[\]{}|;':",.<>?/`~\\]/.test(password),
+    special:   /[!@#$%^&*()\-_=+\[\]{}|;':",.<>?\/`~\\]/.test(password),
   };
   const passwordValid = Object.values(pwChecks).every(Boolean);
   const passwordsMatch = confirmPassword.length > 0 && confirmPassword === password;
