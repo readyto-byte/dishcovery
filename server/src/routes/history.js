@@ -6,38 +6,19 @@ const { addHistoryRecord, getHistoryByAccount, clearHistoryByAccount } = require
 router.post('/', async (req, res) => {
   try {
     const accountId = req.user.id;
-    const {
-      search_query,
-      searchQuery,
-      recipe_id,
-      recipeId,
-      source_api,
-      sourceApi,
-      output_response,
-      outputResponse,
-      profile_id,
-      profileId,
-      profile_name,
-      profileName,
-    } = req.body;
-
-    const query = search_query ?? searchQuery;
+    const b = req.body ?? {};
+    const query = b.search_query ?? b.searchQuery;
     if (!query) {
       return res.status(400).json({ success: false, error: 'search_query is required' });
     }
 
     const history = await addHistoryRecord(accountId, {
       search_query: query,
-      recipe_id,
-      recipeId,
-      source_api,
-      sourceApi,
-      output_response,
-      outputResponse,
-      profile_id,
-      profileId,
-      profile_name,
-      profileName,
+      recipe_id: b.recipe_id ?? b.recipeId,
+      source_api: b.source_api ?? b.sourceApi,
+      output_response: b.output_response ?? b.outputResponse,
+      profile_id: b.profile_id ?? b.profileId,
+      profile_name: b.profile_name ?? b.profileName,
     });
 
     res.json({ success: true, data: history });
