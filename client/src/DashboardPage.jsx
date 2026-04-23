@@ -413,7 +413,7 @@ const DashboardPage = () => {
 
       if (Array.isArray(recipeResponse?.suggestions) && recipeResponse.suggestions.length > 0) {
         const cards = recipeResponse.suggestions.map((suggestion, index) =>
-          mapSuggestionToCard(suggestion, recipeResponse?.estimatedTime, suggestion?.id ?? `suggestion-${index}`)
+          mapSuggestionToCard(suggestion, recipeResponse?.estimatedTime, suggestion?.id ?? null)
         );
 
         if (cards.length > 1) {
