@@ -6,7 +6,7 @@ async function generateText(req, res) {
   try {
     const { prompt } = req.body;
     const result = await ai.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-2.5-flash',
       contents: prompt,
     });
     return res.json({ response: result.text });

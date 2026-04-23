@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { supabaseAdmin } = require('../config/supabase');
 const {
   createMealPlan,
   listMealPlans,
@@ -55,8 +56,36 @@ router.post('/', async (req, res) => {
 
 router.post('/generate', async (req, res) => {
   try {
-    const response = await generateAiMealPlan(req.body || {}, req.body?.profiles || []);
-    res.json({ success: true, response });
+    const accountId = req.user?.id;
+    if (!accountId) {
+      return res.status(401).json({ success: false, error: 'Authentication required' });
+    }
+
+    const body = req.body || {};
+    const profileId = body?.profileId ?? body?.profile_id ?? req.query?.profileId ?? req.query?.profile_id ?? null;
+
+    let profiles = [];
+    if (profileId) {
+      const { data: profileRow, error: profileErr } = await supabaseAdmin
+        .from('profile')
+        .select('id, name, dietary_restrictions, dietary_preferences')
+        .eq('account_id', accountId)
+        .eq('id', profileId)
+        .maybeSingle();
+
+      if (profileErr) {
+        throw profileErr;
+      }
+      if (profileRow) {
+        profiles = [profileRow];
+      }
+    } else if (Array.isArray(body?.profiles)) {
+      profiles = body.profiles;
+    }
+
+    const response = await generateAiMealPlan(body, profiles);
+    const saved = await createMealPlan(accountId, { ...body, response }, profileId);
+    res.json({ success: true, response, saved });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
   }
