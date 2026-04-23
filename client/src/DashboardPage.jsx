@@ -307,6 +307,7 @@ const DashboardPage = () => {
       : ["ai", "generated"],
     ingredients: Array.isArray(suggestion?.keyIngredients) ? suggestion.keyIngredients : [],
     instructions: Array.isArray(suggestion?.instructions) ? suggestion.instructions : [],
+    nutritionalInfo: suggestion?.nutritionalInfo ?? null,
   });
 
   const saveToHistory = async (card, promptText) => {
