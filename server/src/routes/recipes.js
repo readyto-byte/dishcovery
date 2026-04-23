@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { searchRecipes, generateMealRecipeDetail } = require('../controllers/recipes');
+const { supabaseAdmin } = require('../config/supabase');
 
 function hasRecipeError(errorValue) {
   if (errorValue === null || errorValue === undefined) return false;
@@ -36,8 +37,37 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Please provide a prompt.' });
     }
 
+    // Hydrate profile details (dietary restrictions/preferences) when client only sends {id,name,avatar}.
+    // This ensures prompt includes correct restrictions/allergies and the AI is constrained properly.
+    let resolvedProfiles = Array.isArray(profiles) ? profiles : [];
+    const profileIds = resolvedProfiles
+      .map((p) => p?.id ?? p?.profile_id ?? p?.profileId ?? null)
+      .filter(Boolean);
+
+    if (profileIds.length > 0) {
+      const { data: profileRows, error: profileErr } = await supabaseAdmin
+        .from('profile')
+        .select('id, name, dietary_restrictions, dietary_preferences')
+        .eq('account_id', accountId)
+        .in('id', profileIds);
+
+      if (profileErr) {
+        throw profileErr;
+      }
+
+      if (Array.isArray(profileRows) && profileRows.length > 0) {
+        // Merge DB fields onto provided objects (preserve any client fields like avatar_url).
+        const map = new Map(profileRows.map((p) => [String(p.id), p]));
+        resolvedProfiles = resolvedProfiles.map((p) => {
+          const id = p?.id ?? p?.profile_id ?? p?.profileId ?? null;
+          const db = id ? map.get(String(id)) : null;
+          return db ? { ...p, ...db } : p;
+        });
+      }
+    }
+
     const response = await searchRecipes({
-      profiles,
+      profiles: resolvedProfiles,
       promptText,
       history,
       numOptions,
