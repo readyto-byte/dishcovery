@@ -31,13 +31,13 @@ const AboutSection = () => {
         ([entry]) => {
           if (entry.isIntersecting) {
             setTimeout(() => {
-              card.classList.remove("opacity-0", "translate-y-12");
-              card.classList.add("opacity-100", "translate-y-0");
-            }, i * 200);
+              card.classList.remove("opacity-0", "translate-y-12", "scale-95");
+              card.classList.add("opacity-100", "translate-y-0", "scale-100");
+            }, i * 150);
             observer.disconnect();
           }
         },
-        { threshold: 0.15 }
+        { threshold: 0.15, rootMargin: "0px 0px -50px 0px" }
       );
       if (card) observer.observe(card);
       return observer;
@@ -47,45 +47,59 @@ const AboutSection = () => {
   }, []);
 
   return (
-    <div id="about" className="w-full bg-[#F0F5E8] py-14 px-6 sm:py-20 lg:py-24 lg:px-16">
+    <div id="about" className="relative w-full bg-gradient-to-br from-[#F5F8F0] to-[#EDF3E6] py-12 px-6 sm:py-16 lg:py-20 lg:px-16 overflow-hidden">
 
-      <div className="max-w-5xl mx-auto">
+      <div className="absolute top-20 right-10 w-64 h-64 bg-[#8BAE66]/5 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-20 left-10 w-80 h-80 bg-[#BBCB2E]/5 rounded-full blur-3xl"></div>
 
-        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-roboto text-[#1B211A] mb-3">
-          Why Use Dishcovery?
-        </h2>
+      <div className="max-w-6xl mx-auto relative">
 
-        <p className="text-sm sm:text-base lg:text-lg font-freeman font-semibold text-[#1B211A] mb-10 sm:mb-14">
+        <div className="text-center mb-10">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[#1B211A]">
+            Why Use{" "}
+            <span className="relative inline-block">
+              <span className="absolute inset-0 blur-lg bg-[#8BAE66]/30 rounded-full"></span>
+              <span className="relative text-transparent bg-clip-text bg-gradient-to-r from-[#6B8F4A] to-[#8BAE66]">
+                Dishcovery?
+              </span>
+            </span>
+          </h2>
+        </div>
+
+        <p className="text-center text-base sm:text-lg font-medium text-gray-700 mb-10 max-w-2xl mx-auto">
           Dishcovery makes finding the{" "}
-          <span className="text-[#BBCB2E] italic">perfect recipe</span>{" "}
+          <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#8BAE66] to-[#6B8F4A]">
+            perfect recipe
+          </span>{" "}
           easier than ever.
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {features.map((feature, index) => (
             <div
               key={index}
               ref={(el) => (cardRefs.current[index] = el)}
-              className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 flex flex-col gap-4 opacity-0 translate-y-12 transition-all duration-700 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]"
+              className="group bg-white rounded-2xl p-5 shadow-md hover:shadow-xl transition-all duration-500 opacity-0 translate-y-12 scale-95 cursor-pointer hover:-translate-y-1"
             >
-              <div className="flex flex-row items-center gap-3">
-                <div className="p-2 bg-[#F0F5E8] rounded-xl flex-shrink-0">
-                  {feature.icon}
+              <div className="flex flex-col gap-3">
+                <div className="flex-shrink-0">
+                  <div className="inline-flex p-2.5 bg-[#F0F5E8] rounded-xl transition-all duration-500 group-hover:scale-110 group-hover:bg-[#8BAE66]/20">
+                    {feature.icon}
+                  </div>
                 </div>
-                <h3 className="text-sm font-bold font-roboto text-[#1B211A] leading-snug">
-                  {feature.title}
-                </h3>
+
+                <div className="flex-1">
+                  <h3 className="text-base font-bold text-[#1B211A] mb-2 transition-colors duration-300 group-hover:text-[#8BAE66]">
+                    {feature.title}
+                  </h3>
+                  <p className="text-sm text-gray-500 leading-relaxed">
+                    {feature.description}
+                  </p>
+                </div>
               </div>
-
-              <hr className="border-gray-200" />
-
-              <p className="text-xs sm:text-sm text-gray-500 font-freeman leading-relaxed">
-                {feature.description}
-              </p>
             </div>
           ))}
         </div>
-
       </div>
     </div>
   );
