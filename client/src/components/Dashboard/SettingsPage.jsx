@@ -166,7 +166,6 @@ const ConfirmDeleteModal = ({ onConfirm, onCancel, isLoading, deletePassword, se
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-
 const SettingsPage = () => {
   const [activeSection, setActiveSection] = useState(null);
   const [formData, setFormData] = useState({

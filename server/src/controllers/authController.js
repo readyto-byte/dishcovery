@@ -1,6 +1,14 @@
 const { supabase, supabaseAdmin } = require('../config/supabase');
 const { rollbackAccountCreation } = require('./accountDelete');
 
+function normalizeAccountStatus(status) {
+  if (typeof status !== 'string') {
+    return ''
+  }
+
+  return status.trim().replace(/^"+|"+$/g, '').toUpperCase()
+}
+
 // Sign Up
 async function signUp({ email, password, firstName, lastName, username }) {
   const normalizedEmail = email.trim().toLowerCase()
@@ -24,7 +32,8 @@ async function signUp({ email, password, firstName, lastName, username }) {
       first_name: firstName,
       last_name: lastName,
       username: normalizedUsername,
-      is_verified: !!authData.user.email_confirmed_at,
+      is_verified: false,
+      status: 'ACTIVE',
     }])
     .single()
 
@@ -87,12 +96,15 @@ async function logIn(loginInfo, password) {
 
   let accountData = null
   if (authData?.user?.id) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('account')
       .select('*')
       .eq('id', authData.user.id)
       .single()
-    if (!error) accountData = data
+    if (error) {
+      throw error
+    }
+    accountData = data
   }
 
   // Keep account.is_verified aligned with Supabase Auth (email confirmed).
@@ -108,10 +120,19 @@ async function logIn(loginInfo, password) {
     }
   }
 
-  if (accountData && !accountData.is_verified) {
-  await supabase.auth.signOut()
-  throw new Error('Account not verified. Please check your email.')
-}
+  const normalizedStatus = normalizeAccountStatus(accountData?.status)
+  const isRestricted = normalizedStatus === 'RESTRICTED'
+  const isActive = normalizedStatus === 'ACTIVE'
+
+  if (!accountData?.is_verified) {
+    await supabase.auth.signOut()
+    throw new Error('Account not verified. Please check your email.')
+  }
+
+  if (!isActive || isRestricted) {
+    await supabase.auth.signOut()
+    throw new Error('Account is not active.')
+  }
 
   return { auth: authData, account: accountData }
 }
