@@ -1,27 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { searchRecipes, getCachedRecipeResponse, cacheRecipeResponse, generateMealRecipeDetail } = require('../controllers/recipes');
-const { addHistoryRecord } = require('../controllers/history');
-
-function normalizeProfileForCache(profile = {}) {
-  const restrictions = Array.isArray(profile.dietary_restrictions)
-    ? profile.dietary_restrictions
-    : Array.isArray(profile.dietaryRestrictions)
-      ? profile.dietaryRestrictions
-      : [];
-  const allergies = Array.isArray(profile.dietary_preferences)
-    ? profile.dietary_preferences
-    : Array.isArray(profile.allergies)
-      ? profile.allergies
-      : [];
-
-  return {
-    id: profile.id ?? null,
-    name: profile.name ?? '',
-    dietary_restrictions: [...restrictions].sort(),
-    dietary_preferences: [...allergies].sort(),
-  };
-}
+const { searchRecipes, generateMealRecipeDetail } = require('../controllers/recipes');
 
 function hasRecipeError(errorValue) {
   if (errorValue === null || errorValue === undefined) return false;
@@ -33,11 +12,10 @@ router.post('/', async (req, res) => {
   try {
     const accountId = req.user?.id;
     const profiles = req.body?.profiles;
-    const promptText = req.body?.promptText ?? '';
-    const history = Array.isArray(req.body?.history) ? req.body.history : [];
+    const rawPromptText = req.body?.promptText ?? req.body?.search_query ?? req.body?.searchQuery ?? '';
+    const conversation = Array.isArray(req.body?.conversation) ? req.body.conversation : [];
+    const history = Array.isArray(req.body?.history) ? req.body.history : conversation;
     const numOptions = Number(req.body?.numOptions) || 3;
-    const resolvedSearchQuery = req.body?.search_query ?? req.body?.searchQuery;
-    const resolvedBypassCache = Boolean(req.body?.bypass_cache ?? req.body?.bypassCache);
     const resolvedAvoidTitles = Array.isArray(req.body?.avoid_titles)
       ? req.body.avoid_titles
       : (Array.isArray(req.body?.avoidTitles) ? req.body.avoidTitles : []);
@@ -46,17 +24,16 @@ router.post('/', async (req, res) => {
       return res.status(401).json({ success: false, error: 'Authentication required' });
     }
 
-    if (!promptText.trim()) {
+    const conversationLatestText = Array.isArray(conversation) && conversation.length > 0
+      ? String(conversation[conversation.length - 1]?.content ?? '').trim()
+      : '';
+    const historyLatestText = Array.isArray(history) && history.length > 0
+      ? String(history[history.length - 1]?.content ?? '').trim()
+      : '';
+    const promptText = String(rawPromptText || conversationLatestText || historyLatestText).trim();
+
+    if (!promptText) {
       return res.status(400).json({ success: false, error: 'Please provide a prompt.' });
-    }
-
-    const query = resolvedSearchQuery ?? promptText;
-    const cacheContext = JSON.stringify((profiles || []).map(normalizeProfileForCache));
-    const cacheQuery = `${query}||profiles:${cacheContext}`;
-    const cachedResponse = resolvedBypassCache ? null : await getCachedRecipeResponse(cacheQuery);
-
-    if (cachedResponse) {
-      return res.json({ success: true, response: cachedResponse });
     }
 
     const response = await searchRecipes({
@@ -73,30 +50,20 @@ router.post('/', async (req, res) => {
         suggestions: [],
       };
 
-      await addHistoryRecord(accountId, {
-        search_query: query,
-        recipe_id: null,
-        source_api: 'gemini-2.5-flash',
-        output_response: blockedResponse,
-        profile_id: profiles?.[0]?.id ?? null,
-        source: 'error',
-      });
-
       return res.json({ success: true, response: blockedResponse });
     }
-
-    const cachedRows = await cacheRecipeResponse(cacheQuery, response);
-    const responseWithIds = {
+    // Keep generated suggestions transient; persistence happens only when user manually saves/views.
+    const transientResponse = {
       ...response,
       suggestions: Array.isArray(response?.suggestions)
-        ? response.suggestions.map((suggestion, index) => ({
+        ? response.suggestions.map((suggestion) => ({
             ...suggestion,
-            id: cachedRows?.[index]?.id ?? suggestion?.id ?? null,
+            id: null,
           }))
         : [],
     };
 
-    res.json({ success: true, response: responseWithIds });
+    res.json({ success: true, response: transientResponse });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
