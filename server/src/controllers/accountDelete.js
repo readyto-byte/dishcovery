@@ -47,27 +47,11 @@ async function deleteAccount(userId) {
 
   const { error: statusError } = await supabaseAdmin
     .from('account')
-    .update({ status: 'INACTIVE' })
+    .update({ status: 'INACTIVE', is_verified: false })
     .eq('id', userId)
 
   if (statusError) {
     throw statusError
-  }
-
-  // Deletes the user from the Auth Database
-  const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(userId)
-  if (authDeleteError) {
-    throw authDeleteError
-  }
-
-  // Deletes the user from the Account Database
-  const { error: deleteError } = await supabaseAdmin
-    .from('account')
-    .delete()
-    .eq('id', userId)
-
-  if (deleteError) {
-    throw deleteError
   }
 }
 
