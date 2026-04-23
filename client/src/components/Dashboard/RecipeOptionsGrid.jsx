@@ -10,6 +10,29 @@ const RecipeOptionsGrid = ({ options, onSelectOption, isLoading }) => {
     }
   };
 
+  const CostScale = ({ phpAmount }) => {
+    const getLevel = () => {
+      if (phpAmount == null) return 0;
+      const usd = phpAmount / 56;
+      if (usd <= 25) return 1;
+      if (usd <= 50) return 2;
+      return 3;
+    };
+    const level = getLevel();
+    return (
+      <span className="flex items-center gap-0.5">
+        {[1, 2, 3].map((i) => (
+          <span
+            key={i}
+            style={{ color: i <= level ? '#587A34' : '#ccc', fontWeight: i <= level ? '700' : '400' }}
+          >
+            $
+          </span>
+        ))}
+      </span>
+    );
+  };
+
   return (
     <div className="mx-4 md:mx-8 mb-8">
       <div
@@ -100,10 +123,7 @@ const RecipeOptionsGrid = ({ options, onSelectOption, isLoading }) => {
                       {option.cookTime}
                     </span>
                     <span className="flex items-center gap-1.5">
-                      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
-                        <path d="M8 2v12M5 5.5C5 4 6 3 8 3s3 1 3 2.5-1.5 3-3 3c-2 0-3 1-3 2.5S6 13 8 13s3-1 3-2.5" />
-                      </svg>
-                      {option.estimatedCostPhp != null ? `₱${option.estimatedCostPhp}` : "-"}
+                      <CostScale phpAmount={option.estimatedCostPhp} />
                     </span>
                   </div>
                   
