@@ -56,86 +56,53 @@ const teamMembers = [
   }
 ];
 
-
 const orderedTeam = [teamMembers[2], teamMembers[1], teamMembers[0], teamMembers[3], teamMembers[4]];
 
 const MeetTheTeam = () => {
   const defaultIndex = orderedTeam.findIndex(member => member.name === "Tyrone Jonel Sangalang");
-  const [activeIndex, setActiveIndex] = useState(defaultIndex !== -1 ? defaultIndex : 2); // Fallback to index 2 if not found
+  const [activeIndex, setActiveIndex] = useState(defaultIndex !== -1 ? defaultIndex : 2);
+  const [showEmailTooltip, setShowEmailTooltip] = useState(false);
 
   const handlePrevious = () => {
     setActiveIndex((prev) => (prev === 0 ? orderedTeam.length - 1 : prev - 1));
+    setShowEmailTooltip(false);
   };
 
   const handleNext = () => {
     setActiveIndex((prev) => (prev === orderedTeam.length - 1 ? 0 : prev + 1));
+    setShowEmailTooltip(false);
   };
 
   const getVisibleMembers = () => {
     const members = [];
     const total = orderedTeam.length;
-    
     for (let offset = -2; offset <= 2; offset++) {
       let index = (activeIndex + offset + total) % total;
-      let position = offset;
-      
-      members.push({
-        ...orderedTeam[index],
-        position,
-        isCenter: offset === 0,
-        originalIndex: index
-      });
+      members.push({ ...orderedTeam[index], position: offset, isCenter: offset === 0, originalIndex: index });
     }
-    
     return members;
   };
 
   const getItemStyle = (position) => {
     const absPosition = Math.abs(position);
-    
-    if (position === 0) {
-      return {
-        transform: 'translateX(0px) scale(1) translateY(-8px)',
-        opacity: 1,
-        zIndex: 30,
-      };
-    } else if (absPosition === 1) {
+    if (position === 0) return { transform: 'translateX(0px) scale(1) translateY(-8px)', opacity: 1, zIndex: 30 };
+    if (absPosition === 1) {
       const translateX = position === -1 ? -130 : 130;
-      return {
-        transform: `translateX(${translateX}px) scale(0.85) translateY(8px)`,
-        opacity: 0.85,
-        zIndex: 20,
-      };
-    } else {
-      const translateX = position === -2 ? -240 : 240;
-      return {
-        transform: `translateX(${translateX}px) scale(0.7) translateY(20px)`,
-        opacity: 0.4,
-        zIndex: 10,
-      };
+      return { transform: `translateX(${translateX}px) scale(0.85) translateY(8px)`, opacity: 0.85, zIndex: 20 };
     }
+    const translateX = position === -2 ? -240 : 240;
+    return { transform: `translateX(${translateX}px) scale(0.7) translateY(20px)`, opacity: 0.4, zIndex: 10 };
   };
 
   const activeMember = orderedTeam[activeIndex];
   const visibleMembers = getVisibleMembers();
-
-  console.log("Images:", { TyroneImg, RachelleImg, GinoImg, MauiImg, JosefImg });
-  console.log("Active Member:", activeMember);
-  console.log("Default Index:", defaultIndex);
 
   return (
     <section className="py-16 px-4 bg-gradient-to-b from-[#FDFBF7] to-white relative overflow-hidden">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-1/4 w-80 h-80 bg-[#839705]/5 rounded-full blur-3xl animate-pulse-slow"></div>
         <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-[#2D3A18]/5 rounded-full blur-3xl animate-pulse-slow animation-delay-2000"></div>
-        
-        <div 
-          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-gradient-radial from-[#839705]/10 via-transparent to-transparent pointer-events-none transition-all duration-500"
-          style={{
-            opacity: 1,
-            animation: 'spotlightPulse 2s ease-in-out infinite'
-          }}
-        ></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-gradient-radial from-[#839705]/10 via-transparent to-transparent pointer-events-none transition-all duration-500" style={{ opacity: 1, animation: 'spotlightPulse 2s ease-in-out infinite' }}></div>
       </div>
 
       <div className="max-w-6xl mx-auto relative z-10">
@@ -156,73 +123,33 @@ const MeetTheTeam = () => {
         </div>
 
         <div className="relative mb-6">
-          <button
-            onClick={handlePrevious}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-40 p-2.5 rounded-full bg-white shadow-lg border border-gray-200 text-[#2D3A18] hover:bg-[#839705] hover:text-white hover:border-[#839705] hover:scale-110 transition-all duration-300 group"
-            aria-label="Previous"
-          >
+          <button onClick={handlePrevious} className="absolute left-0 top-1/2 -translate-y-1/2 z-40 p-2.5 rounded-full bg-white shadow-lg border border-gray-200 text-[#2D3A18] hover:bg-[#839705] hover:text-white hover:border-[#839705] hover:scale-110 transition-all duration-300 group" aria-label="Previous">
             <ChevronLeft className="w-5 h-5 group-hover:animate-pulse" />
           </button>
-          
-          <button
-            onClick={handleNext}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-40 p-2.5 rounded-full bg-white shadow-lg border border-gray-200 text-[#2D3A18] hover:bg-[#839705] hover:text-white hover:border-[#839705] hover:scale-110 transition-all duration-300 group"
-            aria-label="Next"
-          >
+          <button onClick={handleNext} className="absolute right-0 top-1/2 -translate-y-1/2 z-40 p-2.5 rounded-full bg-white shadow-lg border border-gray-200 text-[#2D3A18] hover:bg-[#839705] hover:text-white hover:border-[#839705] hover:scale-110 transition-all duration-300 group" aria-label="Next">
             <ChevronRight className="w-5 h-5 group-hover:animate-pulse" />
           </button>
 
           <div className="relative flex justify-center items-center min-h-[320px]">
             {visibleMembers.map((member) => {
               const style = getItemStyle(member.position);
-              
               return (
                 <div
                   key={`${member.id}-${member.position}`}
                   className="absolute transition-all duration-500 ease-out cursor-pointer group"
-                  style={{
-                    transform: style.transform,
-                    opacity: style.opacity,
-                    zIndex: style.zIndex,
-                    transition: 'all 0.5s cubic-bezier(0.34, 1.2, 0.64, 1)'
-                  }}
-                  onClick={() => setActiveIndex(member.originalIndex)}
+                  style={{ transform: style.transform, opacity: style.opacity, zIndex: style.zIndex, transition: 'all 0.5s cubic-bezier(0.34, 1.2, 0.64, 1)' }}
+                  onClick={() => { setActiveIndex(member.originalIndex); setShowEmailTooltip(false); }}
                 >
                   <div className="flex flex-col items-center">
                     <div className="relative">
                       {member.isCenter && (
-                        <div className="absolute inset-0 rounded-full animate-ping-slow opacity-75" style={{
-                          background: 'radial-gradient(circle, rgba(131,151,5,0.3) 0%, rgba(131,151,5,0) 70%)',
-                          width: 'calc(100% + 20px)',
-                          height: 'calc(100% + 20px)',
-                          left: '-10px',
-                          top: '-10px',
-                        }}></div>
+                        <div className="absolute inset-0 rounded-full animate-ping-slow opacity-75" style={{ background: 'radial-gradient(circle, rgba(131,151,5,0.3) 0%, rgba(131,151,5,0) 70%)', width: 'calc(100% + 20px)', height: 'calc(100% + 20px)', left: '-10px', top: '-10px' }}></div>
                       )}
-                      
-                      <div className={`
-                        relative rounded-full overflow-hidden transition-all duration-300
-                        ${member.isCenter 
-                          ? 'ring-4 ring-[#839705] ring-offset-4 ring-offset-white shadow-2xl animate-glow' 
-                          : 'ring-2 ring-white/60 shadow-lg group-hover:ring-[#839705]/40 group-hover:scale-105'
-                        }
-                      `}>
-                        <img
-                          src={member.image}
-                          alt={member.name}
-                          className="w-28 h-28 md:w-32 md:h-32 object-cover transition-transform duration-500 group-hover:scale-110"
-                          onError={(e) => {
-                            console.error(`Failed to load image for ${member.name}:`, member.image);
-                            e.target.src = 'https://via.placeholder.com/128?text=No+Image';
-                          }}
-                        />
-                        {member.isCenter && (
-                          <div className="absolute inset-0 bg-gradient-to-t from-[#839705]/30 via-transparent to-transparent pointer-events-none"></div>
-                        )}
+                      <div className={`relative rounded-full overflow-hidden transition-all duration-300 ${member.isCenter ? 'ring-4 ring-[#839705] ring-offset-4 ring-offset-white shadow-2xl animate-glow' : 'ring-2 ring-white/60 shadow-lg group-hover:ring-[#839705]/40 group-hover:scale-105'}`}>
+                        <img src={member.image} alt={member.name} className="w-28 h-28 md:w-32 md:h-32 object-cover transition-transform duration-500 group-hover:scale-110" onError={(e) => { e.target.src = 'https://via.placeholder.com/128?text=No+Image'; }} />
+                        {member.isCenter && <div className="absolute inset-0 bg-gradient-to-t from-[#839705]/30 via-transparent to-transparent pointer-events-none"></div>}
                       </div>
                     </div>
-                    
-                    {/* Only show name and role for the center member - NO HOVER EFFECT ANYMORE */}
                     {member.isCenter && (
                       <div className="text-center mt-2 animate-slideUp">
                         <p className="font-bold text-[#2D3A18] text-base animate-textShine">{member.name}</p>
@@ -237,51 +164,56 @@ const MeetTheTeam = () => {
         </div>
 
         <div className="max-w-2xl mx-auto">
-          <div 
-            className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 transition-all duration-500 hover:shadow-2xl hover:scale-105 group transform-gpu"
-            style={{
-              animation: 'slideUpFade 0.4s ease-out forwards'
-            }}
-          >
+          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 transition-all duration-500 hover:shadow-2xl hover:scale-105 group transform-gpu" style={{ animation: 'slideUpFade 0.4s ease-out forwards' }}>
             <div className="flex items-start gap-4">
               <div className="hidden md:block flex-shrink-0">
                 <div className="w-14 h-14 rounded-full overflow-hidden ring-2 ring-[#839705]/20 shadow-md transition-transform duration-300 group-hover:scale-110">
-                  <img 
-                    src={activeMember?.image} 
-                    alt={activeMember?.name} 
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      console.error("Failed to load active member image:", activeMember?.image);
-                      e.target.src = 'https://via.placeholder.com/56?text=No+Image';
-                    }}
-                  />
+                  <img src={activeMember?.image} alt={activeMember?.name} className="w-full h-full object-cover" onError={(e) => { e.target.src = 'https://via.placeholder.com/56?text=No+Image'; }} />
                 </div>
               </div>
-              
+
               <div className="flex-1">
                 <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
                   <div>
-                    <h3 className="text-lg font-bold text-[#2D3A18] transition-colors duration-300 group-hover:text-[#839705]">
-                      {activeMember?.name}
-                    </h3>
+                    <h3 className="text-lg font-bold text-[#2D3A18] transition-colors duration-300 group-hover:text-[#839705]">{activeMember?.name}</h3>
                     <p className="text-[#839705] text-xs font-semibold">{activeMember?.role}</p>
                   </div>
-                  <div className="flex gap-3">
-                    <a href={activeMember?.social?.github} className="text-gray-400 hover:text-[#2D3A18] transition-all duration-300 hover:scale-125 transform inline-block">
+                  <div className="flex gap-3 items-center">
+                    <a href={activeMember?.social?.github} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-[#2D3A18] transition-all duration-300 hover:scale-125 transform inline-block">
                       <Github className="w-4 h-4" />
                     </a>
-                    <a href={activeMember?.social?.linkedin} className="text-gray-400 hover:text-[#2D3A18] transition-all duration-300 hover:scale-125 transform inline-block">
-                      <Linkedin className="w-4 h-4" />
-                    </a>
-                    <a href={`mailto:${activeMember?.social?.email}`} className="text-gray-400 hover:text-[#2D3A18] transition-all duration-300 hover:scale-125 transform inline-block">
-                      <Mail className="w-4 h-4" />
-                    </a>
+                    {activeMember?.social?.linkedin && (
+                      <a href={activeMember.social.linkedin} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-[#2D3A18] transition-all duration-300 hover:scale-125 transform inline-block">
+                        <Linkedin className="w-4 h-4" />
+                      </a>
+                    )}
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowEmailTooltip((prev) => !prev)}
+                        className="text-gray-400 hover:text-[#2D3A18] transition-all duration-300 hover:scale-125 transform inline-block cursor-pointer"
+                        aria-label="Show email"
+                      >
+                        <Mail className="w-4 h-4" />
+                      </button>
+                      {showEmailTooltip && (
+                        <div className="absolute bottom-full right-0 mb-2 z-50 animate-slideUp">
+                          <div className="bg-[#2D3A18] text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-xl flex items-center gap-2">
+                            <Mail className="w-3 h-3 text-[#839705] shrink-0" />
+                            <a
+                              href={`mailto:${activeMember?.social?.email}`}
+                              className="hover:text-[#B5D098] transition-colors underline underline-offset-2"
+                            >
+                              {activeMember?.social?.email}
+                            </a>
+                          </div>
+                          <div className="absolute top-full right-3 w-0 h-0" style={{ borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '5px solid #2D3A18' }} />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="pt-2 border-t border-gray-100">
-                  <p className="text-gray-600 text-sm leading-relaxed transition-all duration-300 group-hover:text-gray-700">
-                    {activeMember?.contribution}
-                  </p>
+                  <p className="text-gray-600 text-sm leading-relaxed transition-all duration-300 group-hover:text-gray-700">{activeMember?.contribution}</p>
                 </div>
               </div>
             </div>
@@ -290,152 +222,30 @@ const MeetTheTeam = () => {
 
         <div className="flex justify-center gap-1.5 mt-5">
           {orderedTeam.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => setActiveIndex(idx)}
-              className={`transition-all duration-300 rounded-full ${
-                idx === activeIndex
-                  ? 'w-6 h-1.5 bg-[#839705] animate-pulse'
-                  : 'w-1.5 h-1.5 bg-gray-300 hover:bg-gray-400 hover:scale-125 transform'
-              }`}
-              aria-label={`Go to member ${idx + 1}`}
-            />
+            <button key={idx} onClick={() => { setActiveIndex(idx); setShowEmailTooltip(false); }} className={`transition-all duration-300 rounded-full ${idx === activeIndex ? 'w-6 h-1.5 bg-[#839705] animate-pulse' : 'w-1.5 h-1.5 bg-gray-300 hover:bg-gray-400 hover:scale-125 transform'}`} aria-label={`Go to member ${idx + 1}`} />
           ))}
         </div>
       </div>
 
       <style>{`
-        @keyframes slideUpFade {
-          from {
-            opacity: 0;
-            transform: translateY(15px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        @keyframes slideUp {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        @keyframes spotlightPulse {
-          0%, 100% {
-            opacity: 0.3;
-            transform: translate(-50%, -50%) scale(1);
-          }
-          50% {
-            opacity: 0.6;
-            transform: translate(-50%, -50%) scale(1.1);
-          }
-        }
-        
-        @keyframes pulse-slow {
-          0%, 100% {
-            opacity: 0.3;
-            transform: scale(1);
-          }
-          50% {
-            opacity: 0.6;
-            transform: scale(1.05);
-          }
-        }
-        
-        @keyframes glow {
-          0%, 100% {
-            box-shadow: 0 0 5px rgba(131,151,5,0.3), 0 0 10px rgba(131,151,5,0.2);
-          }
-          50% {
-            box-shadow: 0 0 20px rgba(131,151,5,0.6), 0 0 30px rgba(131,151,5,0.3);
-          }
-        }
-        
-        @keyframes textShine {
-          0% {
-            background-position: -100% 0;
-          }
-          100% {
-            background-position: 200% 0;
-          }
-        }
-        
-        .animate-pulse-slow {
-          animation: pulse-slow 4s ease-in-out infinite;
-        }
-        
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-        
-        .animate-spin-slow {
-          animation: spin 3s linear infinite;
-        }
-        
-        .animate-ping-slow {
-          animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
-        }
-        
-        .animate-glow {
-          animation: glow 2s ease-in-out infinite;
-        }
-        
-        .animate-textShine {
-          background: linear-gradient(120deg, #2D3A18 0%, #839705 50%, #2D3A18 100%);
-          background-size: 200% auto;
-          background-clip: text;
-          -webkit-background-clip: text;
-          color: transparent;
-          animation: textShine 3s linear infinite;
-        }
-        
-        .animate-slideUp {
-          animation: slideUp 0.4s ease-out;
-        }
-        
-        .animate-bounce-subtle {
-          animation: bounce 2s ease-in-out infinite;
-        }
-        
-        @keyframes bounce {
-          0%, 100% {
-            transform: translateY(0);
-          }
-          50% {
-            transform: translateY(-3px);
-          }
-        }
-        
-        @keyframes spin {
-          from {
-            transform: rotate(0deg);
-          }
-          to {
-            transform: rotate(360deg);
-          }
-        }
-        
-        @keyframes ping {
-          0% {
-            transform: scale(1);
-            opacity: 0.8;
-          }
-          75%, 100% {
-            transform: scale(1.3);
-            opacity: 0;
-          }
-        }
-        
-        .bg-gradient-radial {
-          background-image: radial-gradient(circle, var(--tw-gradient-stops));
-        }
+        @keyframes slideUpFade { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spotlightPulse { 0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); } 50% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.1); } }
+        @keyframes pulse-slow { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.05); } }
+        @keyframes glow { 0%, 100% { box-shadow: 0 0 5px rgba(131,151,5,0.3), 0 0 10px rgba(131,151,5,0.2); } 50% { box-shadow: 0 0 20px rgba(131,151,5,0.6), 0 0 30px rgba(131,151,5,0.3); } }
+        @keyframes textShine { 0% { background-position: -100% 0; } 100% { background-position: 200% 0; } }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes ping { 0% { transform: scale(1); opacity: 0.8; } 75%, 100% { transform: scale(1.3); opacity: 0; } }
+        .animate-pulse-slow { animation: pulse-slow 4s ease-in-out infinite; }
+        .animation-delay-2000 { animation-delay: 2s; }
+        .animate-spin-slow { animation: spin 3s linear infinite; }
+        .animate-ping-slow { animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite; }
+        .animate-glow { animation: glow 2s ease-in-out infinite; }
+        .animate-textShine { background: linear-gradient(120deg, #2D3A18 0%, #839705 50%, #2D3A18 100%); background-size: 200% auto; background-clip: text; -webkit-background-clip: text; color: transparent; animation: textShine 3s linear infinite; }
+        .animate-slideUp { animation: slideUp 0.4s ease-out; }
+        .animate-bounce-subtle { animation: bounce 2s ease-in-out infinite; }
+        .bg-gradient-radial { background-image: radial-gradient(circle, var(--tw-gradient-stops)); }
       `}</style>
     </section>
   );
