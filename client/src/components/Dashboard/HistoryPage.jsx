@@ -148,20 +148,27 @@ const HistoryPage = ({ onViewRecipe }) => {
     const parsed = parseOutputResponse(item.output_response);
     const firstSuggestion = parsed?.suggestions?.[0] || {};
     const estimatedTime = parsed?.estimatedTime || "N/A";
+    const hasError = !!(parsed?.error && String(parsed.error).trim().toLowerCase() !== 'null');
+    const sourceLabel = item.source === 'meal-plan' ? 'Meal Plan' : item.source === 'error' ? 'Error' : 'Recipe Generation';
+    const profileName = item.profiles?.name ?? null;
 
     return {
       id: item.id,
       recipeId: item.recipe_id ?? null,
-      title: firstSuggestion.title || item.search_query || "Generated Recipe",
+      title: hasError ? (item.search_query || "Invalid Request") : (firstSuggestion.title || item.search_query || "Generated Recipe"),
       type: item.source_api === "cache" ? "Cached Recipe" : "AI Generated",
       difficulty: "Medium",
       time: estimatedTime,
       servings: firstSuggestion.servings || "-",
       viewed: getRelativeViewedTime(item.searched_date),
       tags: ["history", "dishcovery", item.source_api || "recipe"],
-      description: firstSuggestion.description || parsed?.message || "",
+      description: hasError ? (parsed?.message || parsed?.error || "") : (firstSuggestion.description || parsed?.message || ""),
       ingredients: Array.isArray(firstSuggestion.keyIngredients) ? firstSuggestion.keyIngredients : [],
       instructions: Array.isArray(firstSuggestion.instructions) ? firstSuggestion.instructions : [],
+      hasError,
+      errorHeader: hasError ? (parsed?.header || "Invalid request") : null,
+      sourceLabel,
+      profileName,
     };
   };
 
@@ -172,7 +179,7 @@ const HistoryPage = ({ onViewRecipe }) => {
         setError("");
         const response = await apiCall("/api/history");
         const rows = Array.isArray(response?.data) ? response.data : [];
-        setHistoryRecipes(rows.map(mapHistoryToUi));
+        setHistoryRecipes(rows.filter(r => r.source !== 'error').map(mapHistoryToUi));
       } catch (err) {
         setError(err.message || "Failed to load history.");
       } finally {
@@ -262,9 +269,9 @@ const HistoryPage = ({ onViewRecipe }) => {
             return (
               <div
                 key={recipe.id}
-                className="bg-[#F0E6D1] rounded-2xl shadow-lg overflow-hidden hover:scale-105 transition-all duration-300"
+                className={`rounded-2xl shadow-lg overflow-hidden hover:scale-105 transition-all duration-300 ${recipe.hasError ? 'bg-[#fff5f5] border border-red-200/60' : 'bg-[#F0E6D1]'}`}
               >
-                <div className="relative h-12 bg-[#587A34] flex items-center justify-between px-4">
+                <div className={`relative h-12 flex items-center justify-between px-4 ${recipe.hasError ? 'bg-red-400' : 'bg-[#587A34]'}`}>
                   <button
                     onClick={() => toggleFavorite(recipe)}
                     title={isFavorited ? "Remove from favorites" : "Add to favorites"}
@@ -293,14 +300,45 @@ const HistoryPage = ({ onViewRecipe }) => {
                     )}
                   </button>
 
-                  <div className="bg-[#95A131] rounded-full px-3 py-1 text-xs font-bold text-white">
-                    Viewed {recipe.viewed}
+                  <div className="flex items-center gap-2">
+                    {recipe.hasError && (
+                      <span className="bg-white/20 rounded-full px-2.5 py-1 text-xs font-bold text-white flex items-center gap-1">
+                        <i className="fas fa-exclamation-circle text-xs"></i> Error
+                      </span>
+                    )}
+                    <div className="bg-[#95A131] rounded-full px-3 py-1 text-xs font-bold text-white">
+                      Viewed {recipe.viewed}
+                    </div>
                   </div>
                 </div>
 
                 <div className="p-5">
-                  <h3 className="text-xl font-bold text-[#32491B]">{recipe.title}</h3>
+                  <h3 className={`text-xl font-bold ${recipe.hasError ? 'text-red-800' : 'text-[#32491B]'}`}>
+                    {recipe.hasError ? recipe.errorHeader : recipe.title}
+                  </h3>
+                  {recipe.hasError && (
+                    <p className="text-red-500 text-xs mt-0.5 leading-snug italic">Query: {recipe.title}</p>
+                  )}
                   <p className="text-black/60 text-sm mt-1">{recipe.type} • {recipe.difficulty}</p>
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+                      recipe.sourceLabel === 'Meal Plan' ? 'bg-[#32491B]/15 text-[#32491B]' :
+                      recipe.sourceLabel === 'Error' ? 'bg-red-100 text-red-600' :
+                      'bg-[#839705]/20 text-[#587A34]'
+                    }`}>
+                      <i className={`mr-1 ${
+                        recipe.sourceLabel === 'Meal Plan' ? 'fas fa-calendar-alt' :
+                        recipe.sourceLabel === 'Error' ? 'fas fa-exclamation-circle' :
+                        'fas fa-robot'
+                      }`}></i>
+                      {recipe.sourceLabel}
+                    </span>
+                    {recipe.profileName && (
+                      <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-[#B5D098]/40 text-[#32491B]">
+                        <i className="fas fa-user mr-1"></i>{recipe.profileName}
+                      </span>
+                    )}
+                  </div>
                   <div className="flex flex-wrap gap-2 mt-3">
                     {recipe.tags.map((tag, idx) => (
                       <span

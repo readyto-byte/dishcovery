@@ -16,16 +16,10 @@ import FirsttimeModal from "./components/Dashboard/FirsttimeModal";
 
 const MEAL_PLAN_STORAGE_KEY = 'dishcovery_meal_plan';
 
-const ErrorBanner = ({ message, onClose }) => {
+const ErrorBanner = ({ message, detail, isRefusal, onClose }) => {
   if (!message) return null;
 
-  const isAiRefusal =
-    message.toLowerCase().includes("cannot fulfill") ||
-    message.toLowerCase().includes("safety") ||
-    message.toLowerCase().includes("guidelines") ||
-    message.toLowerCase().includes("harmful") ||
-    message.toLowerCase().includes("inappropriate") ||
-    message.toLowerCase().includes("failed to parse");
+  const isAiRefusal = isRefusal === true;
 
   return (
     <div className="mx-4 md:mx-8 mb-5">
@@ -37,16 +31,14 @@ const ErrorBanner = ({ message, onClose }) => {
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-bold text-red-900 text-sm mb-0.5">
-              {isAiRefusal ? "Invalid Prompt" : "Something went wrong"}
+              {isAiRefusal ? message : "Something went wrong"}
             </p>
-            <p className="text-red-700 text-sm leading-relaxed">{message}</p>
+            {!isAiRefusal && <p className="text-red-700 text-sm leading-relaxed">{message}</p>}
+            {isAiRefusal && detail && detail !== message && <p className="text-red-700 text-sm leading-relaxed mt-1">{detail}</p>}
             {isAiRefusal && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                <span className="text-xs text-red-600/70 font-medium self-center">Try:</span>
-                {["Chicken stir fry", "Vegan pasta", "15-min breakfast"].map((s, i) => (
-                  <span key={i} className="text-xs bg-red-100 text-red-700 px-2.5 py-1 rounded-full font-medium">{s}</span>
-                ))}
-              </div>
+              <p className="mt-2 text-xs text-red-500/80 italic">
+                Try asking about a dish, ingredient, or cuisine instead.
+              </p>
             )}
           </div>
           <button
@@ -241,8 +233,11 @@ const DashboardPage = () => {
   const [showOptions, setShowOptions] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateError, setGenerateError] = useState("");
+  const [generateErrorDetail, setGenerateErrorDetail] = useState("");
+  const [isAiRefusalError, setIsAiRefusalError] = useState(false);
   const [aiResponse, setAiResponse] = useState(null);
   const [lastRequestTime, setLastRequestTime] = useState(0);
+  const [lastPromptText, setLastPromptText] = useState("");
   const [showFirstTimeModal, setShowFirstTimeModal] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
   const [activeProfile, setActiveProfile] = useState(null);
@@ -305,6 +300,7 @@ const DashboardPage = () => {
     prepTime: fallbackEstimatedTime || "N/A",
     cookTime: suggestion?.cookTimeMin ? `${suggestion.cookTimeMin} min` : "N/A",
     servings: suggestion?.servings || "-",
+    estimatedCostPhp: suggestion?.estimatedCostPhp ?? null,
     difficulty: "Medium",
     tags: Array.isArray(suggestion?.keyIngredients) && suggestion.keyIngredients.length > 0
       ? ["ai", "generated", "recipe"]
@@ -313,11 +309,40 @@ const DashboardPage = () => {
     instructions: Array.isArray(suggestion?.instructions) ? suggestion.instructions : [],
   });
 
+  const saveToHistory = async (card, promptText) => {
+    try {
+      await apiCall("/api/history", {
+        method: "POST",
+        body: JSON.stringify({
+          search_query: promptText || card.title,
+          recipe_id: typeof card.id === 'number' ? card.id : null,
+          source_api: "gemini-2.5-flash",
+          source: "recipe-generation",
+          profile_id: activeProfile?.id ?? null,
+          output_response: {
+            suggestions: [{
+              title: card.title,
+              description: card.description,
+              servings: card.servings,
+              keyIngredients: card.ingredients,
+              instructions: card.instructions,
+            }],
+            estimatedTime: card.prepTime,
+          },
+        }),
+      });
+    } catch (err) {
+      console.error("Failed to save history:", err);
+    }
+  };
+
   const handleGenerateWithOptions = async (promptText, history, numOptions = 3) => {
     const now = Date.now();
     const timeSinceLastRequest = now - lastRequestTime;
     if (timeSinceLastRequest < 2000 && lastRequestTime !== 0) {
       setGenerateError(`Please wait ${Math.ceil((2000 - timeSinceLastRequest) / 1000)} seconds between requests.`);
+      setGenerateErrorDetail("");
+      setIsAiRefusalError(false);
       return;
     }
 
@@ -325,66 +350,23 @@ const DashboardPage = () => {
       setIsGenerating(true);
       setGenerateError("");
       setLastRequestTime(now);
+      setLastPromptText(promptText);
       setShowOptions(false);
       setRecipeOptions([]);
-
-      let finalPrompt = `Generate ${numOptions} different recipe variations for: "${promptText}".
-      
-Return the response as a JSON object with this exact structure:
-{
-  "options": [
-    {
-      "title": "Option 1 title",
-      "description": "Brief description",
-      "keyIngredients": ["ingredient1", "ingredient2"],
-      "cookTimeMin": 30,
-      "servings": 4,
-      "instructions": ["step1", "step2"]
-    }
-  ]
-}`;
-
-      if (history && history.length > 0 && aiResponse) {
-        finalPrompt = `Previous recipe context: "${aiResponse.headline}"
-        
-User request: Generate ${numOptions} variations for "${promptText}"
-
-Please provide ${numOptions} different ways to modify/adapt the previous recipe.
-Return as JSON with the structure above.`;
-      }
 
       const response = await apiCall("/api/recipes", {
         method: "POST",
         body: JSON.stringify({
           profiles: activeProfile ? [activeProfile] : [],
-          conversation: [{ role: "user", content: finalPrompt }],
+          promptText,
+          history: history || [],
+          numOptions,
         }),
       });
 
       const recipeResponse = response?.response;
 
-      if (recipeResponse?.options && Array.isArray(recipeResponse.options)) {
-        const options = recipeResponse.options.map((opt, index) => ({
-          id: `option-${index}`,
-          title: opt.title || `Option ${index + 1}`,
-          description: opt.description || "",
-          prepTime: opt.cookTimeMin ? `${opt.cookTimeMin} min` : "N/A",
-          cookTime: opt.cookTimeMin ? `${opt.cookTimeMin} min` : "N/A",
-          servings: opt.servings || "-",
-          difficulty: ["Easy", "Medium", "Hard"][index % 3],
-          tags: ["ai", "generated"],
-          ingredients: Array.isArray(opt.keyIngredients) ? opt.keyIngredients : [],
-          instructions: Array.isArray(opt.instructions) ? opt.instructions : [],
-        }));
-
-        if (options.length > 1) {
-          setRecipeOptions(options);
-          setShowOptions(true);
-        } else if (options.length === 1) {
-          setGeneratedRecipe(options[0]);
-          setAiResponse({ headline: options[0].title, summary: options[0].description });
-        }
-      } else if (Array.isArray(recipeResponse?.suggestions) && recipeResponse.suggestions.length > 0) {
+      if (Array.isArray(recipeResponse?.suggestions) && recipeResponse.suggestions.length > 0) {
         const cards = recipeResponse.suggestions.map((suggestion, index) =>
           mapSuggestionToCard(suggestion, recipeResponse?.estimatedTime, suggestion?.id ?? `suggestion-${index}`)
         );
@@ -397,9 +379,20 @@ Return as JSON with the structure above.`;
         } else {
           setGeneratedRecipe(cards[0]);
           setAiResponse({ headline: cards[0].title, summary: cards[0].description });
+          saveToHistory(cards[0], promptText);
         }
       } else {
-        throw new Error("No recipe options were returned.");
+        const hasAiError = recipeResponse?.error && String(recipeResponse.error).trim().toLowerCase() !== 'null';
+        if (hasAiError) {
+          setGenerateError(recipeResponse.header || "Invalid request");
+          setGenerateErrorDetail(recipeResponse.error || "");
+          setIsAiRefusalError(true);
+          setGeneratedRecipe(null);
+          setAiResponse(null);
+          setShowOptions(false);
+        } else {
+          throw new Error("No recipe options were returned.");
+        }
       }
     } catch (error) {
       if (error.message?.includes("503") || error.message?.includes("high demand") || error.message?.includes("UNAVAILABLE")) {
@@ -407,6 +400,8 @@ Return as JSON with the structure above.`;
       } else {
         setGenerateError(error.message || "Failed to generate recipe.");
       }
+      setGenerateErrorDetail("");
+      setIsAiRefusalError(false);
       setGeneratedRecipe(null);
       setAiResponse(null);
       setShowOptions(false);
@@ -423,6 +418,7 @@ Return as JSON with the structure above.`;
     });
     setShowOptions(false);
     setRecipeOptions([]);
+    saveToHistory(selected, lastPromptText);
   };
 
   const handleGenerateRecipe = async (promptText, history) => {
@@ -433,6 +429,8 @@ Return as JSON with the structure above.`;
     setAiResponse(null);
     setGeneratedRecipe(null);
     setGenerateError("");
+    setGenerateErrorDetail("");
+    setIsAiRefusalError(false);
     setShowOptions(false);
     setRecipeOptions([]);
   };
@@ -449,7 +447,7 @@ Return as JSON with the structure above.`;
               aiResponse={aiResponse}
               onReset={handleResetRecipe}
             />
-            <ErrorBanner message={generateError} onClose={() => setGenerateError("")} />
+            <ErrorBanner message={generateError} detail={generateErrorDetail} isRefusal={isAiRefusalError} onClose={() => { setGenerateError(""); setGenerateErrorDetail(""); setIsAiRefusalError(false); }} />
             {showOptions && recipeOptions.length > 0 && (
               <RecipeOptionsGrid
                 options={recipeOptions}

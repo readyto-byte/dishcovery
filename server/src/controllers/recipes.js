@@ -75,8 +75,8 @@ function isFreeTierQuotaError(error) {
   return /free_tier|quota exceeded.*free tier|generate_content_free_tier_requests/i.test(message);
 }
 
-async function searchRecipes({ profiles, conversation = [], avoidTitles = [] }) {
-  console.log('searchRecipes input:', { profileCount: profiles?.length ?? 0, conversationCount: conversation?.length ?? 0, avoidTitlesCount: avoidTitles?.length ?? 0 });
+async function searchRecipes({ profiles, promptText = '', history = [], numOptions = 3, avoidTitles = [] }) {
+  console.log('searchRecipes input:', { profileCount: profiles?.length ?? 0, historyCount: history?.length ?? 0, numOptions, avoidTitlesCount: avoidTitles?.length ?? 0 });
   let profileInfo = 'No profiles specified.';
   if (profiles && profiles.length > 0) {
     profileInfo = profiles.map((p) => {
@@ -86,7 +86,7 @@ async function searchRecipes({ profiles, conversation = [], avoidTitles = [] }) 
     }).join('; ');
   }
 
-  const conversationText = buildConversationText(conversation);
+  const conversationText = buildConversationText(history);
   const avoidTitlesText = Array.isArray(avoidTitles) && avoidTitles.length > 0
     ? avoidTitles.map((title) => `- ${String(title)}`).join('\n')
     : '- none';
@@ -103,7 +103,7 @@ ${avoidTitlesText}
 
 Respond as a friendly expert chef chatbot that is giving recipes to a not very proficient user in cooking.
 PRIORITY: The latest user request in the conversation is the top instruction and must be followed exactly unless it conflicts with safety constraints.
-If this is the first message, acknowledge the profiles and the user's prompt, suggest 3 recipe ideas. For follow-up messages, continue the conversation naturally, refine suggestions based on new info, and provide more recipes if needed.
+If this is the first message, acknowledge the profiles and the user's prompt, suggest ${numOptions} recipe ideas. For follow-up messages, continue the conversation naturally, refine suggestions based on new info, and provide more recipes if needed.
 
 RESTRICTIONS:
 - Return an error message if the user's request include non-edible items such as rocks, pens, sand, etc.
@@ -131,6 +131,9 @@ Return ONLY a valid JSON object with this exact structure:
     {
       "title": "Recipe Title",
       "description": "Brief description under 100 words",
+      "cookTimeMin": 30,
+      "servings": "4 servings",
+      "estimatedCostPhp": 150,
       "keyIngredients": ["1/4 cup flour", "2 large eggs"],
       "whyItFits": "Why this recipe matches their needs",
       "instructions": ["Step 1", "Step 2", ...],
@@ -149,11 +152,14 @@ Return ONLY a valid JSON object with this exact structure:
 - ALWAYS include "header" as a friendly compliment or short response.
 - "header" must be fewer than 7 words.
 - Examples of valid "header": "Great choice!", "Lovely taste!", "Quick and easy!".
-- Always return exactly 3 suggestions.
+- Always return exactly ${numOptions} suggestions.
 - Each recipe must include ingredient measurements in "keyIngredients" (for example, "1/4 cup", "2 tsp", "3 slices").
 - Keep each recipe "description" under 100 words.
 - ALWAYS include nutritionalInfo with calories (as number), protein, carbs, fat, and fiber (as strings with units like "15g").
 - Estimate nutritional values per serving based on the recipe.
+- ALWAYS include "cookTimeMin" as an integer (total cook time in minutes).
+- ALWAYS include "servings" as a string (e.g. "4 servings").
+- ALWAYS include "estimatedCostPhp" as an integer representing the estimated total ingredient cost in Philippine Peso (PHP).
 - If no new suggestions are appropriate, set "suggestions" to an empty array, but still return "estimatedTime" and "message".
 - Do not include any text outside the JSON object.`;
 
