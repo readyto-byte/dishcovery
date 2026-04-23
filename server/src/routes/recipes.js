@@ -33,7 +33,9 @@ router.post('/', async (req, res) => {
   try {
     const accountId = req.user?.id;
     const profiles = req.body?.profiles;
-    const conversation = req.body?.conversation;
+    const promptText = req.body?.promptText ?? '';
+    const history = Array.isArray(req.body?.history) ? req.body.history : [];
+    const numOptions = Number(req.body?.numOptions) || 3;
     const resolvedSearchQuery = req.body?.search_query ?? req.body?.searchQuery;
     const resolvedBypassCache = Boolean(req.body?.bypass_cache ?? req.body?.bypassCache);
     const resolvedAvoidTitles = Array.isArray(req.body?.avoid_titles)
@@ -44,29 +46,24 @@ router.post('/', async (req, res) => {
       return res.status(401).json({ success: false, error: 'Authentication required' });
     }
 
-    if (!conversation || conversation.length === 0) {
-      return res.status(400).json({ success: false, error: 'Please provide at least one conversation message.' });
+    if (!promptText.trim()) {
+      return res.status(400).json({ success: false, error: 'Please provide a prompt.' });
     }
 
-    const query = resolvedSearchQuery ?? conversation.map((msg) => msg.content).join(' ');
+    const query = resolvedSearchQuery ?? promptText;
     const cacheContext = JSON.stringify((profiles || []).map(normalizeProfileForCache));
     const cacheQuery = `${query}||profiles:${cacheContext}`;
     const cachedResponse = resolvedBypassCache ? null : await getCachedRecipeResponse(cacheQuery);
 
     if (cachedResponse) {
-      await addHistoryRecord(accountId, {
-        search_query: query,
-        recipe_id: cachedResponse.suggestions[0]?.id ?? null,
-        source_api: 'cache',
-        output_response: cachedResponse,
-      });
-
       return res.json({ success: true, response: cachedResponse });
     }
 
     const response = await searchRecipes({
       profiles,
-      conversation,
+      promptText,
+      history,
+      numOptions,
       avoidTitles: resolvedAvoidTitles,
     });
 
@@ -81,6 +78,8 @@ router.post('/', async (req, res) => {
         recipe_id: null,
         source_api: 'gemini-2.5-flash',
         output_response: blockedResponse,
+        profile_id: profiles?.[0]?.id ?? null,
+        source: 'error',
       });
 
       return res.json({ success: true, response: blockedResponse });
@@ -96,13 +95,6 @@ router.post('/', async (req, res) => {
           }))
         : [],
     };
-
-    await addHistoryRecord(accountId, {
-      search_query: query,
-      recipe_id: cachedRows?.[0]?.id ?? null,
-      source_api: 'gemini-2.5-flash',
-      output_response: responseWithIds,
-    });
 
     res.json({ success: true, response: responseWithIds });
   } catch (error) {

@@ -103,7 +103,7 @@ const RecipeOptionsGrid = ({ options, onSelectOption, isLoading }) => {
                       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
                         <path d="M8 2v12M5 5.5C5 4 6 3 8 3s3 1 3 2.5-1.5 3-3 3c-2 0-3 1-3 2.5S6 13 8 13s3-1 3-2.5" />
                       </svg>
-                      {option.servings}
+                      {option.estimatedCostPhp != null ? `₱${option.estimatedCostPhp}` : "-"}
                     </span>
                   </div>
                   

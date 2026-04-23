@@ -10,6 +10,8 @@ router.post('/', async (req, res) => {
     const resolvedRecipeId = req.body.recipe_id ?? req.body.recipeId ?? null;
     const resolvedSourceApi = req.body.source_api ?? req.body.sourceApi ?? null;
     const resolvedOutputResponse = req.body.output_response ?? req.body.outputResponse ?? null;
+    const resolvedProfileId = req.body.profile_id ?? req.body.profileId ?? null;
+    const resolvedSource = req.body.source ?? null;
 
     if (!resolvedSearchQuery) {
       return res.status(400).json({ success: false, error: 'search_query is required' });
@@ -20,6 +22,8 @@ router.post('/', async (req, res) => {
       recipe_id: resolvedRecipeId,
       source_api: resolvedSourceApi,
       output_response: resolvedOutputResponse,
+      profile_id: resolvedProfileId,
+      source: resolvedSource,
     });
 
     res.json({ success: true, data: history });

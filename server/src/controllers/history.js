@@ -5,6 +5,8 @@ async function addHistoryRecord(accountId, historyData) {
   const resolvedRecipeId = historyData.recipe_id ?? historyData.recipeId ?? null;
   const resolvedSourceApi = historyData.source_api ?? historyData.sourceApi ?? null;
   const resolvedOutputResponse = historyData.output_response ?? historyData.outputResponse ?? null;
+  const resolvedProfileId = historyData.profile_id ?? historyData.profileId ?? null;
+  const resolvedSource = historyData.source ?? null;
 
   const payload = {
     account_id: accountId,
@@ -13,6 +15,8 @@ async function addHistoryRecord(accountId, historyData) {
     source_api: resolvedSourceApi,
     output_response: resolvedOutputResponse,
     searched_date: new Date().toISOString(),
+    profile_id: resolvedProfileId,
+    source: resolvedSource,
   };
 
   const { data, error } = await supabaseAdmin
@@ -30,7 +34,7 @@ async function addHistoryRecord(accountId, historyData) {
 async function getHistoryByAccount(accountId) {
   const { data, error } = await supabaseAdmin
     .from('history')
-    .select('id, account_id, search_query, recipe_id, source_api, searched_date, output_response')
+    .select('id, account_id, search_query, recipe_id, source_api, searched_date, output_response, profile_id, source')
     .eq('account_id', accountId)
     .order('searched_date', { ascending: false });
 
@@ -38,7 +42,20 @@ async function getHistoryByAccount(accountId) {
     throw error;
   }
 
-  return data;
+  const { data: profileRows } = await supabaseAdmin
+    .from('profile')
+    .select('id, name, avatar_url')
+    .eq('account_id', accountId);
+
+  const profileMap = {};
+  (profileRows || []).forEach((p) => {
+    profileMap[String(p.id)] = { name: p.name, avatar_url: p.avatar_url };
+  });
+
+  return (data || []).map((row) => ({
+    ...row,
+    profiles: row.profile_id ? (profileMap[String(row.profile_id)] ?? null) : null,
+  }));
 }
 
 async function clearHistoryByAccount(accountId) {
