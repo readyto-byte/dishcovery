@@ -1,12 +1,38 @@
 const { supabase, supabaseAdmin } = require('../config/supabase');
 const { rollbackAccountCreation } = require('./accountDelete');
 
+function getEmailRedirectTo() {
+  const baseUrl = (
+    process.env.EMAIL_REDIRECT_TO
+    || process.env.CLIENT_URL
+    || process.env.FRONTEND_URL
+    || 'http://localhost:5173'
+  );
+
+  return `${baseUrl.replace(/\/+$/, '')}/email-confirmed`;
+}
+
+function getEmailRedirectToWithName(firstName) {
+  const redirectUrl = new URL(getEmailRedirectTo());
+  if (firstName && String(firstName).trim()) {
+    redirectUrl.searchParams.set('name', String(firstName).trim());
+  }
+  return redirectUrl.toString();
+}
+
 // Sign Up
 async function signUp({ email, password, firstName, lastName, username }) {
   const normalizedEmail = email.trim().toLowerCase()
   const normalizedUsername = username.trim()
+  const emailRedirectTo = getEmailRedirectToWithName(firstName)
 
-  const { data: authData, error: authError } = await supabase.auth.signUp({ email: normalizedEmail, password })
+  const { data: authData, error: authError } = await supabase.auth.signUp({
+    email: normalizedEmail,
+    password,
+    options: {
+      emailRedirectTo,
+    },
+  })
 
   if (authError) throw authError
 
@@ -24,7 +50,8 @@ async function signUp({ email, password, firstName, lastName, username }) {
       first_name: firstName,
       last_name: lastName,
       username: normalizedUsername,
-      is_verified: !!authData.user.email_confirmed_at,
+      // Account starts unverified until confirmation email is completed.
+      is_verified: false,
     }])
     .single()
 
@@ -80,47 +107,64 @@ async function logIn(loginInfo, password) {
   if (authError) throw authError
 
   // Checks if user's email is confirmed in the Auth Database
-  if (!authData.user.email_confirmed_at) {
+  const isAuthVerified = Boolean(authData?.user?.email_confirmed_at)
+  if (!isAuthVerified) {
     await supabase.auth.signOut()
     throw new Error('Email not verified. Please check your inbox for the verification email.')  
   }
 
-  let accountData = null
-  if (authData?.user?.id) {
-    const { data, error } = await supabase
-      .from('account')
-      .select('*')
-      .eq('id', authData.user.id)
-      .single()
-    if (!error) accountData = data
+  if (!authData?.user?.id) {
+    await supabase.auth.signOut()
+    throw new Error('Unable to verify account.')
   }
 
-  // Keep account.is_verified aligned with Supabase Auth (email confirmed).
-  if (accountData && authData.user.email_confirmed_at && !accountData.is_verified) {
+  let accountData = null
+  const { data: account, error: accountError } = await supabaseAdmin
+    .from('account')
+    .select('*')
+    .eq('id', authData.user.id)
+    .single()
+
+  if (accountError) {
+    await supabase.auth.signOut()
+    throw accountError
+  }
+
+  accountData = account
+
+  // Keep account.is_verified aligned with Auth confirmation state.
+  if (!accountData.is_verified && isAuthVerified) {
     const { data: updated, error: updateError } = await supabaseAdmin
       .from('account')
       .update({ is_verified: true })
       .eq('id', authData.user.id)
       .select()
       .single()
-    if (!updateError && updated) {
-      accountData = updated
+    if (updateError) {
+      await supabase.auth.signOut()
+      throw updateError
     }
+    accountData = updated
   }
 
-  if (accountData && !accountData.is_verified) {
-  await supabase.auth.signOut()
-  throw new Error('Account not verified. Please check your email.')
-}
+  const isAccountVerified = Boolean(accountData?.is_verified)
+  if (!isAuthVerified || !isAccountVerified) {
+    await supabase.auth.signOut()
+    throw new Error('Account not verified. Please confirm your email first.')
+  }
 
   return { auth: authData, account: accountData }
 }
 
 // Resend Email Verification
 async function resendEmailVerification(email) {
+  const emailRedirectTo = getEmailRedirectTo()
   const {error} = await supabase.auth.resend({ 
     type: 'signup',
-    email: email
+    email,
+    options: {
+      emailRedirectTo,
+    },
   })
 
   if (error) throw error

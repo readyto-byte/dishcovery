@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import './index.css'
 import LandingPage from './LandingPage.jsx'
 import DashboardPage from './DashboardPage.jsx'  
+import EmailConfirmedPage from './EmailConfirmedPage.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -11,6 +12,7 @@ createRoot(document.getElementById('root')).render(
       <Routes>       
         <Route path="/" element={<LandingPage />} />           
         <Route path="/dashboard" element={<DashboardPage />} /> 
+        <Route path="/email-confirmed" element={<EmailConfirmedPage />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,
