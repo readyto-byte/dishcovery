@@ -13,9 +13,11 @@ const RecipeOptionsGrid = ({ options, onSelectOption, isLoading }) => {
   const CostScale = ({ phpAmount }) => {
     const getLevel = () => {
       if (phpAmount == null) return 0;
-      const usd = phpAmount / 56;
-      if (usd <= 25) return 1;
-      if (usd <= 50) return 2;
+      const amount = Number(phpAmount);
+      if (!Number.isFinite(amount) || amount <= 0) return 0;
+      // Use PHP bands directly so visual cost levels vary meaningfully.
+      if (amount <= 150) return 1;
+      if (amount <= 300) return 2;
       return 3;
     };
     const level = getLevel();

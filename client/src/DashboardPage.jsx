@@ -336,22 +336,38 @@ const DashboardPage = () => {
     fetchActiveProfile();
   };
 
-  const mapSuggestionToCard = (suggestion, fallbackEstimatedTime, recipeId) => ({
-    id: recipeId,
-    title: suggestion?.title || "Generated Recipe",
-    description: suggestion?.description || "",
-    prepTime: fallbackEstimatedTime || "N/A",
-    cookTime: suggestion?.cookTimeMin ? `${suggestion.cookTimeMin} min` : "N/A",
-    servings: suggestion?.servings || "-",
-    estimatedCostPhp: suggestion?.estimatedCostPhp ?? null,
-    difficulty: "Medium",
-    tags: Array.isArray(suggestion?.keyIngredients) && suggestion.keyIngredients.length > 0
-      ? ["ai", "generated", "recipe"]
-      : ["ai", "generated"],
-    ingredients: Array.isArray(suggestion?.keyIngredients) ? suggestion.keyIngredients : [],
-    instructions: Array.isArray(suggestion?.instructions) ? suggestion.instructions : [],
-    nutritionalInfo: suggestion?.nutritionalInfo ?? null,
-  });
+  const inferDifficulty = (suggestion = {}) => {
+    const aiDifficulty = String(suggestion?.difficulty || "").trim();
+    if (aiDifficulty) return aiDifficulty;
+
+    const cookTime = Number(suggestion?.cookTimeMin ?? 0);
+    const steps = Array.isArray(suggestion?.instructions) ? suggestion.instructions.length : 0;
+    const ingredients = Array.isArray(suggestion?.keyIngredients) ? suggestion.keyIngredients.length : 0;
+
+    if (cookTime >= 45 || steps >= 8 || ingredients >= 12) return "Hard";
+    if (cookTime >= 25 || steps >= 5 || ingredients >= 8) return "Medium";
+    return "Easy";
+  };
+
+  const mapSuggestionToCard = (suggestion, fallbackEstimatedTime, recipeId) => {
+    const parsedCost = Number(suggestion?.estimatedCostPhp);
+    return {
+      id: recipeId,
+      title: suggestion?.title || "Generated Recipe",
+      description: suggestion?.description || "",
+      prepTime: fallbackEstimatedTime || "N/A",
+      cookTime: suggestion?.cookTimeMin ? `${suggestion.cookTimeMin} min` : "N/A",
+      servings: suggestion?.servings || "-",
+      estimatedCostPhp: Number.isFinite(parsedCost) ? parsedCost : null,
+      difficulty: inferDifficulty(suggestion),
+      tags: Array.isArray(suggestion?.keyIngredients) && suggestion.keyIngredients.length > 0
+        ? ["ai", "generated", "recipe"]
+        : ["ai", "generated"],
+      ingredients: Array.isArray(suggestion?.keyIngredients) ? suggestion.keyIngredients : [],
+      instructions: Array.isArray(suggestion?.instructions) ? suggestion.instructions : [],
+      nutritionalInfo: suggestion?.nutritionalInfo ?? null,
+    };
+  };
 
   const saveToHistory = async (card, promptText) => {
     try {
