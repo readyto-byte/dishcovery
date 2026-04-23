@@ -113,6 +113,7 @@ async function generateContentWithModelFallback({ models, contents, config }) {
 }
 
 async function searchRecipes({ profiles, promptText = '', history = [], numOptions = 3, avoidTitles = [] }) {
+  numOptions = Math.min(Number(numOptions) || 3, 3);
   console.log('searchRecipes input:', { profileCount: profiles?.length ?? 0, historyCount: history?.length ?? 0, numOptions, avoidTitlesCount: avoidTitles?.length ?? 0 });
   let profileInfo = 'No profiles specified.';
   if (profiles && profiles.length > 0) {

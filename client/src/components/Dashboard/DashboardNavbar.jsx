@@ -73,8 +73,6 @@ const DashboardNavbar = ({ setCurrentPage, sidebarOpen, setSidebarOpen, activePr
         backdropFilter: "blur(12px)",
         WebkitBackdropFilter: "blur(12px)",
         borderBottom: "1px solid rgba(181, 208, 152, 0.2)",
-        marginLeft: sidebarOpen ? "-18rem" : "0",
-        width: sidebarOpen ? "calc(100% + 18rem)" : "100%",
       }}
     >
       <div className="flex items-center gap-3">

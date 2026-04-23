@@ -32,12 +32,18 @@ function mapFavoriteRow(row = {}) {
   };
 }
 
-async function getFavoritesByAccount(accountId) {
-  const { data, error } = await supabaseAdmin
+async function getFavoritesByAccount(accountId, profileId) {
+  let query = supabaseAdmin
     .from('favorites')
-    .select('id, user_id, recipe_id, saved_date, recipes(*)')
+    .select('id, user_id, recipe_id, saved_date, profile_id, recipes(*)')
     .eq('user_id', accountId)
     .order('saved_date', { ascending: false });
+
+  if (profileId) {
+    query = query.eq('profile_id', profileId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     throw error;
@@ -47,17 +53,50 @@ async function getFavoritesByAccount(accountId) {
 }
 
 async function addFavorite(accountId, favoriteData) {
-  const recipeId = favoriteData.recipe_id ?? favoriteData.recipeId ?? null;
+  let recipeId = favoriteData.recipe_id ?? favoriteData.recipeId ?? null;
+  const profileId = favoriteData.profile_id ?? favoriteData.profileId ?? null;
+
   if (!recipeId) {
-    throw new Error('recipe_id is required to save a favorite.');
+    if (!favoriteData.recipeData) {
+      throw new Error('recipe_id is required to save a favorite.');
+    }
+    const rd = favoriteData.recipeData;
+    const parseTimeToMin = (val) => { const m = String(val || '').match(/\d+/); return m ? Number(m[0]) : null; };
+    const recipePayload = {
+      title: rd.title,
+      source_api: 'gemini-2.5-flash',
+      prep_time_min: parseTimeToMin(rd.prepTime),
+      cook_time_min: parseTimeToMin(rd.cookTime),
+      servings: rd.servings ?? null,
+      instructions: JSON.stringify({
+        title: rd.title,
+        description: rd.description ?? '',
+        keyIngredients: rd.ingredients ?? [],
+        instructions: rd.instructions ?? [],
+        nutritionalInfo: rd.nutritionalInfo ?? null,
+      }),
+      nutritional_info: rd.nutritionalInfo ? JSON.stringify(rd.nutritionalInfo) : null,
+      cached_date: new Date().toISOString(),
+    };
+    const { data: savedRecipes, error: saveError } = await supabaseAdmin
+      .from('recipes')
+      .insert([recipePayload])
+      .select('id');
+    if (saveError) throw saveError;
+    recipeId = savedRecipes[0].id;
   }
 
-  const { data: existingRows, error: existingError } = await supabaseAdmin
+  let existingQuery = supabaseAdmin
     .from('favorites')
-    .select('id, user_id, recipe_id, saved_date, recipes(*)')
+    .select('id, user_id, recipe_id, saved_date, profile_id, recipes(*)')
     .eq('user_id', accountId)
-    .eq('recipe_id', recipeId)
-    .limit(1);
+    .eq('recipe_id', recipeId);
+
+  if (profileId) {
+    existingQuery = existingQuery.eq('profile_id', profileId);
+  }
+
+  const { data: existingRows, error: existingError } = await existingQuery.limit(1);
 
   if (existingError) {
     throw existingError;
@@ -71,6 +110,7 @@ async function addFavorite(accountId, favoriteData) {
     user_id: accountId,
     recipe_id: recipeId,
     saved_date: new Date().toISOString(),
+    profile_id: profileId,
   };
 
   const { error } = await supabaseAdmin
@@ -81,13 +121,18 @@ async function addFavorite(accountId, favoriteData) {
     throw error;
   }
 
-  const { data: insertedRows, error: insertedError } = await supabaseAdmin
+  let insertedQuery = supabaseAdmin
     .from('favorites')
-    .select('id, user_id, recipe_id, saved_date, recipes(*)')
+    .select('id, user_id, recipe_id, saved_date, profile_id, recipes(*)')
     .eq('user_id', accountId)
     .eq('recipe_id', recipeId)
-    .order('saved_date', { ascending: false })
-    .limit(1);
+    .order('saved_date', { ascending: false });
+
+  if (profileId) {
+    insertedQuery = insertedQuery.eq('profile_id', profileId);
+  }
+
+  const { data: insertedRows, error: insertedError } = await insertedQuery.limit(1);
 
   if (insertedError) {
     throw insertedError;
@@ -108,11 +153,17 @@ async function deleteFavoriteById(accountId, favoriteId) {
   }
 }
 
-async function clearFavoritesByAccount(accountId) {
-  const { error } = await supabaseAdmin
+async function clearFavoritesByAccount(accountId, profileId) {
+  let query = supabaseAdmin
     .from('favorites')
     .delete()
     .eq('user_id', accountId);
+
+  if (profileId) {
+    query = query.eq('profile_id', profileId);
+  }
+
+  const { error } = await query;
 
   if (error) {
     throw error;

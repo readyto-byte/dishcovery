@@ -127,6 +127,7 @@ const buildAiGeneratedPlan = (fd, aiResponse, createdAtIso) => {
     protein: parseMacroNumber(breakfastSource?.nutritionalInfo?.protein),
     carbs: parseMacroNumber(breakfastSource?.nutritionalInfo?.carbs),
     fats: parseMacroNumber(breakfastSource?.nutritionalInfo?.fat),
+    fiber: parseMacroNumber(breakfastSource?.nutritionalInfo?.fiber),
   };
   const lunch = {
     title: normalizeMealTitle(lunchSource.title, "AI Lunch"),
@@ -134,6 +135,7 @@ const buildAiGeneratedPlan = (fd, aiResponse, createdAtIso) => {
     protein: parseMacroNumber(lunchSource?.nutritionalInfo?.protein),
     carbs: parseMacroNumber(lunchSource?.nutritionalInfo?.carbs),
     fats: parseMacroNumber(lunchSource?.nutritionalInfo?.fat),
+    fiber: parseMacroNumber(lunchSource?.nutritionalInfo?.fiber),
   };
   const dinner = {
     title: normalizeMealTitle(dinnerSource.title, "AI Dinner"),
@@ -141,6 +143,7 @@ const buildAiGeneratedPlan = (fd, aiResponse, createdAtIso) => {
     protein: parseMacroNumber(dinnerSource?.nutritionalInfo?.protein),
     carbs: parseMacroNumber(dinnerSource?.nutritionalInfo?.carbs),
     fats: parseMacroNumber(dinnerSource?.nutritionalInfo?.fat),
+    fiber: parseMacroNumber(dinnerSource?.nutritionalInfo?.fiber),
   };
 
   const base = buildGeneratedPlanFromPreferences(fd, createdAtIso);
@@ -195,8 +198,9 @@ const getEmptyMealPlanFormData = () => ({
 const inputClass = "w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:border-[#587A34] focus:ring-1 focus:ring-[#587A34] focus:outline-none transition";
 const selectClass = "w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:border-[#587A34] focus:ring-1 focus:ring-[#587A34] focus:outline-none transition bg-white";
 const labelClass = "block text-sm font-semibold text-gray-700 mb-1";
+
 // Loading Animation Component inside Meal Plan Section
-const MealPlanLoadingCard = ({ message }) => {
+const MealPlanLoadingCard = () => {
   const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
   const loadingMessages = [
     "Analyzing your preferences...",
@@ -361,7 +365,7 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
   const fetchMealDetail = async (meal, type) => {
     setSelectedMeal({
       type, title: meal.title, calories: meal.calories, protein: meal.protein,
-      carbs: meal.carbs, fats: meal.fats, prepTime: null, cookTime: null,
+      carbs: meal.carbs, fats: meal.fats, fiber: meal.fiber ?? null, prepTime: null, cookTime: null,
       servings: null, difficulty: null, description: null, ingredients: null,
       instructions: null, tags: null,
     });
@@ -517,6 +521,9 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
     setMealPlanSaveOk(false);
     setMealPlanSaving(true);
     
+    // Small delay to ensure loading state renders
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     try {
       let built = null;
       const snapshotWithProfile = { ...snapshot, profileId: activeProfileId };
@@ -544,6 +551,8 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
       }
     } catch (err) {
       setMealPlanSaveError(err?.message || "Could not save your meal plan preferences.");
+      // If generation fails, show the form again
+      setShowForm(true);
     } finally {
       setMealPlanSaving(false);
       setIsGeneratingPlan(false);
@@ -772,8 +781,10 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
         </div>
       </div>
 
-      {showForm && isGeneratingPlan && <MealPlanLoadingCard />}
+      {/* Loading card - shows when generating */}
+      {isGeneratingPlan && <MealPlanLoadingCard />}
 
+      {/* Show form only when not generating and showForm is true */}
       {showForm && !isGeneratingPlan && (
         <div className="mx-4 md:mx-8 mb-8">
           <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
@@ -1208,6 +1219,7 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
                   { label: `${selectedMeal.protein}g protein`, color: "text-blue-700" },
                   { label: `${selectedMeal.carbs}g carbs`, color: "text-green-700" },
                   { label: `${selectedMeal.fats}g fats`, color: "text-orange-700" },
+                  ...(selectedMeal.fiber ? [{ label: `${selectedMeal.fiber}g fiber`, color: "text-purple-700" }] : []), 
                 ].map(({ label, color }) => (
                   <span key={label} className={`bg-white/70 px-3 py-1 rounded-full font-semibold border border-[#d6e8c0] ${color}`}>{label}</span>
                 ))}

@@ -16,7 +16,7 @@ router.post('/', async (req, res) => {
     const rawPromptText = req.body?.promptText ?? req.body?.search_query ?? req.body?.searchQuery ?? '';
     const conversation = Array.isArray(req.body?.conversation) ? req.body.conversation : [];
     const history = Array.isArray(req.body?.history) ? req.body.history : conversation;
-    const numOptions = Number(req.body?.numOptions) || 3;
+    const numOptions = Math.min(Number(req.body?.numOptions) || 3, 3);
     const resolvedAvoidTitles = Array.isArray(req.body?.avoid_titles)
       ? req.body.avoid_titles
       : (Array.isArray(req.body?.avoidTitles) ? req.body.avoidTitles : []);

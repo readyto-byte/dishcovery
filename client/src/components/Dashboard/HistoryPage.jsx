@@ -13,7 +13,6 @@ const HistoryLoadingSkeleton = () => {
         .skeleton { background: linear-gradient(90deg, #e8f2dc 25%, #d4e9c0 50%, #e8f2dc 75%); background-size: 600px 100%; animation: shimmer 1.6s infinite linear; border-radius: 8px; }
       `}</style>
       
-      {/* Hero skeleton */}
       <div className="relative mx-4 md:mx-8 mt-6 mb-8 overflow-hidden rounded-2xl shadow-xl bg-[#1e3a0f]/80 px-8 py-7">
         <div className="space-y-2">
           <div className="skeleton h-8 w-40 opacity-30" />
@@ -21,7 +20,6 @@ const HistoryLoadingSkeleton = () => {
         </div>
       </div>
 
-      {/* Cards skeleton */}
       <div className="mx-4 md:mx-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -53,7 +51,7 @@ const HistoryLoadingSkeleton = () => {
   );
 };
 
-const HistoryPage = ({ onViewRecipe }) => {
+const HistoryPage = ({ onViewRecipe, activeProfile }) => {
   const [historyRecipes, setHistoryRecipes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isClearing, setIsClearing] = useState(false);
@@ -70,7 +68,8 @@ const HistoryPage = ({ onViewRecipe }) => {
 
   const syncFavoriteStateFromApi = async () => {
     try {
-      const response = await apiCall("/api/favorites");
+      const profileParam = activeProfile?.id ? `?profile_id=${activeProfile.id}` : "";
+      const response = await apiCall(`/api/favorites${profileParam}`);
       const rows = Array.isArray(response?.data) ? response.data : [];
       setFavorites(new Set(rows.map((fav) => Number(fav.recipe_id)).filter((id) => Number.isFinite(id))));
     } catch (err) {
@@ -83,11 +82,11 @@ const HistoryPage = ({ onViewRecipe }) => {
       setError("This recipe cannot be favorited because it has no recipe_id.");
       return;
     }
-
     try {
       setError("");
       if (favorites.has(recipe.recipeId)) {
-        const response = await apiCall("/api/favorites");
+        const profileParam = activeProfile?.id ? `?profile_id=${activeProfile.id}` : "";
+        const response = await apiCall(`/api/favorites${profileParam}`);
         const rows = Array.isArray(response?.data) ? response.data : [];
         const match = rows.find((fav) => Number(fav.recipe_id) === Number(recipe.recipeId));
         if (match?.id) {
@@ -96,7 +95,7 @@ const HistoryPage = ({ onViewRecipe }) => {
       } else {
         await apiCall("/api/favorites", {
           method: "POST",
-          body: JSON.stringify({ recipe_id: recipe.recipeId }),
+          body: JSON.stringify({ recipe_id: recipe.recipeId, profile_id: activeProfile?.id ?? null }),
         });
       }
       await syncFavoriteStateFromApi();
@@ -165,10 +164,12 @@ const HistoryPage = ({ onViewRecipe }) => {
       description: hasError ? (parsed?.message || parsed?.error || "") : (firstSuggestion.description || parsed?.message || ""),
       ingredients: Array.isArray(firstSuggestion.keyIngredients) ? firstSuggestion.keyIngredients : [],
       instructions: Array.isArray(firstSuggestion.instructions) ? firstSuggestion.instructions : [],
+      nutritionalInfo: firstSuggestion.nutritionalInfo ?? null,
       hasError,
       errorHeader: hasError ? (parsed?.header || "Invalid request") : null,
       sourceLabel,
       profileName,
+      nutritionalInfo: firstSuggestion.nutritionalInfo ?? null, // passed through to modal
     };
   };
 
@@ -263,143 +264,143 @@ const HistoryPage = ({ onViewRecipe }) => {
         )}
 
         <div className="flex flex-col" style={{ minHeight: "600px" }}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {paginatedRecipes.map((recipe) => {
-            const isFavorited = recipe.recipeId ? favorites.has(Number(recipe.recipeId)) : false;
-            return (
-              <div
-                key={recipe.id}
-                className={`rounded-2xl shadow-lg overflow-hidden hover:scale-105 transition-all duration-300 ${recipe.hasError ? 'bg-[#fff5f5] border border-red-200/60' : 'bg-[#F0E6D1]'}`}
-              >
-                <div className={`relative h-12 flex items-center justify-between px-4 ${recipe.hasError ? 'bg-red-400' : 'bg-[#587A34]'}`}>
-                  <button
-                    onClick={() => toggleFavorite(recipe)}
-                    title={isFavorited ? "Remove from favorites" : "Add to favorites"}
-                    className="flex items-center justify-center w-7 h-7 rounded-full transition-all duration-200 active:scale-90"
-                    style={{
-                      background: isFavorited ? 'rgba(240,230,209,0.2)' : 'rgba(255,255,255,0.1)',
-                      border: `1.5px solid ${isFavorited ? '#F0E6D1' : 'rgba(240,230,209,0.35)'}`,
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'rgba(240,230,209,0.25)';
-                      e.currentTarget.style.borderColor = '#F0E6D1';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = isFavorited ? 'rgba(240,230,209,0.2)' : 'rgba(255,255,255,0.1)';
-                      e.currentTarget.style.borderColor = isFavorited ? '#F0E6D1' : 'rgba(240,230,209,0.35)';
-                    }}
-                  >
-                    {isFavorited ? (
-                      <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="#F0E6D1">
-                        <path d="M8 13.5S2 9.5 2 5.5A3.5 3.5 0 018 3a3.5 3.5 0 016 2c0 4-6 8.5-6 8.5z" />
-                      </svg>
-                    ) : (
-                      <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="none" stroke="#F0E6D1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M8 13.5S2 9.5 2 5.5A3.5 3.5 0 018 3a3.5 3.5 0 016 2c0 4-6 8.5-6 8.5z" />
-                      </svg>
-                    )}
-                  </button>
-
-                  <div className="flex items-center gap-2">
-                    {recipe.hasError && (
-                      <span className="bg-white/20 rounded-full px-2.5 py-1 text-xs font-bold text-white flex items-center gap-1">
-                        <i className="fas fa-exclamation-circle text-xs"></i> Error
-                      </span>
-                    )}
-                    <div className="bg-[#95A131] rounded-full px-3 py-1 text-xs font-bold text-white">
-                      Viewed {recipe.viewed}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-5">
-                  <h3 className={`text-xl font-bold ${recipe.hasError ? 'text-red-800' : 'text-[#32491B]'}`}>
-                    {recipe.hasError ? recipe.errorHeader : recipe.title}
-                  </h3>
-                  {recipe.hasError && (
-                    <p className="text-red-500 text-xs mt-0.5 leading-snug italic">Query: {recipe.title}</p>
-                  )}
-                  <p className="text-black/60 text-sm mt-1">{recipe.type} • {recipe.difficulty}</p>
-                  <div className="flex flex-wrap gap-1.5 mt-2">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
-                      recipe.sourceLabel === 'Meal Plan' ? 'bg-[#32491B]/15 text-[#32491B]' :
-                      recipe.sourceLabel === 'Error' ? 'bg-red-100 text-red-600' :
-                      'bg-[#839705]/20 text-[#587A34]'
-                    }`}>
-                      <i className={`mr-1 ${
-                        recipe.sourceLabel === 'Meal Plan' ? 'fas fa-calendar-alt' :
-                        recipe.sourceLabel === 'Error' ? 'fas fa-exclamation-circle' :
-                        'fas fa-robot'
-                      }`}></i>
-                      {recipe.sourceLabel}
-                    </span>
-                    {recipe.profileName && (
-                      <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-[#B5D098]/40 text-[#32491B]">
-                        <i className="fas fa-user mr-1"></i>{recipe.profileName}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {recipe.tags.map((tag, idx) => (
-                      <span
-                        key={idx}
-                        className="bg-[#839705]/20 text-[#32491B] px-2 py-0.5 rounded-full text-xs font-semibold"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                  <div className="flex justify-between items-center mt-4 pt-3 border-t border-[#B5D098]/30">
-                    <div className="flex gap-3 text-sm text-black/60">
-                      <span><i className="far fa-clock"></i> {recipe.time}</span>
-                      <span><i className="fas fa-users"></i> {recipe.servings}</span>
-                    </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {paginatedRecipes.map((recipe) => {
+              const isFavorited = recipe.recipeId ? favorites.has(Number(recipe.recipeId)) : false;
+              return (
+                <div
+                  key={recipe.id}
+                  className={`rounded-2xl shadow-lg overflow-hidden hover:scale-105 transition-all duration-300 ${recipe.hasError ? 'bg-[#fff5f5] border border-red-200/60' : 'bg-[#F0E6D1]'}`}
+                >
+                  <div className={`relative h-12 flex items-center justify-between px-4 ${recipe.hasError ? 'bg-red-400' : 'bg-[#587A34]'}`}>
                     <button
-                      onClick={() => onViewRecipe(recipe)}
-                      className="text-[#587A34] hover:text-[#32491B] font-semibold text-sm transition-all cursor-pointer"
+                      onClick={() => toggleFavorite(recipe)}
+                      title={isFavorited ? "Remove from favorites" : "Add to favorites"}
+                      className="flex items-center justify-center w-7 h-7 rounded-full transition-all duration-200 active:scale-90"
+                      style={{
+                        background: isFavorited ? 'rgba(240,230,209,0.2)' : 'rgba(255,255,255,0.1)',
+                        border: `1.5px solid ${isFavorited ? '#F0E6D1' : 'rgba(240,230,209,0.35)'}`,
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(240,230,209,0.25)';
+                        e.currentTarget.style.borderColor = '#F0E6D1';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = isFavorited ? 'rgba(240,230,209,0.2)' : 'rgba(255,255,255,0.1)';
+                        e.currentTarget.style.borderColor = isFavorited ? '#F0E6D1' : 'rgba(240,230,209,0.35)';
+                      }}
                     >
-                      View Recipe <i className="fas fa-arrow-right ml-1"></i>
+                      {isFavorited ? (
+                        <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="#F0E6D1">
+                          <path d="M8 13.5S2 9.5 2 5.5A3.5 3.5 0 018 3a3.5 3.5 0 016 2c0 4-6 8.5-6 8.5z" />
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="none" stroke="#F0E6D1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M8 13.5S2 9.5 2 5.5A3.5 3.5 0 018 3a3.5 3.5 0 016 2c0 4-6 8.5-6 8.5z" />
+                        </svg>
+                      )}
                     </button>
+
+                    <div className="flex items-center gap-2">
+                      {recipe.hasError && (
+                        <span className="bg-white/20 rounded-full px-2.5 py-1 text-xs font-bold text-white flex items-center gap-1">
+                          <i className="fas fa-exclamation-circle text-xs"></i> Error
+                        </span>
+                      )}
+                      <div className="bg-[#95A131] rounded-full px-3 py-1 text-xs font-bold text-white">
+                        Viewed {recipe.viewed}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-5">
+                    <h3 className={`text-xl font-bold ${recipe.hasError ? 'text-red-800' : 'text-[#32491B]'}`}>
+                      {recipe.hasError ? recipe.errorHeader : recipe.title}
+                    </h3>
+                    {recipe.hasError && (
+                      <p className="text-red-500 text-xs mt-0.5 leading-snug italic">Query: {recipe.title}</p>
+                    )}
+                    <p className="text-black/60 text-sm mt-1">{recipe.type} • {recipe.difficulty}</p>
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+                        recipe.sourceLabel === 'Meal Plan' ? 'bg-[#32491B]/15 text-[#32491B]' :
+                        recipe.sourceLabel === 'Error' ? 'bg-red-100 text-red-600' :
+                        'bg-[#839705]/20 text-[#587A34]'
+                      }`}>
+                        <i className={`mr-1 ${
+                          recipe.sourceLabel === 'Meal Plan' ? 'fas fa-calendar-alt' :
+                          recipe.sourceLabel === 'Error' ? 'fas fa-exclamation-circle' :
+                          'fas fa-robot'
+                        }`}></i>
+                        {recipe.sourceLabel}
+                      </span>
+                      {recipe.profileName && (
+                        <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-[#B5D098]/40 text-[#32491B]">
+                          <i className="fas fa-user mr-1"></i>{recipe.profileName}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {recipe.tags.map((tag, idx) => (
+                        <span
+                          key={idx}
+                          className="bg-[#839705]/20 text-[#32491B] px-2 py-0.5 rounded-full text-xs font-semibold"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                    <div className="flex justify-between items-center mt-4 pt-3 border-t border-[#B5D098]/30">
+                      <div className="flex gap-3 text-sm text-black/60">
+                        <span><i className="far fa-clock"></i> {recipe.time}</span>
+                        <span><i className="fas fa-users"></i> {recipe.servings}</span>
+                      </div>
+                      <button
+                        onClick={() => onViewRecipe(recipe)}
+                        className="text-[#587A34] hover:text-[#32491B] font-semibold text-sm transition-all cursor-pointer"
+                      >
+                        View Recipe <i className="fas fa-arrow-right ml-1"></i>
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-1 mt-auto pt-10">
-            <button
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="px-3 py-1.5 rounded-lg text-sm font-semibold text-[#587A34] hover:bg-[#587A34]/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-            >
-              <i className="fas fa-chevron-left mr-1"></i> Prev
-            </button>
-
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                onClick={() => handlePageChange(page)}
-                className={`w-8 h-8 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
-                  page === currentPage
-                    ? "bg-[#587A34] text-white shadow-md"
-                    : "text-[#587A34] hover:bg-[#587A34]/10"
-                }`}
-              >
-                {page}
-              </button>
-            ))}
-
-            <button
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1.5 rounded-lg text-sm font-semibold text-[#587A34] hover:bg-[#587A34]/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-            >
-              Next <i className="fas fa-chevron-right ml-1"></i>
-            </button>
+              );
+            })}
           </div>
-        )}
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-1 mt-auto pt-10">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-3 py-1.5 rounded-lg text-sm font-semibold text-[#587A34] hover:bg-[#587A34]/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <i className="fas fa-chevron-left mr-1"></i> Prev
+              </button>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  onClick={() => handlePageChange(page)}
+                  className={`w-8 h-8 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
+                    page === currentPage
+                      ? "bg-[#587A34] text-white shadow-md"
+                      : "text-[#587A34] hover:bg-[#587A34]/10"
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1.5 rounded-lg text-sm font-semibold text-[#587A34] hover:bg-[#587A34]/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+              >
+                Next <i className="fas fa-chevron-right ml-1"></i>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
