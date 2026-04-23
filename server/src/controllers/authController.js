@@ -34,6 +34,20 @@ async function signUp({ email, password, firstName, lastName, username }) {
   const normalizedUsername = username.trim()
   const emailRedirectTo = getEmailRedirectToWithName(firstName)
 
+  // If this username belongs to a recently deleted account, block re-registration with a clear message.
+  const { data: existingByUsername } = await supabaseAdmin
+    .from('account')
+    .select('id, status')
+    .ilike('username', normalizedUsername)
+    .limit(1)
+
+  if (Array.isArray(existingByUsername) && existingByUsername.length > 0) {
+    const existing = existingByUsername[0]
+    if (normalizeAccountStatus(existing?.status) === 'INACTIVE') {
+      throw new Error('Account was recently deleted. Please wait for at least 90 days until you can use this email account.')
+    }
+  }
+
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email: normalizedEmail,
     password,
@@ -64,6 +78,24 @@ async function signUp({ email, password, firstName, lastName, username }) {
     .single()
 
   if (accountError) {
+    const isDuplicateKey = String(accountError?.code || '') === '23505'
+      || String(accountError?.message || '').toLowerCase().includes('duplicate key')
+
+    if (isDuplicateKey) {
+      const { data: duplicateByUsername } = await supabaseAdmin
+        .from('account')
+        .select('id, status')
+        .ilike('username', normalizedUsername)
+        .limit(1)
+
+      if (Array.isArray(duplicateByUsername) && duplicateByUsername.length > 0) {
+        const existing = duplicateByUsername[0]
+        if (normalizeAccountStatus(existing?.status) === 'INACTIVE') {
+          throw new Error('Account was recently deleted. Please wait for at least 90 days until you can use this email account.')
+        }
+      }
+    }
+
     try {
       await rollbackAccountCreation(userId);
 
