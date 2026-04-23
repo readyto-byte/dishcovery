@@ -9,6 +9,29 @@ function hasRecipeError(errorValue) {
   return normalized !== '' && normalized !== 'null';
 }
 
+function isLikelyJumbledToken(token) {
+  const clean = String(token || '').toLowerCase().replace(/[^a-z]/g, '');
+  if (clean.length < 4) return false;
+  const vowelCount = (clean.match(/[aeiou]/g) || []).length;
+  const vowelRatio = vowelCount / clean.length;
+  if (vowelCount === 0) return true;
+  if (clean.length >= 7 && vowelRatio < 0.15) return true;
+  return false;
+}
+
+function isGibberish(text) {
+  const tokens = String(text || '').trim().split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) return false;
+  const jumbledCount = tokens.filter(isLikelyJumbledToken).length;
+  return jumbledCount / tokens.length > 0.5;
+}
+
+const FOUL_WORD_PATTERN = /\b(f+u+c+k+(?:ing|er|ed|s)?|s+h+i+t+(?:ty|s)?|b+i+t+c+h+(?:es)?|c+u+n+t+|w+h+o+r+e+(?:s)?|s+l+u+t+(?:s)?|a+s+s+h+o+l+e+(?:s)?|n+i+g+g+e+r+(?:s)?|f+a+g+g+?o+t+(?:s)?|d+y+k+e+(?:s)?|r+e+t+a+r+d+(?:ed|s)?|p+e+d+o+(?:phile)?|c+h+i+l+d+p+o+r+n|p+o+r+n+o?(?:graphy)?)\b/i;
+
+function hasFoulLanguage(text) {
+  return FOUL_WORD_PATTERN.test(String(text || ''));
+}
+
 router.post('/', async (req, res) => {
   try {
     const accountId = req.user?.id;
@@ -35,6 +58,14 @@ router.post('/', async (req, res) => {
 
     if (!promptText) {
       return res.status(400).json({ success: false, error: 'Please provide a prompt.' });
+    }
+
+    if (hasFoulLanguage(promptText)) {
+      return res.status(400).json({ success: false, error: 'Your prompt contains inappropriate language. Please keep it respectful.' });
+    }
+
+    if (isGibberish(promptText)) {
+      return res.status(400).json({ success: false, error: 'Your prompt appears to be gibberish. Please enter a valid food or recipe request.' });
     }
 
     // Hydrate profile details (dietary restrictions/preferences) when client only sends {id,name,avatar}.
