@@ -3,6 +3,8 @@ import { RotateCcw } from "lucide-react";
 import heroBg from "../../assets/hero-bg.jpg";
 import { apiCall } from "../../api/config";
 
+const RECIPES_PER_PAGE = 9;
+
 const FavoritesLoadingSkeleton = () => {
   return (
     <div className="pb-12">
@@ -58,6 +60,13 @@ const FavoritesPage = ({ onViewRecipe, activeProfile }) => {
   const [isClearing, setIsClearing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [recipeToDelete, setRecipeToDelete] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const totalPages = Math.ceil(favorites.length / RECIPES_PER_PAGE);
+  const paginatedFavorites = favorites.slice(
+    (currentPage - 1) * RECIPES_PER_PAGE,
+    currentPage * RECIPES_PER_PAGE
+  );
 
   useEffect(() => {
     setLoading(true);
@@ -68,6 +77,7 @@ const FavoritesPage = ({ onViewRecipe, activeProfile }) => {
         const response = await apiCall(`/api/favorites${profileParam}`);
         const rows = Array.isArray(response?.data) ? response.data : [];
         setFavorites(rows);
+        setCurrentPage(1);
       } catch (error) {
         setError(error.message || "Failed to load favorites.");
         setFavorites([]);
@@ -99,6 +109,7 @@ const FavoritesPage = ({ onViewRecipe, activeProfile }) => {
       await apiCall(`/api/favorites${profileParam}`, { method: "DELETE" });
       setFavorites([]);
       setShowClearConfirm(false);
+      setCurrentPage(1);
     } catch (err) {
       setError(err.message || "Failed to clear favorites.");
     } finally {
@@ -109,6 +120,11 @@ const FavoritesPage = ({ onViewRecipe, activeProfile }) => {
   const openDeleteConfirm = (recipe) => {
     setRecipeToDelete(recipe);
     setShowDeleteConfirm(true);
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   if (loading) {
@@ -152,60 +168,100 @@ const FavoritesPage = ({ onViewRecipe, activeProfile }) => {
             {error}
           </div>
         )}
-        {favorites.length === 0 ? (
-          <div className="bg-[#F0E6D1]/50 backdrop-blur-sm rounded-2xl p-16 text-center">
-            <div className="flex justify-center mb-6">
-              <div className="w-32 h-32 bg-[#B5D098]/40 rounded-full flex items-center justify-center">
-                <i className="fas fa-heart text-[#889E73] text-6xl"></i>
+        
+        <div className="flex flex-col" style={{ minHeight: "600px" }}>
+          {paginatedFavorites.length === 0 ? (
+            <div className="bg-[#F0E6D1]/50 backdrop-blur-sm rounded-2xl p-16 text-center">
+              <div className="flex justify-center mb-6">
+                <div className="w-32 h-32 bg-[#B5D098]/40 rounded-full flex items-center justify-center">
+                  <i className="fas fa-heart text-[#889E73] text-6xl"></i>
+                </div>
               </div>
+              <h3 className="text-2xl font-bold text-[#32491B] mb-2">No Saved Dishcoveries</h3>
+              <p className="text-[#587A34] text-lg mb-6">Start adding recipes to your favorites collection!</p>
+              <p className="text-black/40 text-sm italic">
+                Click the heart icon on any recipe card to see it here.
+              </p>
             </div>
-            <h3 className="text-2xl font-bold text-[#32491B] mb-2">No Saved Dishcoveries</h3>
-            <p className="text-[#587A34] text-lg mb-6">Start adding recipes to your favorites collection!</p>
-            <p className="text-black/40 text-sm italic">
-              Click the heart icon on any recipe card to see it here.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {favorites.map((recipe) => (
-              <div
-                key={recipe.id}
-                className="bg-[#F0E6D1] rounded-2xl shadow-lg overflow-hidden hover:scale-105 transition-all duration-300"
-              >
-                <div className="relative h-12 bg-[#587A34] flex items-center justify-end px-4">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openDeleteConfirm(recipe);
-                    }}
-                    className="bg-white/20 hover:bg-red-500 rounded-full p-2 text-white transition-all cursor-pointer"
-                    title="Remove from favorites"
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {paginatedFavorites.map((recipe) => (
+                  <div
+                    key={recipe.id}
+                    className="bg-[#F0E6D1] rounded-2xl shadow-lg overflow-hidden hover:scale-105 transition-all duration-300"
                   >
-                    <i className="fas fa-trash-alt"></i>
+                    <div className="relative h-12 bg-[#587A34] flex items-center justify-end px-4">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openDeleteConfirm(recipe);
+                        }}
+                        className="bg-white/20 hover:bg-red-500 rounded-full p-2 text-white transition-all cursor-pointer"
+                        title="Remove from favorites"
+                      >
+                        <i className="fas fa-trash-alt"></i>
+                      </button>
+                    </div>
+                    <div className="p-5">
+                      <h3 className="text-xl font-bold text-[#32491B]">{recipe.title}</h3>
+                      <p className="text-black/60 text-sm mt-1">
+                        Saved Recipe
+                      </p>
+                      <div className="flex justify-between items-center mt-4 pt-3 border-t border-[#B5D098]/30">
+                        <div className="flex gap-3 text-sm text-black/60">
+                          <span><i className="far fa-clock"></i> {recipe.prepTime || '15 min'}</span>
+                          <span><i className="fas fa-users"></i> Serves {recipe.servings || 2}</span>
+                        </div>
+                        <button
+                          onClick={() => onViewRecipe(recipe)}
+                          className="text-[#587A34] hover:text-[#32491B] font-semibold text-sm transition-all cursor-pointer"
+                        >
+                          View Recipe <i className="fas fa-arrow-right ml-1"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Pagination - only shows when there are more than 9 recipes */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-1 mt-auto pt-10">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1.5 rounded-lg text-sm font-semibold text-[#587A34] hover:bg-[#587A34]/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    <i className="fas fa-chevron-left mr-1"></i> Prev
+                  </button>
+
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => handlePageChange(page)}
+                      className={`w-8 h-8 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
+                        page === currentPage
+                          ? "bg-[#587A34] text-white shadow-md"
+                          : "text-[#587A34] hover:bg-[#587A34]/10"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1.5 rounded-lg text-sm font-semibold text-[#587A34] hover:bg-[#587A34]/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    Next <i className="fas fa-chevron-right ml-1"></i>
                   </button>
                 </div>
-                <div className="p-5">
-                  <h3 className="text-xl font-bold text-[#32491B]">{recipe.title}</h3>
-                  <p className="text-black/60 text-sm mt-1">
-                    Saved Recipe
-                  </p>
-                  <div className="flex justify-between items-center mt-4 pt-3 border-t border-[#B5D098]/30">
-                    <div className="flex gap-3 text-sm text-black/60">
-                      <span><i className="far fa-clock"></i> {recipe.prepTime || '15 min'}</span>
-                      <span><i className="fas fa-users"></i> Serves {recipe.servings || 2}</span>
-                    </div>
-                    <button
-                      onClick={() => onViewRecipe(recipe)}
-                      className="text-[#587A34] hover:text-[#32491B] font-semibold text-sm transition-all cursor-pointer"
-                    >
-                      View Recipe <i className="fas fa-arrow-right ml-1"></i>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {/* Delete Single Favorite Confirmation Modal */}
