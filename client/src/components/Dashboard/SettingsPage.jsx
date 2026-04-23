@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import {Mail,User,Lock,Trash2,Eye,EyeOff,CheckCircle,XCircle,AlertTriangle,Save,X} from "lucide-react";
+import {Mail,User,Lock,Trash2,Eye,EyeOff,CheckCircle,XCircle,AlertTriangle,Save,X,Check} from "lucide-react";
 import heroBg from "../../assets/hero-bg.jpg";
 import { apiCall } from "../../api/config";
 
@@ -190,6 +190,8 @@ const SettingsPage = () => {
   const [isBootstrapping, setIsBootstrapping] = useState(true);
   const [deletePassword, setDeletePassword] = useState("");
   const [showDeletePassword, setShowDeletePassword] = useState(false);
+  const [newPasswordTouched, setNewPasswordTouched] = useState(false);
+  const [confirmNewPasswordTouched, setConfirmNewPasswordTouched] = useState(false);
 
   const [userData, setUserData] = useState({
     firstName: "",
@@ -219,6 +221,24 @@ const SettingsPage = () => {
 
     loadAccount();
   }, []);
+
+  const pwChecks = {
+    length:    formData.newPassword.length >= 6,
+    uppercase: /[A-Z]/.test(formData.newPassword),
+    lowercase: /[a-z]/.test(formData.newPassword),
+    number:    /\d/.test(formData.newPassword),
+    special:   /[!@#$%^&*()_=+[\]{}|;':",.<>?/`~\\-]/.test(formData.newPassword),
+  };
+  const newPasswordValid = Object.values(pwChecks).every(Boolean);
+  const newPasswordsMatch = formData.confirmNewPassword.length > 0 && formData.confirmNewPassword === formData.newPassword;
+
+  const pwCheckItems = [
+    { key: "length",    label: "At least 6 characters" },
+    { key: "uppercase", label: "One uppercase (A–Z)" },
+    { key: "lowercase", label: "One lowercase (a–z)" },
+    { key: "number",    label: "One number (0–9)" },
+    { key: "special",   label: "One special character" },
+  ];
 
   const handleToggle = (sectionKey) => {
     setActiveSection((prev) => (prev === sectionKey ? null : sectionKey));
@@ -265,7 +285,10 @@ const SettingsPage = () => {
     if (!currentPassword || !newPassword || !confirmNewPassword)
       return setErrors({ password: "All password fields are required" });
     if (newPassword !== confirmNewPassword) return setErrors({ password: "New passwords do not match" });
-    if (newPassword.length < 6) return setErrors({ password: "Password must be at least 6 characters" });
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_=+[\]{}|;':",.<>?/`~\\-]).{6,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      return setErrors({ password: "Password must be at least 6 characters and include an uppercase letter, a lowercase letter, a number, and a special character." });
+    }
     if (newPassword === currentPassword) return setErrors({ password: "New password must be different from current password" });
     setIsLoading(true);
     try {
@@ -364,7 +387,7 @@ const SettingsPage = () => {
   const togglePasswordVisibility = (field) =>
     setShowPassword((prev) => ({ ...prev, [field]: !prev[field] }));
 
-  const cancelSection = () => { setActiveSection(null); setErrors({}); };
+  const cancelSection = () => { setActiveSection(null); setErrors({}); setNewPasswordTouched(false); setConfirmNewPasswordTouched(false); };
 
   return (
     <div className="mx-4 md:mx-8 mt-6 pb-12">
@@ -498,29 +521,74 @@ const SettingsPage = () => {
 
             <Row icon={Lock} label="Password" value="••••••••••" sectionKey="password" activeSection={activeSection} onToggle={handleToggle} editLabel="Change">
               <form onSubmit={handleChangePassword} className="space-y-2 mt-3">
-                {[
-                  { field: "current", name: "currentPassword", placeholder: "Current password" },
-                  { field: "new", name: "newPassword", placeholder: "New password" },
-                  { field: "confirm", name: "confirmNewPassword", placeholder: "Confirm new password" },
-                ].map(({ field, name, placeholder }) => (
-                  <div key={field} className="relative">
+                {/* Current Password */}
+                <div className="relative">
+                  <input
+                    type={showPassword.current ? "text" : "password"}
+                    name="currentPassword"
+                    placeholder="Current password"
+                    value={formData.currentPassword}
+                    onChange={handleInputChange}
+                    className={`${inputClass(errors.password)} pr-10`}
+                  />
+                  <button type="button" onClick={() => togglePasswordVisibility("current")} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6b5a3a] hover:text-[#2d2a1e]">
+                    {showPassword.current ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+
+                {/* New Password + Checklist */}
+                <div>
+                  <div className="relative">
                     <input
-                      type={showPassword[field] ? "text" : "password"}
-                      name={name}
-                      placeholder={placeholder}
-                      value={formData[name]}
-                      onChange={handleInputChange}
-                      className={`${inputClass(errors.password)} pr-10`}
+                      type={showPassword.new ? "text" : "password"}
+                      name="newPassword"
+                      placeholder="New password"
+                      value={formData.newPassword}
+                      onChange={(e) => { handleInputChange(e); setNewPasswordTouched(true); }}
+                      className={`${inputClass(newPasswordTouched && !newPasswordValid)} pr-10`}
                     />
-                    <button
-                      type="button"
-                      onClick={() => togglePasswordVisibility(field)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6b5a3a] hover:text-[#2d2a1e]"
-                    >
-                      {showPassword[field] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    <button type="button" onClick={() => togglePasswordVisibility("new")} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6b5a3a] hover:text-[#2d2a1e]">
+                      {showPassword.new ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
-                ))}
+                  {newPasswordTouched && (
+                    <ul className="mt-1.5 grid grid-cols-2 gap-x-2 gap-y-0.5 pl-1">
+                      {pwCheckItems.map(({ key, label }) => (
+                        <li key={key} className={`flex items-center gap-1 text-xs ${pwChecks[key] ? "text-green-700" : "text-[#9a8c6e]"}`}>
+                          <span className={`flex-shrink-0 w-3 h-3 rounded-full flex items-center justify-center ${pwChecks[key] ? "bg-green-100" : "bg-[#d4c9a8]"}`}>
+                            {pwChecks[key] ? <Check size={8} strokeWidth={3} /> : <span className="w-1 h-1 rounded-full bg-[#9a8c6e] block" />}
+                          </span>
+                          {label}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                {/* Confirm New Password + Match indicator */}
+                <div>
+                  <div className="relative">
+                    <input
+                      type={showPassword.confirm ? "text" : "password"}
+                      name="confirmNewPassword"
+                      placeholder="Confirm new password"
+                      value={formData.confirmNewPassword}
+                      onChange={(e) => { handleInputChange(e); setConfirmNewPasswordTouched(true); }}
+                      className={`${inputClass(confirmNewPasswordTouched && formData.confirmNewPassword && !newPasswordsMatch)} pr-10`}
+                    />
+                    <button type="button" onClick={() => togglePasswordVisibility("confirm")} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6b5a3a] hover:text-[#2d2a1e]">
+                      {showPassword.confirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  {confirmNewPasswordTouched && formData.confirmNewPassword && (
+                    <p className={`mt-1 text-xs pl-1 flex items-center gap-1 ${newPasswordsMatch ? "text-green-700" : "text-red-500"}`}>
+                      {newPasswordsMatch
+                        ? <><Check size={10} strokeWidth={3} /> Passwords match</>
+                        : <><span className="font-bold">✕</span> Passwords do not match</>}
+                    </p>
+                  )}
+                </div>
+
                 {errors.password && (
                   <p className="text-xs text-red-600 flex items-center gap-1">
                     <XCircle className="w-3 h-3" /> {errors.password}
