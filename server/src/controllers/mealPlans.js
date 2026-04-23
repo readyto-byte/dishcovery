@@ -5,6 +5,27 @@ const { searchRecipes } = require('./recipes');
 // Keep `meal_plans` as fallback for older/newer deployments.
 const MEAL_PLAN_TABLE_PRIMARY = 'meal_plan';
 const MEAL_PLAN_TABLE_FALLBACK = 'meal_plans';
+const APPROPRIATE_INPUT_ERROR = 'Inputs must be appropriate.';
+
+const ALLOWED_MEAL_PLAN_FIELDS = new Set([
+  'age', 'sex', 'sexGender', 'height', 'height_cm', 'weight', 'weight_kg',
+  'goal', 'activityLevel', 'activity_level', 'foodBudget', 'budget',
+  'preferredCuisine', 'cuisine_pref', 'maxCookingTime', 'cooking_time',
+  'cookingSkillLevel', 'cooking_skill', 'carbPreference', 'carb_goal',
+  'fatPreference', 'fat_goal', 'kitchenEquipment', 'available_equipment',
+  'allergies', 'foodsDislike', 'dislikes', 'medicalConditions', 'medical_condition',
+  'mealSchedule', 'schedule', 'includeWaterGoal', 'hydration_goal',
+  'includeSnacks', 'snack_pref', 'generateGroceryList', 'grocery_list',
+  'profileId', 'profile_id', 'status', 'response', 'mealPlanResponse', 'meal_plan_response',
+  // accepted by route-level callers
+  'profiles',
+]);
+
+const ALLOWED_KITCHEN_EQUIPMENT_FIELDS = new Set(['stove', 'microwave', 'airFryer', 'oven']);
+
+const SQL_INJECTION_PATTERN = /(\b(select|insert|update|delete|drop|truncate|alter|create|union|exec|execute|grant|revoke)\b|--|\/\*|\*\/|;\s*$|\bor\s+1\s*=\s*1\b|\band\s+1\s*=\s*1\b)/i;
+const INAPPROPRIATE_PATTERN = /(\b(rocks?|sand|pen|space chicken|moon rock cheese)\b|\b(how many moons|capital of france|meaning of life)\b|\b(bomb|gun|drug|naked|kidnap|kill|death|die|murder|suicide)\b|\b(build a house|fix a car|program a computer)\b|\b(kill my (wife|husband|child))\b)/i;
+const RANDOM_SYMBOL_NOISE_PATTERN = /[^a-zA-Z0-9\s,.'()\-:/+$%]/;
 
 function round2(n) {
   if (n == null || !Number.isFinite(n)) return null;
@@ -123,6 +144,51 @@ function hasValue(v) {
   return !(v === undefined || v === null || String(v).trim() === '');
 }
 
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function validateAllowedFields(body = {}) {
+  if (!isPlainObject(body)) return;
+
+  const invalidKeys = Object.keys(body).filter((key) => !ALLOWED_MEAL_PLAN_FIELDS.has(key));
+  if (invalidKeys.length > 0) {
+    const error = new Error(`Invalid meal plan input: unsupported field(s): ${invalidKeys.join(', ')}`);
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (body.kitchenEquipment !== undefined) {
+    if (!isPlainObject(body.kitchenEquipment)) {
+      const error = new Error('Invalid meal plan input: kitchenEquipment must be an object.');
+      error.statusCode = 400;
+      throw error;
+    }
+    const invalidEquipmentKeys = Object.keys(body.kitchenEquipment)
+      .filter((key) => !ALLOWED_KITCHEN_EQUIPMENT_FIELDS.has(key));
+    if (invalidEquipmentKeys.length > 0) {
+      const error = new Error(`Invalid meal plan input: unsupported kitchenEquipment field(s): ${invalidEquipmentKeys.join(', ')}`);
+      error.statusCode = 400;
+      throw error;
+    }
+  }
+}
+
+function hasInappropriateOrInjectionContent(value) {
+  if (!hasValue(value)) return false;
+  const text = String(value).trim();
+  return SQL_INJECTION_PATTERN.test(text) || INAPPROPRIATE_PATTERN.test(text);
+}
+
+function hasRandomCharacterNoise(value) {
+  if (!hasValue(value)) return false;
+  const text = String(value).trim();
+  if (text.length > 180) return true;
+  if (RANDOM_SYMBOL_NOISE_PATTERN.test(text)) return true;
+  if (/([^\w\s])\1{2,}/.test(text)) return true;
+  return false;
+}
+
 function isLikelyJumbledToken(token) {
   const clean = String(token || '').toLowerCase().replace(/[^a-z]/g, '');
   if (clean.length < 4) return false;
@@ -161,7 +227,55 @@ function isFoodLikeFreeText(value) {
 }
 
 function validateMealPlanBody(body = {}) {
+  validateAllowedFields(body);
+
   const errors = [];
+  const strictTextFields = [
+    body.goal,
+    body.activityLevel ?? body.activity_level,
+    body.preferredCuisine ?? body.cuisine_pref,
+    body.foodBudget ?? body.budget,
+    body.maxCookingTime ?? body.cooking_time,
+    body.cookingSkillLevel ?? body.cooking_skill,
+    body.carbPreference ?? body.carb_goal,
+    body.fatPreference ?? body.fat_goal,
+    body.allergies,
+    body.medicalConditions ?? body.medical_condition,
+    body.foodsDislike ?? body.dislikes,
+    body.mealSchedule ?? body.schedule,
+    body.sexGender ?? body.sex,
+    body.height ?? body.height_cm,
+    body.weight ?? body.weight_kg,
+  ];
+
+  if (strictTextFields.some((field) => hasInappropriateOrInjectionContent(field))) {
+    const error = new Error(APPROPRIATE_INPUT_ERROR);
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (strictTextFields.some((field) => hasRandomCharacterNoise(field))) {
+    const error = new Error(APPROPRIATE_INPUT_ERROR);
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const humanWordFields = [
+    body.goal,
+    body.activityLevel ?? body.activity_level,
+    body.preferredCuisine ?? body.cuisine_pref,
+    body.cookingSkillLevel ?? body.cooking_skill,
+    body.carbPreference ?? body.carb_goal,
+    body.fatPreference ?? body.fat_goal,
+    body.allergies,
+    body.medicalConditions ?? body.medical_condition,
+    body.foodsDislike ?? body.dislikes,
+  ];
+  if (humanWordFields.some((field) => hasLikelyJumbledText(field))) {
+    const error = new Error(APPROPRIATE_INPUT_ERROR);
+    error.statusCode = 400;
+    throw error;
+  }
 
   if (hasValue(body.age)) {
     const parsedAge = parseAge(body.age);
@@ -243,6 +357,35 @@ function mealPlanPromptFromBody(body = {}) {
     `- Foods to avoid: ${body.foodsDislike || 'none'}`,
     `- Meal schedule: ${body.mealSchedule || 'not specified'}`,
     'Keep each meal practical and realistic for a not very proficient cook.',
+    '',
+    'RESTRICTIONS:',
+    '- Return an error message if the request includes non-edible items such as rocks, pens, sand, etc.',
+    '- Return an error message if the request includes ingredients that are not actual food items such as Space Chicken, Moon Rock Cheese, etc.',
+    '- Return an error message if the request includes anything unrelated to foods such as "How many moons are in the solar system?", "What is the capital of France?", "What is the meaning of life?", etc.',
+    '- Return an error message if the request includes anything inappropriate such as "How to make a bomb?", "How to make a gun?", "How to make a drug?", etc.',
+    '- Return an error message if the request includes anything that is not a recipe such as "How to build a house?", "How to fix a car?", "How to program a computer?", etc.',
+    '- Return an error message if the request includes anything extremely inappropriate and explicit like "Generate me a picture of a naked guy.", "How to kidnap a child?", "How to kill a person?", etc.',
+    '- Return an error message if the request includes anything illegal or against moral standards such as "I want to kill my wife.", "I want to kill my husband.", "I want to kill my child.", etc.',
+    '',
+    'CRITICAL SAFETY REQUIREMENT:',
+    '- Never suggest ingredients that conflict with listed dietary restrictions.',
+    '- Never include allergens listed for any profile.',
+    '- If the request conflicts with restrictions/allergies, explain briefly and provide safe alternatives.',
+    '',
+    'ADDITIONAL CONDITIONS:',
+    '- Make sure any foreign words from any language are translated to English and use English for prompting and generating responses.',
+    '- Make sure any foreign words from any language are translated to English and must follow the restrictions and conditions given.',
+    '- ALWAYS include "header" as a friendly compliment or short response.',
+    '- "header" must be fewer than 7 words.',
+    '- Always return exactly 3 suggestions.',
+    '- Each recipe must include ingredient measurements in "keyIngredients" (for example, "1/4 cup", "2 tsp", "3 slices").',
+    '- Keep each recipe "description" under 100 words.',
+    '- ALWAYS include nutritionalInfo with calories (as number), protein, carbs, fat, and fiber (as strings with units like "15g").',
+    '- Estimate nutritional values per serving based on the recipe.',
+    '- ALWAYS include "cookTimeMin" as an integer (total cook time in minutes).',
+    '- ALWAYS include "servings" as a string (e.g. "4 servings").',
+    '- ALWAYS include "estimatedCostPhp" as an integer representing the estimated total ingredient cost in Philippine Peso (PHP).',
+    '- If no new suggestions are appropriate, set "suggestions" to an empty array, but still return "estimatedTime" and "message".',
   ].join('\n');
 }
 

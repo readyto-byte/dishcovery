@@ -114,6 +114,11 @@ const validateMealPlanForm = (fd) => {
 };
 
 const buildAiGeneratedPlan = (fd, aiResponse, createdAtIso) => {
+  const aiError = String(aiResponse?.error ?? "").trim();
+  if (aiError && aiError.toLowerCase() !== "null") {
+    throw new Error(`AI_BLOCKED: ${aiError || "Inputs must be appropriate."}`);
+  }
+
   const suggestions = Array.isArray(aiResponse?.suggestions) ? aiResponse.suggestions : [];
   if (suggestions.length < 3) throw new Error("AI returned fewer than 3 meal suggestions.");
 
@@ -289,6 +294,32 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
   const formValidation = validateMealPlanForm(formData);
   const activeProfileId = activeProfile?.id ?? null;
+  const isValidationLikeMealPlanError = (message = "") => {
+    const text = String(message || "").toLowerCase();
+    return text.includes("ai_blocked:")
+      || text.includes("inputs must be appropriate")
+      || text.includes("invalid meal plan input")
+      || text.includes("unsupported field")
+      || text.includes("must be")
+      || text.includes("error message")
+      || text.includes("not a recipe")
+      || text.includes("inappropriate")
+      || text.includes("illegal")
+      || text.includes("non-edible")
+      || text.includes("unrelated to foods");
+  };
+
+  const isServiceFailureError = (message = "") => {
+    const text = String(message || "").toLowerCase();
+    return text.includes("quota")
+      || text.includes("429")
+      || text.includes("503")
+      || text.includes("unavailable")
+      || text.includes("high demand")
+      || text.includes("temporarily unavailable")
+      || text.includes("network")
+      || text.includes("fetch");
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -334,7 +365,10 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
               setMealPlanResponse(aiResult?.response ?? null);
               gen = aiResult?.plan ?? null;
             }
-          } catch {
+          } catch (err) {
+            if (isValidationLikeMealPlanError(err?.message)) {
+              throw err;
+            }
             gen = buildGeneratedPlanFromPreferences(form, row.created_at);
           }
           setFormData(form);
@@ -533,7 +567,15 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
         built = result?.plan ?? null;
         savedRow = result?.saved ?? null;
         setMealPlanResponse(result?.response ?? null);
-      } catch {
+      } catch (generationError) {
+        // If AI or backend validation rejected the request, do not generate fallback data.
+        if (isValidationLikeMealPlanError(generationError?.message)) {
+          throw generationError;
+        }
+        // Only use local fallback for transient service failures.
+        if (!isServiceFailureError(generationError?.message)) {
+          throw generationError;
+        }
         built = buildGeneratedPlanFromPreferences(snapshot);
         setMealPlanResponse(null);
         try {
@@ -550,7 +592,8 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
         setGeneratedPlan((prev) => prev ? { ...prev, createdAt: formatMealPlanCreatedAt(savedRow.created_at) } : prev);
       }
     } catch (err) {
-      setMealPlanSaveError(err?.message || "Could not save your meal plan preferences.");
+      const cleanMessage = String(err?.message || "").replace(/^AI_BLOCKED:\s*/i, "");
+      setMealPlanSaveError(cleanMessage || "Could not save your meal plan preferences.");
       // If generation fails, show the form again
       setShowForm(true);
     } finally {

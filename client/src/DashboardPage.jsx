@@ -253,7 +253,7 @@ const LoadingScreen = () => {
           </p>
         </div>
       </div>
-      <style jsx>{`
+      <style>{`
         @keyframes glass-pulse {
           0%, 100% { transform: scale(1); opacity: 0.3; box-shadow: 0 0 0 0 rgba(50, 73, 27, 0); }
           50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 0 4px rgba(50, 73, 27, 0.2); }
