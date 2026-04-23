@@ -295,8 +295,71 @@ async function cacheRecipeResponse(searchQuery, response) {
   return data;
 }
 
+async function generateMealRecipeDetail(title) {
+  if (!title || typeof title !== 'string' || !title.trim()) {
+    throw new Error('A meal title is required.');
+  }
+
+  const prompt = `Give me a detailed recipe for "${title.trim()}". Return ONLY a raw JSON object with no markdown, no backticks, no explanation. Use exactly these fields:
+{
+  "prepTime": "X min",
+  "cookTime": "X min",
+  "servings": "X serving(s)",
+  "difficulty": "Easy",
+  "description": "one sentence description",
+  "ingredients": ["ingredient 1", "ingredient 2"],
+  "instructions": ["step 1", "step 2"],
+  "tags": ["tag1", "tag2"]
+}`;
+
+  let result = null;
+  let lastError = null;
+
+  for (let attempt = 0; attempt <= GENERATION_MAX_RETRIES; attempt += 1) {
+    try {
+      result = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+          thinkingConfig: {
+            thinkingBudget: 0,
+          },
+        },
+      });
+      lastError = null;
+      break;
+    } catch (error) {
+      lastError = error;
+      if (attempt >= GENERATION_MAX_RETRIES || !isRetryableAiError(error)) {
+        break;
+      }
+      const backoffMs = getRetryDelayMs(error, attempt);
+      await sleep(backoffMs);
+    }
+  }
+
+  if (!result && lastError) {
+    if (isFreeTierQuotaError(lastError)) {
+      console.error('[generateMealRecipeDetail] Gemini free-tier quota reached:', lastError.message);
+      throw new Error('Recipe service is temporarily unavailable. Please try again later.');
+    }
+    console.error('[generateMealRecipeDetail] Gemini API error:', lastError.message);
+    throw new Error('Could not generate recipe details. Please try again later.');
+  }
+
+  const text = result.text;
+  try {
+    const cleaned = extractJsonObject(text);
+    return JSON.parse(cleaned);
+  } catch {
+    console.error('[generateMealRecipeDetail] Failed to parse AI response:', text);
+    throw new Error('Could not process recipe details. Please try again.');
+  }
+}
+
 module.exports = {
   searchRecipes,
   getCachedRecipeResponse,
   cacheRecipeResponse,
+  generateMealRecipeDetail,
 };

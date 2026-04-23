@@ -11,7 +11,7 @@ const {
 router.get('/active', async (req, res) => {
   try {
     const accountId = req.user.id;
-    const profileId = req.query.profileId ?? null;
+    const profileId = req.query.profileId ?? req.query.profile_id ?? null;
     const row = await getActiveMealPlan(accountId, profileId);
     res.json({ success: true, data: row });
   } catch (error) {
@@ -22,7 +22,7 @@ router.get('/active', async (req, res) => {
 router.post('/deactivate-active', async (req, res) => {
   try {
     const accountId = req.user.id;
-    const profileId = req.body?.profileId ?? req.body?.profile_id ?? req.query?.profileId ?? null;
+    const profileId = req.body?.profileId ?? req.body?.profile_id ?? req.query?.profileId ?? req.query?.profile_id ?? null;
     await deactivateActiveMealPlans(accountId, profileId);
     res.json({ success: true });
   } catch (error) {
@@ -34,7 +34,7 @@ router.get('/', async (req, res) => {
   try {
     const accountId = req.user.id;
     const limit = req.query.limit;
-    const profileId = req.query.profileId ?? null;
+    const profileId = req.query.profileId ?? req.query.profile_id ?? null;
     const rows = await listMealPlans(accountId, limit, profileId);
     res.json({ success: true, data: rows });
   } catch (error) {

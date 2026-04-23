@@ -1,23 +1,17 @@
 const { supabaseAdmin } = require('../config/supabase');
 
 async function addHistoryRecord(accountId, historyData) {
-  const {
-    search_query,
-    searchQuery,
-    recipe_id,
-    recipeId,
-    source_api,
-    sourceApi,
-    output_response,
-    outputResponse,
-  } = historyData;
+  const resolvedSearchQuery = historyData.search_query ?? historyData.searchQuery;
+  const resolvedRecipeId = historyData.recipe_id ?? historyData.recipeId ?? null;
+  const resolvedSourceApi = historyData.source_api ?? historyData.sourceApi ?? null;
+  const resolvedOutputResponse = historyData.output_response ?? historyData.outputResponse ?? null;
 
   const payload = {
     account_id: accountId,
-    search_query: search_query ?? searchQuery,
-    recipe_id: recipe_id ?? recipeId ?? null,
-    source_api: source_api ?? sourceApi ?? null,
-    output_response: output_response ?? outputResponse ?? null,
+    search_query: resolvedSearchQuery,
+    recipe_id: resolvedRecipeId,
+    source_api: resolvedSourceApi,
+    output_response: resolvedOutputResponse,
     searched_date: new Date().toISOString(),
   };
 

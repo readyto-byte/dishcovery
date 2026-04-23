@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { searchRecipes, getCachedRecipeResponse, cacheRecipeResponse } = require('../controllers/recipes');
+const { searchRecipes, getCachedRecipeResponse, cacheRecipeResponse, generateMealRecipeDetail } = require('../controllers/recipes');
 const { addHistoryRecord } = require('../controllers/history');
 
 function normalizeProfileForCache(profile = {}) {
@@ -26,7 +26,13 @@ function normalizeProfileForCache(profile = {}) {
 router.post('/', async (req, res) => {
   try {
     const accountId = req.user?.id;
-    const { profiles, conversation, search_query, searchQuery, bypass_cache, bypassCache, avoid_titles, avoidTitles } = req.body;
+    const profiles = req.body?.profiles;
+    const conversation = req.body?.conversation;
+    const resolvedSearchQuery = req.body?.search_query ?? req.body?.searchQuery;
+    const resolvedBypassCache = Boolean(req.body?.bypass_cache ?? req.body?.bypassCache);
+    const resolvedAvoidTitles = Array.isArray(req.body?.avoid_titles)
+      ? req.body.avoid_titles
+      : (Array.isArray(req.body?.avoidTitles) ? req.body.avoidTitles : []);
 
     if (!accountId) {
       return res.status(401).json({ success: false, error: 'Authentication required' });
@@ -36,11 +42,10 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Please provide at least one conversation message.' });
     }
 
-    const query = search_query ?? searchQuery ?? conversation.map((msg) => msg.content).join(' ');
+    const query = resolvedSearchQuery ?? conversation.map((msg) => msg.content).join(' ');
     const cacheContext = JSON.stringify((profiles || []).map(normalizeProfileForCache));
     const cacheQuery = `${query}||profiles:${cacheContext}`;
-    const shouldBypassCache = Boolean(bypass_cache ?? bypassCache);
-    const cachedResponse = shouldBypassCache ? null : await getCachedRecipeResponse(cacheQuery);
+    const cachedResponse = resolvedBypassCache ? null : await getCachedRecipeResponse(cacheQuery);
 
     if (cachedResponse) {
       await addHistoryRecord(accountId, {
@@ -56,7 +61,7 @@ router.post('/', async (req, res) => {
     const response = await searchRecipes({
       profiles,
       conversation,
-      avoidTitles: Array.isArray(avoid_titles) ? avoid_titles : (Array.isArray(avoidTitles) ? avoidTitles : []),
+      avoidTitles: resolvedAvoidTitles,
     });
     const cachedRows = await cacheRecipeResponse(cacheQuery, response);
     const responseWithIds = {
@@ -77,6 +82,25 @@ router.post('/', async (req, res) => {
     });
 
     res.json({ success: true, response: responseWithIds });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.post('/meal-detail', async (req, res) => {
+  try {
+    const accountId = req.user?.id;
+    if (!accountId) {
+      return res.status(401).json({ success: false, error: 'Authentication required' });
+    }
+
+    const { title } = req.body;
+    if (!title || typeof title !== 'string' || !title.trim()) {
+      return res.status(400).json({ success: false, error: 'A meal title is required.' });
+    }
+
+    const detail = await generateMealRecipeDetail(title);
+    res.json({ success: true, detail });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

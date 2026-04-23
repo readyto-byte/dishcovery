@@ -383,41 +383,12 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
     setMealDetailLoading(true);
 
     try {
-      const prompt = `Give me a detailed recipe for "${meal.title}". Return ONLY a raw JSON object with no markdown, no backticks, no explanation. Use exactly these fields:
-{
-  "prepTime": "X min",
-  "cookTime": "X min",
-  "servings": "X serving(s)",
-  "difficulty": "Easy",
-  "description": "one sentence description",
-  "ingredients": ["ingredient 1", "ingredient 2"],
-  "instructions": ["step 1", "step 2"],
-  "tags": ["tag1", "tag2"]
-}`;
-
-      const res = await apiCall("/api/recipes", {
+      const res = await apiCall("/api/recipes/meal-detail", {
         method: "POST",
-        body: JSON.stringify({
-          profiles: [],
-          search_query: meal.title,
-          conversation: [{ role: "user", content: prompt }],
-        }),
+        body: JSON.stringify({ title: meal.title }),
       });
 
-      let detail = {};
-      try {
-        const raw = res?.response;
-        let text = "";
-        if (typeof raw === "string") {
-          text = raw;
-        } else if (typeof raw === "object") {
-          text = raw?.text || raw?.content || raw?.message || JSON.stringify(raw);
-        }
-        const match = text.match(/\{[\s\S]*\}/);
-        if (match) detail = JSON.parse(match[0]);
-      } catch {
-        detail = {};
-      }
+      const detail = res?.detail || {};
 
       setSelectedMeal(prev => ({
         ...prev,
