@@ -17,7 +17,6 @@ Dishcovery is a web application that helps food lovers discover, create, and org
 
 ### Frontend (Client)
 - **React 19** - Modern, fast, and reactive user interface
-- **Material-UI (MUI)** - Beautiful, customizable components
 - **Tailwind CSS** - Utility-first CSS framework for stunning designs
 - **React Router** - Smooth navigation between pages
 - **Vite** - Lightning-fast development and building
@@ -213,7 +212,3 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - The open-source community for amazing tools and libraries
 
 ---
-
-**Made with care by the Dishcovery Team**
-
-Happy Cooking!
