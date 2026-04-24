@@ -1,4 +1,4 @@
-const { supabaseAdmin } = require('../config/supabase');
+const { supabase, supabaseAdmin } = require('../config/supabase');
 
 async function getAccountById(accountId) {
   const { data: account, error: accountError } = await supabaseAdmin
@@ -59,6 +59,21 @@ async function updateAccountById(accountId, updates = {}) {
   }
 
   if (typeof updates.newPassword === 'string' && updates.newPassword.length >= 6) {
+    const { data: authData } = await supabaseAdmin.auth.admin.getUserById(accountId);
+    const userEmail = authData?.user?.email;
+    if (!userEmail) throw new Error('Unable to verify identity.');
+
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: userEmail,
+      password: updates.currentPassword ?? '',
+    });
+
+    if (signInError) {
+      const err = new Error('Current password is incorrect.');
+      err.statusCode = 400;
+      throw err;
+    }
+
     const { error: passwordUpdateError } = await supabaseAdmin.auth.admin.updateUserById(accountId, {
       password: updates.newPassword,
     });
