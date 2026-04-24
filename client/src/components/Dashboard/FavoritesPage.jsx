@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { RotateCcw } from "lucide-react";
 import heroBg from "../../assets/hero-bg.jpg";
 import { apiCall } from "../../api/config";
@@ -13,7 +13,6 @@ const FavoritesLoadingSkeleton = () => {
         .skeleton { background: linear-gradient(90deg, #e8f2dc 25%, #d4e9c0 50%, #e8f2dc 75%); background-size: 600px 100%; animation: shimmer 1.6s infinite linear; border-radius: 8px; }
       `}</style>
       
-      {/* Hero skeleton */}
       <div className="relative mx-4 md:mx-8 mt-6 mb-8 overflow-hidden rounded-2xl shadow-xl bg-[#1e3a0f]/80 px-8 py-7">
         <div className="space-y-2">
           <div className="skeleton h-8 w-40 opacity-30" />
@@ -21,7 +20,6 @@ const FavoritesLoadingSkeleton = () => {
         </div>
       </div>
 
-      {/* Cards skeleton */}
       <div className="mx-4 md:mx-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -61,6 +59,7 @@ const FavoritesPage = ({ onViewRecipe, activeProfile }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [recipeToDelete, setRecipeToDelete] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const topRef = useRef(null);
 
   const totalPages = Math.ceil(favorites.length / RECIPES_PER_PAGE);
   const paginatedFavorites = favorites.slice(
@@ -124,7 +123,7 @@ const FavoritesPage = ({ onViewRecipe, activeProfile }) => {
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   if (loading) {
@@ -132,7 +131,7 @@ const FavoritesPage = ({ onViewRecipe, activeProfile }) => {
   }
 
   return (
-    <div className="pb-12">
+    <div className="pb-12" ref={topRef}>
       <div
         className="relative mx-4 md:mx-8 mt-6 mb-8 overflow-hidden rounded-2xl shadow-xl"
         style={{ backgroundImage: `url(${heroBg})`, backgroundSize: "cover", backgroundPosition: "center" }}
@@ -225,7 +224,6 @@ const FavoritesPage = ({ onViewRecipe, activeProfile }) => {
                 ))}
               </div>
 
-              {/* Pagination - only shows when there are more than 9 recipes */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-center gap-1 mt-auto pt-10">
                   <button
