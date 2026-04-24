@@ -75,7 +75,7 @@ const validateMealPlanForm = (fd) => {
     hasValue(fd.cookingSkillLevel) || hasValue(fd.fatPreference) || hasValue(fd.allergies) ||
     hasValue(fd.medicalConditions) || hasValue(fd.foodsDislike) || hasValue(fd.mealSchedule) ||
     Boolean(fd.includeWaterGoal) || Boolean(fd.includeSnacks) || Boolean(fd.generateGroceryList) ||
-    Boolean(fd.kitchenEquipment?.stove) || Boolean(fd.kitchenEquipment?.microwave) || Boolean(fd.kitchenEquipment?.airFryer);
+    Boolean(fd.kitchenEquipment?.stove) || Boolean(fd.kitchenEquipment?.microwave) || Boolean(fd.kitchenEquipment?.airFryer) || Boolean(fd.kitchenEquipment?.oven);
 
   if (!hasAnyInput) {
     errors.push("Please enter at least one preference before generating a meal plan.");

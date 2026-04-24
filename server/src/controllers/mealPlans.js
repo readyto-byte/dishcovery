@@ -79,7 +79,7 @@ function parseWeightKg(raw) {
 
 function equipmentToText(equipment) {
   if (!equipment || typeof equipment !== 'object') return null;
-  const labels = { stove: 'stove', microwave: 'microwave', airFryer: 'air fryer' };
+  const labels = { stove: 'stove', microwave: 'microwave', airFryer: 'air fryer', oven: 'oven' };
   const parts = Object.entries(equipment)
     .filter(([, on]) => on)
     .map(([k]) => labels[k] || k);
