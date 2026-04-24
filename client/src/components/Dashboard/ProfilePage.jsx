@@ -306,6 +306,9 @@ const ProfileModal = ({ profile, onSave, onClose }) => {
   const [customAllergyInput, setCustomAllergyInput] = useState("");
   const [showCustomAllergyInput, setShowCustomAllergyInput] = useState(false);
   const customAllergyInputRef = useRef(null);
+  const [customDietaryInput, setCustomDietaryInput] = useState("");
+  const [showCustomDietaryInput, setShowCustomDietaryInput] = useState(false);
+  const customDietaryInputRef = useRef(null);
 
   const toggle = (list, setList, val) =>
     setList((prev) => prev.includes(val) ? prev.filter((x) => x !== val) : [...prev, val]);
@@ -327,13 +330,34 @@ const ProfileModal = ({ profile, onSave, onClose }) => {
     }
   };
 
-  const handleKeyDown = (e) => {
+  const handleAddCustomDietary = () => {
+    const trimmed = customDietaryInput.trim();
+    if (trimmed) {
+      const formatted = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+      if (!dietary.includes(formatted)) {
+        setDietary(prev => [...prev, formatted]);
+      }
+      setCustomDietaryInput("");
+      setShowCustomDietaryInput(false);
+    }
+  };
+
+  const handleKeyDown = (e, type) => {
     if (e.key === "Enter") {
-      handleAddCustomAllergy();
+      if (type === "dietary") {
+        handleAddCustomDietary();
+      } else if (type === "allergy") {
+        handleAddCustomAllergy();
+      }
     }
     if (e.key === "Escape") {
-      setShowCustomAllergyInput(false);
-      setCustomAllergyInput("");
+      if (type === "dietary") {
+        setShowCustomDietaryInput(false);
+        setCustomDietaryInput("");
+      } else if (type === "allergy") {
+        setShowCustomAllergyInput(false);
+        setCustomAllergyInput("");
+      }
     }
   };
 
@@ -342,6 +366,12 @@ const ProfileModal = ({ profile, onSave, onClose }) => {
       customAllergyInputRef.current.focus();
     }
   }, [showCustomAllergyInput]);
+
+  useEffect(() => {
+    if (showCustomDietaryInput && customDietaryInputRef.current) {
+      customDietaryInputRef.current.focus();
+    }
+  }, [showCustomDietaryInput]);
 
   const handleSave = () => {
     if (!name.trim()) { setFormError("Name is required."); return; }
@@ -396,7 +426,42 @@ const ProfileModal = ({ profile, onSave, onClose }) => {
                 </button>
               ))}
             </div>
-            <CustomTagInput onAdd={(val) => addCustom(dietary, setDietary, val)} placeholder="e.g. Halal, Low-sodium..." accentClass="bg-[#587A34] text-white border-[#587A34]" />
+            {/* Add Custom Dietary Restriction Button */}
+            {!showCustomDietaryInput ? (
+              <button
+                onClick={() => setShowCustomDietaryInput(true)}
+                className="mt-2 px-3 py-1 rounded-full border bg-red-500 text-white border-red-500 text-xs font-semibold flex items-center gap-1 hover:opacity-80 transition-opacity"
+              >
+                <span className="text-sm leading-none">+</span> Add
+              </button>
+            ) : (
+              <div className="flex items-center gap-2 mt-2">
+                <input
+                  ref={customDietaryInputRef}
+                  type="text"
+                  value={customDietaryInput}
+                  onChange={(e) => setCustomDietaryInput(e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(e, "dietary")}
+                  placeholder="e.g., Halal, Low-sodium..."
+                  className="flex-1 bg-white border border-red-300 rounded-full px-3 py-1 text-[#3a5220] text-xs focus:outline-none focus:ring-2 focus:ring-red-400/50"
+                />
+                <button
+                  onClick={handleAddCustomDietary}
+                  className="px-3 py-1 rounded-full bg-red-500 text-white text-xs font-semibold hover:bg-red-600 transition-colors"
+                >
+                  Add
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCustomDietaryInput(false);
+                    setCustomDietaryInput("");
+                  }}
+                  className="px-3 py-1 rounded-full bg-gray-200 text-gray-600 text-xs font-semibold hover:bg-gray-300 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Allergies Section with Custom Allergy Input */}
@@ -421,18 +486,18 @@ const ProfileModal = ({ profile, onSave, onClose }) => {
             {!showCustomAllergyInput ? (
               <button
                 onClick={() => setShowCustomAllergyInput(true)}
-                className="mt-1 px-3 py-1 rounded-full border border-red-300 bg-white text-red-500 text-xs font-semibold flex items-center gap-1 hover:bg-red-50 transition-colors"
+                className="mt-2 px-3 py-1 rounded-full border bg-red-500 text-white border-red-500 text-xs font-semibold flex items-center gap-1 hover:opacity-80 transition-opacity"
               >
-                <span className="text-sm leading-none">+</span> Add Custom Allergy
+                <span className="text-sm leading-none">+</span> Add
               </button>
             ) : (
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex items-center gap-2 mt-2">
                 <input
                   ref={customAllergyInputRef}
                   type="text"
                   value={customAllergyInput}
                   onChange={(e) => setCustomAllergyInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
+                  onKeyDown={(e) => handleKeyDown(e, "allergy")}
                   placeholder="e.g., Sesame, Mustard, Celery..."
                   className="flex-1 bg-white border border-red-300 rounded-full px-3 py-1 text-[#3a5220] text-xs focus:outline-none focus:ring-2 focus:ring-red-400/50"
                 />
