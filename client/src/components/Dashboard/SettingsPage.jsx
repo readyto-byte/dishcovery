@@ -5,37 +5,69 @@ import { apiCall } from "../../api/config";
 
 const NAME_ALLOWED_REGEX = /^[A-Za-z]+(?:[ '\-][A-Za-z]+)*$/;
 
+const truncateEmail = (email, maxLength = 20) => {
+  if (!email) return "";
+  if (email.length <= maxLength) return email;
+  
+  const [localPart, domain] = email.split('@');
+  if (!domain) return email.slice(0, maxLength) + "...";
+  
+  const maxLocalLength = maxLength - 4 - domain.length; // 4 for "...@"
+  if (maxLocalLength <= 0) return email.slice(0, maxLength) + "...";
+  
+  const truncatedLocal = localPart.slice(0, maxLocalLength);
+  return `${truncatedLocal}...@${domain}`;
+};
+
 const inputClass = (hasError) =>
   `w-full px-3 py-2 text-sm rounded-md border ${
     hasError ? "border-red-400" : "border-[#c8b99a]"
   } bg-[#f5ecd7] text-[#2d2a1e] placeholder-[#9a8c6e] focus:outline-none focus:ring-2 focus:ring-[#4a6a1e] focus:border-transparent transition-all`;
 
-const Row = ({ icon: Icon, label, value, sectionKey, activeSection, onToggle, children, editLabel = "Edit" }) => (
-  <div className="bg-[#f0e6ce] border border-[#c8b99a] rounded-xl overflow-hidden">
-    <div className="flex items-center justify-between px-5 py-4">
-      <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-[#3a5a12] flex items-center justify-center flex-shrink-0">
-          <Icon className="w-4 h-4 text-[#d4e8a0]" />
+const Row = ({ icon: Icon, label, value, sectionKey, activeSection, onToggle, children, editLabel = "Edit" }) => {
+
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640); // sm breakpoint
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  
+  const displayValue = isMobile && label === "Email Address" ? truncateEmail(value) : value;
+  
+  return (
+    <div className="bg-[#f0e6ce] border border-[#c8b99a] rounded-xl overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-4">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className="w-8 h-8 rounded-full bg-[#3a5a12] flex items-center justify-center flex-shrink-0">
+            <Icon className="w-4 h-4 text-[#d4e8a0]" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold text-[#6b5a3a] uppercase tracking-widest">{label}</p>
+            <p className="text-sm font-bold text-[#2d2a1e] mt-0.5 truncate" title={label === "Email Address" ? value : ""}>
+              {displayValue}
+            </p>
+          </div>
         </div>
-        <div>
-          <p className="text-xs font-semibold text-[#6b5a3a] uppercase tracking-widest">{label}</p>
-          <p className="text-sm font-bold text-[#2d2a1e] mt-0.5">{value}</p>
-        </div>
+        <button
+          onClick={() => onToggle(sectionKey)}
+          className="px-4 py-1.5 text-xs font-bold uppercase tracking-wide rounded-lg bg-[#3a5a12] text-[#d4e8a0] hover:bg-[#2d4710] transition-colors flex-shrink-0"
+        >
+          {editLabel}
+        </button>
       </div>
-      <button
-        onClick={() => onToggle(sectionKey)}
-        className="px-4 py-1.5 text-xs font-bold uppercase tracking-wide rounded-lg bg-[#3a5a12] text-[#d4e8a0] hover:bg-[#2d4710] transition-colors"
-      >
-        {editLabel}
-      </button>
+      {activeSection === sectionKey && (
+        <div className="px-5 pb-5 pt-1 border-t border-[#c8b99a] bg-[#eadec5]">
+          {children}
+        </div>
+      )}
     </div>
-    {activeSection === sectionKey && (
-      <div className="px-5 pb-5 pt-1 border-t border-[#c8b99a] bg-[#eadec5]">
-        {children}
-      </div>
-    )}
-  </div>
-);
+  );
+};
 
 const SaveBar = ({ onCancel, label = "Save Changes", icon: Icon = Save, isLoading }) => (
   <div className="flex gap-2 mt-3">
@@ -62,7 +94,7 @@ const SaveBar = ({ onCancel, label = "Save Changes", icon: Icon = Save, isLoadin
   </div>
 );
 
-// Success Modal Component
+
 const SuccessModal = ({ onClose }) => (
   <>
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" onClick={onClose} />
@@ -92,7 +124,7 @@ const SuccessModal = ({ onClose }) => (
   </>
 );
 
-// Confirmation Modal Component
+
 const ConfirmDeleteModal = ({ onConfirm, onCancel, isLoading, deletePassword, setDeletePassword, showDeletePassword, setShowDeletePassword, error }) => (
   <>
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
@@ -167,7 +199,6 @@ const ConfirmDeleteModal = ({ onConfirm, onCancel, isLoading, deletePassword, se
   </>
 );
 
-// ─────────────────────────────────────────────────────────────────────────────
 const SettingsPage = () => {
   const [activeSection, setActiveSection] = useState(null);
   const [formData, setFormData] = useState({
@@ -658,3 +689,4 @@ const SettingsPage = () => {
 };
 
 export default SettingsPage;
+
