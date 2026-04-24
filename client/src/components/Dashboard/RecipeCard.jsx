@@ -55,18 +55,9 @@ const RecipeCard = ({ recipeData, isLoading, activeProfile }) => {
     hard: 'text-red-400',
   }[recipeData?.difficulty?.toLowerCase()] || 'text-emerald-400';
 
+  // Loading screen removed - just return null while loading
   if (isLoading) {
-    return (
-      <div className="mx-4 md:mx-8">
-        <div className="rounded-3xl border border-[#d6e8c0] shadow-xl p-14 flex flex-col items-center justify-center gap-4" style={{ background: 'linear-gradient(160deg, #f7f0e3 0%, #ede0c4 100%)' }}>
-          <div className="relative w-14 h-14">
-            <div className="absolute inset-0 rounded-full border-4 border-[#587A34]/20"></div>
-            <div className="absolute inset-0 rounded-full border-4 border-t-[#587A34] animate-spin"></div>
-          </div>
-          <p className="text-[#3a5220] text-lg font-semibold tracking-wide">Cooking up something delicious…</p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (
@@ -123,7 +114,7 @@ const RecipeCard = ({ recipeData, isLoading, activeProfile }) => {
             ))}
           </div>
 
-                    {recipeData.nutritionalInfo && (
+          {recipeData.nutritionalInfo && (
             <div className="rounded-xl p-4 bg-white/60 border border-[#d6e8c0]">
               <h4 className="text-[#2d3f1a] font-bold text-sm mb-3 flex items-center gap-2">
                 <span className="w-6 h-6 rounded-md bg-[#587A34]/15 flex items-center justify-center">
@@ -147,7 +138,6 @@ const RecipeCard = ({ recipeData, isLoading, activeProfile }) => {
               </div>
             </div>
           )}
-
 
           <div className="h-px bg-gradient-to-r from-transparent via-[#587A34]/20 to-transparent" />
 
