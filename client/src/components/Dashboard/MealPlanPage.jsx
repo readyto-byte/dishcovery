@@ -444,31 +444,41 @@ const MealPlanPage = ({ onViewRecipe, activeProfile }) => {
           tags: Array.isArray(suggestion.tags) && suggestion.tags.length ? suggestion.tags : [type, "Healthy"],
         }));
 
-        // Only store clicked meal-plan recipes in history.
+        // Only store clicked meal-plan recipes in history, but avoid duplicates.
         try {
-          await apiCall("/api/history", {
-            method: "POST",
-            body: JSON.stringify({
-              search_query: meal.title,
-              recipe_id: null,
-              source_api: "gemini-2.5-flash",
-              source: "meal-plan-generation",
-              profile_id: activeProfileId,
-              output_response: {
-                suggestions: [{
-                  title: suggestion.title ?? meal.title,
-                  description: suggestion.description ?? null,
-                  servings: suggestion.servings ?? null,
-                  keyIngredients: suggestion.keyIngredients ?? [],
-                  instructions: suggestion.instructions ?? [],
-                  cookTimeMin: suggestion.cookTimeMin ?? null,
-                  estimatedCostPhp: suggestion.estimatedCostPhp ?? null,
-                  nutritionalInfo: suggestion.nutritionalInfo ?? null,
-                }],
-                estimatedTime: mealPlanResponse?.estimatedTime ?? null,
-              },
-            }),
+          // Check if this meal-plan recipe is already in today's history
+          const historyResponse = await apiCall("/api/history");
+          const todayHistory = (historyResponse?.data ?? []).filter((h) => {
+            const hDate = new Date(h.searched_date).toDateString();
+            const today = new Date().toDateString();
+            return h.source === "meal-plan-generation" && h.search_query === meal.title && hDate === today;
           });
+
+          if (todayHistory.length === 0) {
+            await apiCall("/api/history", {
+              method: "POST",
+              body: JSON.stringify({
+                search_query: meal.title,
+                recipe_id: null,
+                source_api: "gemini-2.5-flash",
+                source: "meal-plan-generation",
+                profile_id: activeProfileId,
+                output_response: {
+                  suggestions: [{
+                    title: suggestion.title ?? meal.title,
+                    description: suggestion.description ?? null,
+                    servings: suggestion.servings ?? null,
+                    keyIngredients: suggestion.keyIngredients ?? [],
+                    instructions: suggestion.instructions ?? [],
+                    cookTimeMin: suggestion.cookTimeMin ?? null,
+                    estimatedCostPhp: suggestion.estimatedCostPhp ?? null,
+                    nutritionalInfo: suggestion.nutritionalInfo ?? null,
+                  }],
+                  estimatedTime: mealPlanResponse?.estimatedTime ?? null,
+                },
+              }),
+            });
+          }
         } catch (err) {
           console.error("Failed to save meal-plan history:", err);
         }
