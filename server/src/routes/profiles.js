@@ -13,8 +13,8 @@ const {
 // Get all profiles for the authenticated account
 router.get('/', async (req, res) => {
   try {
-    // Assuming accountId is available from auth middleware, e.g., req.user.id
-    const accountId = req.user.id; // Adjust based on your auth setup
+    // Assuming accountId is available from auth middleware
+    const accountId = req.user.id;
 
     const profiles = await getProfiles(accountId);
     res.json({ success: true, data: profiles });
@@ -26,7 +26,7 @@ router.get('/', async (req, res) => {
 // Create a new profile
 router.post('/', async (req, res) => {
   try {
-    const accountId = req.user.id; // Adjust based on your auth setup
+    const accountId = req.user.id;
     const body = req.body;
     const { name, gender } = body;
 

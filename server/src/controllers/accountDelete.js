@@ -10,7 +10,7 @@ function normalizeAccountStatus(status) {
 }
 
 /**
- * Confirms the caller knows the account password without mutating the shared server auth client.
+ * Confirms the FRONT END knows the account password without mutating the shared server auth client.
  */
 async function verifyAccountPassword(userId, password) {
   const trimmed = typeof password === 'string' ? password.trim() : ''
@@ -40,9 +40,6 @@ async function verifyAccountPassword(userId, password) {
     email,
     password: trimmed,
   })
-
-  // Do not call signOut() here. Default global sign-out revokes every session for this user
-  // and invalidates the browser JWT used for the DELETE request (and follow-up API calls).
 
   if (signError) {
     throw new Error('Incorrect password.')
