@@ -353,6 +353,10 @@ const SettingsPage = () => {
     setIsLoading(true);
     try {
       await apiCall("/api/account/me", { method: "DELETE" });
+      await apiCall("/api/account/me", {
+        method: "DELETE",
+        body: JSON.stringify({ password: deletePassword }),
+      });
 
       setShowDeleteConfirm(false);
       setShowDeleteSuccessModal(true);
