@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { RotateCcw } from "lucide-react";
 import heroBg from "../../assets/hero-bg.jpg";
 import { apiCall } from "../../api/config";
@@ -59,6 +59,7 @@ const HistoryPage = ({ onViewRecipe, activeProfile }) => {
   const [error, setError] = useState("");
   const [favorites, setFavorites] = useState(new Set());
   const [currentPage, setCurrentPage] = useState(1);
+  const topRef = useRef(null);
 
   const totalPages = Math.ceil(historyRecipes.length / RECIPES_PER_PAGE);
   const paginatedRecipes = historyRecipes.slice(
@@ -147,7 +148,6 @@ const HistoryPage = ({ onViewRecipe, activeProfile }) => {
     const parsed = parseOutputResponse(item.output_response);
     const firstSuggestion = parsed?.suggestions?.[0] || {};
     
-    // Extract meaningful data
     const recipeTitle = firstSuggestion.title || item.search_query || "Untitled Recipe";
     const recipeTime = firstSuggestion.prepTime || firstSuggestion.cookTime || "30 min";
     const recipeServings = firstSuggestion.servings || 4;
@@ -211,16 +211,31 @@ const HistoryPage = ({ onViewRecipe, activeProfile }) => {
   };
 
   const handlePageChange = (page) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  setCurrentPage(page);
+  setTimeout(() => {
+    if (topRef.current) {
+      // Try scrollIntoView first
+      topRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+      // Also walk up the DOM to find any scrollable parent and reset it
+      let parent = topRef.current.parentElement;
+      while (parent) {
+        const { overflowY } = window.getComputedStyle(parent);
+        if (overflowY === "auto" || overflowY === "scroll") {
+          parent.scrollTo({ top: 0, behavior: "smooth" });
+          break;
+        }
+        parent = parent.parentElement;
+      }
+    }
+  }, 0);
+};
 
   if (isLoading) {
     return <HistoryLoadingSkeleton />;
   }
 
   return (
-    <div className="pb-12">
+    <div className="pb-12" ref={topRef}>
       <div
         className="relative mx-4 md:mx-8 mt-6 mb-8 overflow-hidden rounded-2xl shadow-xl"
         style={{ backgroundImage: `url(${heroBg})`, backgroundSize: "cover", backgroundPosition: "center" }}
