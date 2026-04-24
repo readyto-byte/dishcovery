@@ -1,8 +1,6 @@
 const { supabaseAdmin } = require('../config/supabase');
 const { searchRecipes } = require('./recipes');
 
-// Schema provided shows the canonical table name is `meal_plan`.
-// Keep `meal_plans` as fallback for older/newer deployments.
 const MEAL_PLAN_TABLE_PRIMARY = 'meal_plan';
 const MEAL_PLAN_TABLE_FALLBACK = 'meal_plans';
 
@@ -16,7 +14,6 @@ const ALLOWED_MEAL_PLAN_FIELDS = new Set([
   'mealSchedule', 'schedule', 'includeWaterGoal', 'hydration_goal',
   'includeSnacks', 'snack_pref', 'generateGroceryList', 'grocery_list',
   'profileId', 'profile_id', 'status', 'response', 'mealPlanResponse', 'meal_plan_response',
-  // accepted by route-level callers
   'profiles',
 ]);
 
@@ -268,8 +265,6 @@ function validateMealPlanBody(body = {}) {
 }
 
 function mealPlanPromptFromBody(body = {}) {
-  // Intentionally plain: the full "chef chatbot + JSON schema" wrapper is handled by `searchRecipes`
-  // so the prompt stays consistent with `recipes.js`.
   return [
     'Create a personalized one-day meal plan with exactly 3 meals: breakfast, lunch, and dinner.',
     'Return 3 recipes in this exact order: Breakfast first, Lunch second, Dinner third.',

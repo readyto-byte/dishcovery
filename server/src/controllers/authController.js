@@ -33,9 +33,7 @@ const AUTH_USER_LIST_MAX_PAGES = 100
 const DUPLICATE_ACTIVE_EMAIL_MESSAGE = 'This email is already registered and active.'
 const ACCOUNT_NO_LONGER_EXISTS_MESSAGE = 'This account no longer exists.'
 
-/**
- * Email is stored on Supabase Auth only. Resolve auth.users by email (admin list, paginated).
- */
+// Email is stored on Supabase Auth only.
 async function findAuthUserByEmail(normalizedEmail) {
   const target = normalizedEmail.trim().toLowerCase()
   let page = 1
@@ -78,12 +76,6 @@ async function findDeletedEmailAccountStatus(normalizedEmail) {
   return normalizeAccountStatus(accountRow.status)
 }
 
-/**
- * - No auth user with this email → ok to sign up.
- * - Auth user + account INACTIVE → remove both so email can be reused.
- * - Auth user + account ACTIVE (or RESTRICTED) → block.
- * - Auth user but no account row → block (email already tied to auth).
- */
 async function resolveExistingSignupEmail(normalizedEmail) {
   const existingAuthUser = await findAuthUserByEmail(normalizedEmail)
   if (!existingAuthUser) {
@@ -189,9 +181,6 @@ async function signUp({ email, password, firstName, lastName, username }) {
     throw new Error('No user ID returned from auth signUp')
   }
 
-  // Duplicate confirmed email: Supabase returns success with no identities and may reuse the
-  // existing user's id. Do not call rollbackAccountCreation here — it would delete the real
-  // `account` row and fail on FKs (e.g. profile_account_id_fkey) or corrupt a live account.
   const identities = authData.user.identities
   if (!Array.isArray(identities) || identities.length === 0) {
     throw new Error(DUPLICATE_ACTIVE_EMAIL_MESSAGE)
@@ -199,7 +188,7 @@ async function signUp({ email, password, firstName, lastName, username }) {
 
   const userId = authData.user.id
 
-  // `account` row mirrors profile fields; email lives on Supabase Auth only (no `email` column on `account`).
+  // `account` row mirrors profile fields; email lives on Supabase Auth only.
   const { data: accountData, error: accountError } = await supabaseAdmin
     .from('account')
     .insert([{
