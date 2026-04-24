@@ -126,7 +126,6 @@ const AvatarUpload = ({ name, avatar, onAvatarChange }) => {
     const reader = new FileReader();
     reader.onload = async (ev) => {
       try {
-        // Compress the image to reduce size
         const compressed = await compressImage(ev.target.result, 150, 150, 0.5);
         onAvatarChange(compressed);
       } catch (error) {
@@ -304,6 +303,9 @@ const ProfileModal = ({ profile, onSave, onClose }) => {
   const [dietary, setDietary] = useState(profile?.dietaryRestrictions || []);
   const [allergies, setAllergies] = useState(profile?.allergies || []);
   const [formError, setFormError] = useState("");
+  const [customAllergyInput, setCustomAllergyInput] = useState("");
+  const [showCustomAllergyInput, setShowCustomAllergyInput] = useState(false);
+  const customAllergyInputRef = useRef(null);
 
   const toggle = (list, setList, val) =>
     setList((prev) => prev.includes(val) ? prev.filter((x) => x !== val) : [...prev, val]);
@@ -312,6 +314,34 @@ const ProfileModal = ({ profile, onSave, onClose }) => {
     const formatted = val.charAt(0).toUpperCase() + val.slice(1);
     if (!list.includes(formatted)) setList((prev) => [...prev, formatted]);
   };
+
+  const handleAddCustomAllergy = () => {
+    const trimmed = customAllergyInput.trim();
+    if (trimmed) {
+      const formatted = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+      if (!allergies.includes(formatted)) {
+        setAllergies(prev => [...prev, formatted]);
+      }
+      setCustomAllergyInput("");
+      setShowCustomAllergyInput(false);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      handleAddCustomAllergy();
+    }
+    if (e.key === "Escape") {
+      setShowCustomAllergyInput(false);
+      setCustomAllergyInput("");
+    }
+  };
+
+  useEffect(() => {
+    if (showCustomAllergyInput && customAllergyInputRef.current) {
+      customAllergyInputRef.current.focus();
+    }
+  }, [showCustomAllergyInput]);
 
   const handleSave = () => {
     if (!name.trim()) { setFormError("Name is required."); return; }
@@ -369,9 +399,10 @@ const ProfileModal = ({ profile, onSave, onClose }) => {
             <CustomTagInput onAdd={(val) => addCustom(dietary, setDietary, val)} placeholder="e.g. Halal, Low-sodium..." accentClass="bg-[#587A34] text-white border-[#587A34]" />
           </div>
 
+          {/* Allergies Section with Custom Allergy Input */}
           <div>
             <label className="block text-[#3a5220] text-xs font-semibold uppercase tracking-wider mb-2">Allergies</label>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 mb-2">
               {ALLERGY_OPTIONS.map((opt) => (
                 <button key={opt} onClick={() => toggle(allergies, setAllergies, opt)}
                   className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${allergies.includes(opt) ? "bg-red-500 text-white border-red-500" : "bg-white text-red-500 border-red-300 hover:border-red-500"}`}>
@@ -385,7 +416,43 @@ const ProfileModal = ({ profile, onSave, onClose }) => {
                 </button>
               ))}
             </div>
-            <CustomTagInput onAdd={(val) => addCustom(allergies, setAllergies, val)} placeholder="e.g. Sesame, Mustard..." accentClass="bg-red-500 text-white border-red-500" />
+            
+            {/* Add Custom Allergy Button */}
+            {!showCustomAllergyInput ? (
+              <button
+                onClick={() => setShowCustomAllergyInput(true)}
+                className="mt-1 px-3 py-1 rounded-full border border-red-300 bg-white text-red-500 text-xs font-semibold flex items-center gap-1 hover:bg-red-50 transition-colors"
+              >
+                <span className="text-sm leading-none">+</span> Add Custom Allergy
+              </button>
+            ) : (
+              <div className="flex items-center gap-2 mt-1">
+                <input
+                  ref={customAllergyInputRef}
+                  type="text"
+                  value={customAllergyInput}
+                  onChange={(e) => setCustomAllergyInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="e.g., Sesame, Mustard, Celery..."
+                  className="flex-1 bg-white border border-red-300 rounded-full px-3 py-1 text-[#3a5220] text-xs focus:outline-none focus:ring-2 focus:ring-red-400/50"
+                />
+                <button
+                  onClick={handleAddCustomAllergy}
+                  className="px-3 py-1 rounded-full bg-red-500 text-white text-xs font-semibold hover:bg-red-600 transition-colors"
+                >
+                  Add
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCustomAllergyInput(false);
+                    setCustomAllergyInput("");
+                  }}
+                  className="px-3 py-1 rounded-full bg-gray-200 text-gray-600 text-xs font-semibold hover:bg-gray-300 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="flex gap-3 pt-1">
