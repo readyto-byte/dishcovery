@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
+const { supabase } = require('../config/supabase');
 const { signUp, logIn, logOut, resendEmailVerification } = require('../controllers/authController');
 
 router.post('/signup', async (req, res) => {
@@ -33,6 +34,33 @@ router.post('/signup', async (req, res) => {
     res.status(400).json({ success: false, error: error.message });
   }
 });
+
+router.post('/refresh', async (req, res) => {
+  try {
+    const refresh_token = req.body?.refresh_token
+    if (!refresh_token || typeof refresh_token !== 'string') {
+      return res.status(400).json({ success: false, error: 'Refresh token is required' })
+    }
+
+    const { data, error } = await supabase.auth.refreshSession({ refresh_token })
+    if (error || !data?.session) {
+      return res.status(401).json({
+        success: false,
+        error: error?.message || 'Session refresh failed',
+      })
+    }
+
+    const session = data.session
+    return res.json({
+      success: true,
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
+      expires_at: session.expires_at,
+    })
+  } catch (e) {
+    return res.status(500).json({ success: false, error: e.message })
+  }
+})
 
 router.post('/login', async (req, res) => {
   try {

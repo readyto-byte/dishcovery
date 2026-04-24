@@ -24,7 +24,8 @@ router.put('/me', async (req, res) => {
 
 router.delete('/me', async (req, res) => {
   try {
-    await deleteAccount(req.user.id);
+    const password = req.body?.password ?? req.body?.currentPassword
+    await deleteAccount(req.user.id, password);
     res.json({ success: true, message: 'Account deleted' });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });

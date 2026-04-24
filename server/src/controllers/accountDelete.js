@@ -1,3 +1,4 @@
+const { createClient } = require('@supabase/supabase-js')
 const { supabaseAdmin } = require('../config/supabase')
 
 function normalizeAccountStatus(status) {
@@ -6,6 +7,46 @@ function normalizeAccountStatus(status) {
   }
 
   return status.trim().replace(/^"+|"+$/g, '').toUpperCase()
+}
+
+/**
+ * Confirms the caller knows the account password without mutating the shared server auth client.
+ */
+async function verifyAccountPassword(userId, password) {
+  const trimmed = typeof password === 'string' ? password.trim() : ''
+  if (!trimmed) {
+    throw new Error('Password is required to delete your account.')
+  }
+
+  const { data: authData, error: authLookupError } = await supabaseAdmin.auth.admin.getUserById(userId)
+  if (authLookupError || !authData?.user?.email) {
+    throw new Error('Unable to verify password.')
+  }
+
+  const email = authData.user.email.trim().toLowerCase()
+  const verifyClient = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_KEY,
+    {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    },
+  )
+
+  const { error: signError } = await verifyClient.auth.signInWithPassword({
+    email,
+    password: trimmed,
+  })
+
+  // Do not call signOut() here. Default global sign-out revokes every session for this user
+  // and invalidates the browser JWT used for the DELETE request (and follow-up API calls).
+
+  if (signError) {
+    throw new Error('Incorrect password.')
+  }
 }
 
 async function rollbackAccountCreation(userId) {
@@ -22,19 +63,26 @@ async function rollbackAccountCreation(userId) {
         .eq('id', userId)
 }
 
-async function deleteAccount(userId) {
+async function deleteAccount(userId, password) {
   if (!userId) {
     throw new Error('User ID is required')
   }
 
+  await verifyAccountPassword(userId, password)
+
   const { data: account, error: accountError } = await supabaseAdmin
     .from('account')
-    .select('id, is_verified, status')
+    .select('id, username, is_verified, status')
     .eq('id', userId)
     .single()
 
   if (accountError) {
     throw accountError
+  }
+
+  const { data: authData, error: authLookupError } = await supabaseAdmin.auth.admin.getUserById(userId)
+  if (authLookupError || !authData?.user?.email) {
+    throw new Error('Unable to resolve auth user email for account deletion.')
   }
 
   const normalizedStatus = normalizeAccountStatus(account?.status)
@@ -52,6 +100,22 @@ async function deleteAccount(userId) {
 
   if (statusError) {
     throw statusError
+  }
+
+  if (account?.username && authData?.user?.email) {
+    const email = authData.user.email.trim().toLowerCase()
+    const { error: emailInsertError } = await supabaseAdmin
+      .from('email')
+      .insert([{ email, username: account.username }])
+
+    if (emailInsertError) {
+      throw emailInsertError
+    }
+  }
+
+  const { error: authDelError } = await supabaseAdmin.auth.admin.deleteUser(userId)
+  if (authDelError) {
+    throw authDelError
   }
 }
 
