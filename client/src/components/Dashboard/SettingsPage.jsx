@@ -294,7 +294,7 @@ const SettingsPage = () => {
     try {
       await apiCall("/api/account/me", {
         method: "PUT",
-        body: JSON.stringify({ newPassword }),
+        body: JSON.stringify({ currentPassword, newPassword }),
       });
       setSuccessMessage("Password changed successfully!");
       setFormData((prev) => ({ ...prev, currentPassword: "", newPassword: "", confirmNewPassword: "" }));
